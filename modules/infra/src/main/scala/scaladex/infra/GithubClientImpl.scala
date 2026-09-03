@@ -66,6 +66,13 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
             .copy(maxConnections = 10)
       )
 
+  override protected def isRetryable(response: HttpResponse): Boolean =
+    // GitHub signals rate limiting with a 403 carrying a rate-limit header
+    super.isRetryable(response) ||
+      (response.status == StatusCodes.Forbidden &&
+        (response.headers.exists(h => h.is("x-ratelimit-remaining") && h.value == "0") ||
+          response.headers.exists(_.is("retry-after"))))
+
   override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]] =
     getRepository(ref).flatMap {
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
