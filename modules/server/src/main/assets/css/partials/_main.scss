@@ -224,29 +224,70 @@ main {
     }
   }
 
-  .filters {
-    padding-left: 0;
-
-    li {
-      display: block;
-
-      input {
-        margin-right: 12px;
-      }
-    }
-  }
-
   .filters, .list-result {
     margin-top: 20px;
   }
 
   .list-result {
+    // Individual results are their own cards now, not one continuous box.
+    &.box {
+      background: transparent;
+      padding: 0;
+    }
+
+    // .no-results is on the SAME element as .list-result (not a descendant),
+    // hence "&" here instead of plain nesting.
+    &.no-results {
+      background: #fff;
+      padding: 30px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: $gray;
+      @include border-top-radius($border-radius-base);
+      @include border-bottom-radius($border-radius-base);
+
+      .fa-magnifying-glass {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: $gray-lighter;
+        font-size: 18px;
+        color: $gray-light;
+      }
+      p {
+        margin: 0 0 4px 0;
+        font-size: 18px;
+      }
+      .hint {
+        font-size: 14px;
+        color: $gray-light;
+      }
+    }
+
     .item-list {
       display: block;
+      background: #fff;
 
-      padding: 15px 0;
-      margin: 0;
-      border-bottom: 1px solid rgba($gray-dark, 0.12);
+      padding: 20px;
+      margin: 0 0 16px 0;
+      border: 1px solid rgba($gray-dark, 0.08);
+      @include border-top-radius($border-radius-base);
+      @include border-bottom-radius($border-radius-base);
+      @include box-shadow(0 1px 3px rgba(0, 0, 0, 0.05));
+      transition: $base-transition;
+
+      &:hover, &:focus {
+        @include box-shadow(0 6px 16px rgba(0, 0, 0, 0.1));
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
 
       .targets,
       .homepage,
