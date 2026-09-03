@@ -66,11 +66,14 @@
         }
 
         .btn-default {
-          padding: 7px 8px;
-          background-color: #224951;
+          padding: 7px 12px;
+          background-color: transparent;
+          border: 1px solid rgba(#fff, 0.3);
           color: white;
           &:hover, &:focus {
-            opacity: 0.75;
+            background-color: rgba(#fff, 0.1);
+            border-color: rgba(#fff, 0.5);
+            opacity: 1;
             text-decoration: none;
           }
         }
