@@ -2,8 +2,18 @@
 // -----------------------------------------------------------------------------
 #container-home {
   .home-search {
-    background: url('/assets/img/head-project-background.png') no-repeat center top #0D343C;
-    padding: 80px 0 100px 0;
+    // The image itself is 1920px wide with a flat rgb(13,52,60) fill baked
+    // into its own left/right edges (the mountain silhouette only occupies
+    // the middle). On viewports wider than that, background-color extends
+    // that same flat color outward so the image's edge blends in exactly,
+    // instead of scaling/stretching the image to fill the width.
+    background-color: rgb(13, 52, 60);
+    background-image:
+      linear-gradient(to bottom, rgba($gray-darker, 0) 0, rgba($gray-darker, 0) 220px, $gray-darker 271px),
+      url('/assets/img/head-project-background.png');
+    background-repeat: no-repeat, no-repeat;
+    background-position: center top, center top;
+    padding: 80px 0 40px 0;
     h1 {
       font-size: 42px;
       color: #fff;
