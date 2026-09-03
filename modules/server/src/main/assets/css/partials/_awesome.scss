@@ -81,6 +81,9 @@
     overflow: auto;
     background: white;
     padding: 20px;
+    @include border-top-radius($border-radius-base);
+    @include border-bottom-radius($border-radius-base);
+    @include box-shadow(0 1px 3px rgba(0, 0, 0, 0.05));
     @media screen and (max-width: $screen-md-min) {
       margin: 0 15px 20px 15px;
     }  
@@ -140,6 +143,9 @@
     background: white;
     margin-bottom: 40px;
     padding: 30px 20px;
+    @include border-top-radius($border-radius-base);
+    @include border-bottom-radius($border-radius-base);
+    @include box-shadow(0 1px 3px rgba(0, 0, 0, 0.05));
     h2 {
       text-align: center;
       text-transform: uppercase;
@@ -243,7 +249,7 @@
       color: rgba(255,255,255,0.5);
     }
   }
-  background: $gray-lighter;
+  background: $gray-darker;
   padding-bottom: 40px;
   @media screen and (min-width: $screen-md-min) {
       padding-bottom: 80px;
