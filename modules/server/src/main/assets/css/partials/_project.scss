@@ -55,6 +55,12 @@
   .dependencies,
   .dependents {
     overflow: hidden;
+    .row {
+      > div {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+    }
     span {
       i {
         font-size: 14px;
@@ -62,10 +68,13 @@
     }
     .label {
       font-size: 10px;
-      padding: 2px 5px;
-      top: -2px;
-      position: relative;
+      padding: 2px 6px;
+      top: 0;
+      position: static;
+      vertical-align: middle;
       margin-left: 5px;
+      background-color: $gray-dark;
+      cursor: help;
     }
   }
 
