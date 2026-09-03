@@ -1,7 +1,34 @@
 .bootstrap-switch {
+  border: none;
+  @include border-top-radius($border-radius-base);
+  @include border-bottom-radius($border-radius-base);
+  @include box-shadow(0 1px 2px rgba(0, 0, 0, 0.08));
+
   .bootstrap-switch-label {
     padding: 7px;
-    font-size: 16px;
-    line-height:1.52857;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.52857;
+    background: #fff;
+    color: $gray-dark;
+  }
+
+  .bootstrap-switch-handle-on,
+  .bootstrap-switch-handle-off {
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .bootstrap-switch-handle-on.bootstrap-switch-brand {
+    color: #fff;
+    background: $brand-secondary;
+  }
+
+  .bootstrap-switch-handle-off.bootstrap-switch-brand-off {
+    color: $gray-light;
+    background: $gray-lighter;
   }
 }
