@@ -16,7 +16,14 @@ body {
 // Forms
 //------------------------------------------------------------------------------
 .form-control {
+    border-color: $input-border;
     box-shadow: none !important;
+    transition: border-color $base-duration $base-timing, box-shadow $base-duration $base-timing;
+
+    &:focus {
+        border-color: $input-border-focus;
+        box-shadow: 0 0 0 3px rgba($input-border-focus, 0.15) !important;
+    }
 }
 
 .has-feedback {
