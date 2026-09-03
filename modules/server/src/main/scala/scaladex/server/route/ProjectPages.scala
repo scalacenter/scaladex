@@ -290,8 +290,12 @@ class ProjectPages(
         header <- projectService.getHeader(project)
         directDependencies <-
           header
-            .map(h => database.getProjectDependencies(ref, h.latestVersion, limit = 1000, offset = 0))
+            .map(h => database.getProjectDependencies(ref, h.latestVersion, limit = 100, offset = 0))
             .getOrElse(Future.successful(Seq.empty))
+        directDependencyCount <-
+          header
+            .map(h => database.countProjectDependencies(ref, h.latestVersion))
+            .getOrElse(Future.successful(0L))
         reverseDependencies <- database.getProjectReverseDependencies(ref, limit = 100, offset = 0)
         reverseDependencyCount <- database.countProjectDependents(ref)
       yield
@@ -318,6 +322,7 @@ class ProjectPages(
             project,
             header,
             groupedDirectDependencies.toMap,
+            directDependencyCount,
             groupedReverseDependencies.toMap,
             reverseDependencyCount
           )
