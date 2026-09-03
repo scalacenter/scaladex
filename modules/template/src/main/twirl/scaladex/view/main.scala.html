@@ -185,6 +185,7 @@
               submitFilterFormAjax(event.target.form);
             }
           });
+          $scope.find('.edit-project input[type="checkbox"]').bootstrapSwitch();
           if (window.emojify) { emojify.run(); }
           if (window.ScaladexClient) { ScaladexClient.createSparkline(); }
         }
@@ -251,7 +252,6 @@
           $('[data-toggle="tooltip"]').tooltip({container: 'body'});
           $(".js-keywords-multiple").select2({tags: true});
           $(".js-stackoverflowtags-multiple").select2({tags: true});
-          $('.edit-project input[type="checkbox"]').bootstrapSwitch();
           initPageWidgets(document);
         });
 
