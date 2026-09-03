@@ -15,7 +15,7 @@ main {
 }
 
 .banner {
-  background: #0c353c;
+  background: $gray-darker;
   text-align: center;
   padding: 8px 0;
   color: #fff;
@@ -126,6 +126,7 @@ main {
   .filter-tag {
     margin: 0;
     padding: 10px 0 0 0;
+    color: $gray-lighter;
   }
   .filter-tag {
     li {
@@ -147,6 +148,20 @@ main {
     h3 {
       display: inline-block;
       margin-right: 20px;
+      color: $gray-lighter;
+    }
+
+    .btn-group .btn-default {
+      background: rgba(#fff, 0.08);
+      border-color: transparent;
+      color: $gray-lighter;
+      &:hover {
+        background: rgba(#fff, 0.15);
+      }
+      &.active {
+        background: #fff;
+        color: $gray-darker;
+      }
     }
 
     .btn-primary {
