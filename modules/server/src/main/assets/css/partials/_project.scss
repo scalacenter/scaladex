@@ -131,23 +131,108 @@
   .edit-project {
     h1 {
       margin-top: 0;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
     }
-    .btn-default {
-      background: $gray-lighter;
-      margin-left: 10px;
-      &:focus,
-      &:hover {
-        background: $gray-light;
-        color: $gray-lighter;
+
+    .settings-section {
+      padding: 24px 0;
+      border-bottom: 1px solid $gray-lighter;
+
+      &:first-of-type {
+        padding-top: 0;
+      }
+      &:last-of-type {
+        border-bottom: none;
       }
 
+      h2 {
+        margin: 0 0 20px 0;
+        font-size: 18px;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: $gray;
+      }
     }
-    fieldset fieldset legend {
-      font-size: 16px;
+
+    .form-group {
+      margin-bottom: 24px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      > label {
+        display: block;
+        font-weight: 700;
+        color: $gray-darker;
+        margin-bottom: 4px;
+      }
+
+      .help {
+        color: $gray-light;
+        font-size: 14px;
+        margin: 0 0 10px 0;
+
+        code {
+          font-size: 12px;
+        }
+      }
+
+      .form-control,
+      .selectpicker + .dropdown-toggle,
+      .bootstrap-select {
+        max-width: 480px;
+      }
+
+      .selectpicker + .dropdown-toggle,
+      .bootstrap-select {
+        width: 100% !important;
+      }
     }
-    img[alt="Contributors Wanted"] {
-      background-color: #002b37;
+
+    .form-group-toggle {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+
+      .form-group-toggle-text {
+        > label {
+          margin-bottom: 0;
+        }
+
+        .help {
+          margin: 4px 0 0 0;
+        }
+      }
+
+      input[type="checkbox"] {
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+    }
+
+    .documentation-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      li {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+
+        .form-control {
+          flex: 1 1 0;
+        }
+      }
+    }
+
+    .settings-actions {
+      display: flex;
+      gap: 10px;
+      padding-top: 24px;
+      margin-top: 4px;
     }
   }
 
