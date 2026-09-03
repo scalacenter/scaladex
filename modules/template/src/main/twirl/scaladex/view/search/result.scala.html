@@ -1,5 +1,6 @@
 @import org.apache.pekko.http.scaladsl.model.Uri
 @import scaladex.view.html._
+@import scaladex.view.Formats
 @import scaladex.core.model.search.Pagination
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.search.ProjectHit
@@ -15,20 +16,24 @@
   languages: Seq[(Language, Int)],
   platforms: Seq[(Platform, Int)]
 )
-@if(params.contributingSearch){
-  <h2 class="text-center">Contributing Search</h2>
-  <div class="row">
+@* Always render the title/subtitle area (even empty) so switching in and out
+   of Contributing Search doesn't shift the rest of the page up/down. *@
+<h2 class="text-center">@if(params.contributingSearch) { Contributing Search } else { Search Results }</h2>
+<div class="row search-subtitle">
+  @if(params.contributingSearch) {
     <h4 class="text-center">All the projects below have beginner-friendly issues which are great places to start contributing</h4>
-  </div>
-}
+  }
+</div>
 
 <div class="row">
   <div class="col-md-2">
     <div class="result-count">
-      @if(pagination.current == 1) {
-        @pagination.totalSize results
-      } else {
-        Page @pagination.current of @pagination.totalSize results
+      @if(pagination.totalSize > 0) {
+        @if(pagination.current == 1) {
+          @Formats.plural(pagination.totalSize, "result")
+        } else {
+          Page @pagination.current of @Formats.plural(pagination.totalSize, "result")
+        }
       }
     </div>
   </div>
