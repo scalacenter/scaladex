@@ -10,7 +10,11 @@
     left: 0;
     position: absolute;
     z-index: 9999;
-    @include box-shadow(0 2px 20px rgba(0, 0, 0, 0.2));
+    margin-top: 8px;
+    overflow: hidden;
+    @include border-top-radius($border-radius-base);
+    @include border-bottom-radius($border-radius-base);
+    @include box-shadow(0 8px 24px rgba(0, 0, 0, 0.25));
     ul {
         padding: 0;
         margin: 0;
