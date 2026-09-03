@@ -10,9 +10,12 @@
 )
 
 <form class="float-right" action="#" action="GET">
-  <select class="selectpicker" name="binary-version" 
-    title= "@params.binaryVersionsSummary.getOrElse("Scala Versions")" multiple data-style="btn-secondary" data-actions-box="true" data-selected-text-format="static"
-    onchange="this.form.submit()">
+  @if(withStableOnly) {
+    <input type="checkbox" id="stable-only" name="stable-only" value="true" @if(params.stableOnly) { checked }>
+  }
+  <select class="selectpicker" name="binary-version"
+    title= "@params.binaryVersionsSummary.getOrElse("Target")" multiple data-style="btn-secondary" data-actions-box="true" data-selected-text-format="static"
+    onchange="submitFilterFormAjax(this.form)">
     @for((platform, binaryVersions) <- allBinaryVersions.groupBy(_.platform).toSeq.sortBy(_._1).reverse) {
       <optgroup label="@platform">
         @for(binaryVersion <- binaryVersions.sorted.reverse) {
@@ -24,7 +27,4 @@
       </optgroup>
     }
   </select>
-  @if(withStableOnly) {
-    <input type="checkbox" id="stable-only" name="stable-only" value="true" @if(params.stableOnly) { checked }>
-  }
 </form>

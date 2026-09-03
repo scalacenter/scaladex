@@ -351,10 +351,26 @@
   }
 
   .artifacts, .versions {
+    .artifacts-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 10px;
+
+      h2 {
+        margin: 0;
+      }
+
+      .float-right {
+        float: none;
+      }
+    }
     .center {
       @media (min-width: $screen-md-min) {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
       }
     }
