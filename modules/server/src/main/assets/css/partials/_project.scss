@@ -259,13 +259,16 @@
   
   .head-project {
     padding: 20px 0;
-    background-color: $gray-darker;
+    // Same treatment as the homepage hero: keep the image at its native
+    // size (no stretching/zooming to "cover" a tall box) and fade its own
+    // bottom edge into a flat extension of the image's own edge color,
+    // instead of a hard cutoff into the content box below.
+    background-color: rgb(13, 52, 60);
     background-image:
-      linear-gradient(to bottom, rgba($gray-darker, 0.15) 0%, rgba($gray-darker, 0.8) 100%),
+      linear-gradient(to bottom, rgba($gray-darker, 0) 0, rgba($gray-darker, 0) 220px, $gray-darker 271px),
       url('/assets/img/head-project-background.png');
     background-repeat: no-repeat, no-repeat;
     background-position: center top, center top;
-    background-size: auto, cover;
     color: #fff;
     .head-last-version {
       color: $gray-lighter;
