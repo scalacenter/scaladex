@@ -2,8 +2,18 @@
 // -----------------------------------------------------------------------------
 #container-home {
   .home-search {
-    background: url('/assets/img/head-project-background.png') no-repeat center top #0D343C;
-    padding: 80px 0 100px 0;
+    // The image itself is 1920px wide with a flat rgb(13,52,60) fill baked
+    // into its own left/right edges (the mountain silhouette only occupies
+    // the middle). On viewports wider than that, background-color extends
+    // that same flat color outward so the image's edge blends in exactly,
+    // instead of scaling/stretching the image to fill the width.
+    background-color: rgb(13, 52, 60);
+    background-image:
+      linear-gradient(to bottom, rgba($gray-darker, 0) 0, rgba($gray-darker, 0) 220px, $gray-darker 271px),
+      url('/assets/img/head-project-background.png');
+    background-repeat: no-repeat, no-repeat;
+    background-position: center top, center top;
+    padding: 80px 0 40px 0;
     h1 {
       font-size: 42px;
       color: #fff;
@@ -107,11 +117,78 @@
     }
   }
   .recent-projects {
-    padding: 40px 0 80px 0;
+    padding: 0 0 80px 0;
     h2 {
       margin-bottom: ($line-height-computed * 1.5);
+      color: $gray-lighter;
     }
-    a {
+    // Bootstrap's grid classes (float/margin/padding) fight with this custom
+    // layout with just enough specificity to win depending on where the JS
+    // masonry layout has currently reparented a card, so these box-model
+    // properties are reset unconditionally rather than scoped to one parent.
+    [class*="col-"] {
+      float: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      min-width: 0;
+      box-sizing: border-box;
+
+      > a {
+        display: block;
+        width: 100%;
+        min-width: 0;
+      }
+    }
+    .row {
+      // Base (no-JS) fallback: a plain wrapping grid, equal-ish widths.
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin: 0;
+
+      > [class*="col-"] {
+        display: flex;
+        width: calc(33.333% - 14px);
+      }
+
+      @media (max-width: $bp-medium) {
+        > [class*="col-"] {
+          width: calc(50% - 10px);
+        }
+      }
+
+      @media (max-width: $bp-small) {
+        > [class*="col-"] {
+          width: 100%;
+        }
+      }
+
+      // JS-enhanced real masonry: children become .masonry-col flex columns,
+      // each holding the items greedily assigned to it by actual height.
+      &.masonry-row {
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        gap: 0;
+      }
+    }
+    .masonry-col {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+
+      > [class*="col-"] {
+        display: flex;
+        width: 100%;
+      }
+    }
+    > .container > a.btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0 0 0;
+    }
+    .row a {
       h4 {
         font-size: 16px;
       }
@@ -124,42 +201,68 @@
         text-decoration: none;
         h4 {
           color: $brand-primary;
-          text-decoration: underline;
         }
       }
     }
   }
   .content-project {
     &.box {
-      padding: 10px;
+      padding: 22px;
     }
-    height: 186px;
-    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    min-height: 168px;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba($gray-dark, 0.08);
+    @include box-shadow(0 1px 3px rgba(0, 0, 0, 0.05));
+    transition: $base-transition;
     .content-project-header {
-      & > img,
-      & > h4 {
-        display: inline-block;
-        vertical-align: middle;
-      }
-      border-bottom: 1px solid rgba($gray-dark, 0.12);
-      padding-bottom: 20px;
-      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba($gray-dark, 0.1);
+      padding-bottom: 16px;
+      margin-bottom: 16px;
       h4 {
         margin: 0;
-        display: inline-block;
-        padding-left: 15px;
-        width: 90%;
+        padding-left: 12px;
+        width: auto;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-weight: 700;
+        color: $gray-darker;
       }
       img {
-        width: 28px;
-        height: auto;
-        float: left;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        @include border-top-radius(4px);
+        @include border-bottom-radius(4px);
       }
     }
-    .content-project-body {}
+    .content-project-body {
+      flex: 1;
+      min-width: 0;
+      color: $gray-light;
+      font-size: 13px;
+      .description {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        color: $gray;
+        font-size: $font-size-base;
+        margin-bottom: 8px;
+      }
+    }
     &:hover,
     &:focus {
-      @include box-shadow(0 1px 15px rgba(0, 0, 0, 0.15));
+      border-color: transparent;
+      @include box-shadow(0 10px 24px rgba(0, 0, 0, 0.12));
     }
   }
 }

@@ -4,6 +4,19 @@
 @import scaladex.core.model.search.SearchParams
 
 @(projects: Seq[ProjectHit], params: SearchParams)
+@if(projects.isEmpty) {
+  <div class="list-result box no-results">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <div>
+      @if(params.queryString.trim.nonEmpty) {
+        <p>No projects found for &ldquo;@params.queryString&rdquo;.</p>
+      } else {
+        <p>No projects match the selected filters.</p>
+      }
+      <p class="hint">Try a broader search term, check the spelling, or clear some filters.</p>
+    </div>
+  </div>
+} else {
 <ol class="list-result box">
   @for(hit <- projects; project = hit.document){
   <li class="item-list">
@@ -87,11 +100,7 @@
             @for(github <- project.githubInfo) {
               @if(github.topics.nonEmpty) {
                 @for(topic <- github.topics) {
-                  <span class="item-filter-tag">
-                    <a href="/search?topic=@topic">
-                      @topic
-                    </a>
-                  </span>
+                  <span class="item-filter-tag" data-topic-href="/search?topic=@topic">@topic</span>
                 }
               }
             }
@@ -101,16 +110,16 @@
             @for(github <- project.githubInfo) {
               @for(stars <- github.stars) {
                 <span>
-                  <a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Stars" href="#"><span>@stars</span> <i class="fa-solid fa-star"></i></a>
+                  <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Stars"><span>@stars</span> <i class="fa-solid fa-star"></i></span>
                 </span>
               }
               @for(commitsPerYear <- github.commitsPerYear) {
                 <span>
-<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Commits in the past year" href="#"><span>@commitsPerYear</span> <i class="fa-solid fa-code-merge"></i></a>
+<span class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Commits in the past year"><span>@commitsPerYear</span> <i class="fa-solid fa-code-merge"></i></span>
                 </span>
               }
               <span>
-                <a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#"><span>@github.contributorCount</span> <i class="fa-solid fa-users"></i></a>
+                <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Contributors"><span>@github.contributorCount</span> <i class="fa-solid fa-users"></i></span>
               </span>
             }
             </div>
@@ -121,3 +130,4 @@
   </li>
   }
 </ol>
+}

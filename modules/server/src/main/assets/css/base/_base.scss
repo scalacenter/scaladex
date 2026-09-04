@@ -2,6 +2,10 @@
 // This file contains very base styles.
 // -----------------------------------------------------------------------------
 
+html {
+    background: $gray-darker;
+}
+
 .box {
     background: #fff;
     @include border-top-radius($border-radius-base);

@@ -112,7 +112,7 @@
                   <ul>
                       <li><h5>Community</h5></li>
                       <li><a href="https://github.com/scalacenter/scaladex"><i class="fa-brands fa-github fa-lg"></i> Github</a></li>
-                      <li><a href="https://discord.com/invite/scala"><i class="fab fa-discord fa-lg"></i> Discord</a></li>
+                      <li><a href="https://discord.com/invite/scala"><i class="fa-brands fa-discord fa-lg"></i> Discord</a></li>
                   </ul>
               </div>
               <div class="col-md-3">
@@ -169,21 +169,177 @@
     }
 
     <script>
-        // Tooltips
-        $(function () {
-          $('[data-toggle="tooltip"]').tooltip();
-          $(".js-keywords-multiple").select2({tags: true});
-          $(".js-stackoverflowtags-multiple").select2({tags: true});
-          $('.edit-project input[type="checkbox"]').bootstrapSwitch();
-          $('#stable-only').bootstrapSwitch({
+        // Init/re-init widgets on a chunk of content, so they still work
+        // after an AJAX content swap (see ajaxSwap below).
+        function initPageWidgets(scope) {
+          var $scope = $(scope || document);
+          $scope.find('[data-toggle="tooltip"]').tooltip({container: 'body'});
+          $scope.find('.selectpicker').selectpicker();
+          $scope.find('#stable-only').bootstrapSwitch({
             handleWidth: 30,
             labelWidth: 78,
             labelText: 'Stable Only',
-            onSwitchChange: function(event, state){
-              console.log(event)
-              event.target.form.submit()
+            onColor: 'brand',
+            offColor: 'brand-off',
+            onSwitchChange: function (event, state) {
+              submitFilterFormAjax(event.target.form);
             }
           });
+          $scope.find('.edit-project input[type="checkbox"]').bootstrapSwitch();
+          if (window.emojify) { emojify.run(); }
+          if (window.ScaladexClient) { ScaladexClient.createSparkline(); }
+        }
+
+        // Several links/forms (the artifacts/versions filters, the project
+        // tabs, the search sorting tabs) used to submit a form or follow a
+        // link the plain way, causing a full page reload. Instead, fetch the
+        // target URL and swap in just the relevant content card.
+        function ajaxSwap(targetUrl, contentSelector) {
+          fetch(targetUrl)
+            .then(function (res) { return res.text(); })
+            .then(function (html) {
+              var doc = new DOMParser().parseFromString(html, 'text/html');
+              var newContent = doc.querySelector(contentSelector);
+              var oldContent = document.querySelector(contentSelector);
+              if (newContent && oldContent) {
+                oldContent.replaceWith(newContent);
+                history.pushState({}, '', targetUrl);
+                if (doc.title) { document.title = doc.title; }
+                initPageWidgets(newContent);
+              } else {
+                window.location = targetUrl;
+              }
+            })
+            .catch(function () {
+              window.location = targetUrl;
+            });
+        }
+
+        function submitFilterFormAjax(form, contentSelector) {
+          var params = new URLSearchParams(new FormData(form));
+          var targetUrl = window.location.pathname + '?' + params.toString();
+          ajaxSwap(targetUrl, contentSelector || '.content-project.box');
+        }
+
+        // Project tabs (Project / Artifacts / Versions / Badges / Settings)
+        // and the search results' "Sorting" tabs.
+        document.addEventListener('click', function (event) {
+          var tabLink = event.target.closest('.project-nav-bar a');
+          if (tabLink && tabLink.href) {
+            event.preventDefault();
+            ajaxSwap(tabLink.href, '#container-project');
+          }
+        });
+
+        // Topic tags on result cards: plain elements (not <a>) since each
+        // card is itself one big <a> - a nested <a> would be invalid HTML,
+        // and browsers "fix" that by force-closing the outer link early.
+        document.addEventListener('click', function (event) {
+          var tag = event.target.closest('.item-filter-tag[data-topic-href]');
+          if (tag) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.location = tag.dataset.topicHref;
+          }
+        });
+
+        // The "Sorting" control is a button-group form (each button is a
+        // submit button carrying name="sort"), not plain links.
+        document.addEventListener('submit', function (event) {
+          var form = event.target;
+          if (form.closest && form.closest('.order-by')) {
+            event.preventDefault();
+            var params = new URLSearchParams(new FormData(form, event.submitter));
+            var targetUrl = window.location.pathname + '?' + params.toString();
+            ajaxSwap(targetUrl, '#container-search');
+          }
+        });
+
+        window.addEventListener('popstate', function () {
+          window.location.reload();
+        });
+
+        // Tooltips
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+          $(".js-keywords-multiple").select2({tags: true});
+          $(".js-stackoverflowtags-multiple").select2({tags: true});
+          initPageWidgets(document);
+        });
+
+        // Real masonry for the homepage project grids: each card is greedily
+        // assigned to whichever column is currently shortest, using its
+        // actual rendered height. The server sends a few more cards than we
+        // display so that, whatever their heights turn out to be, we can
+        // drop the ones that don't help balance the columns instead of
+        // stretching a card to force them to line up.
+        var MASONRY_DISPLAY_COUNT = 12;
+        var masonryRows = [];
+
+        function columnCountFor(width) {
+          if (width <= 480) { return 1; }
+          if (width <= 768) { return 2; }
+          return 3;
+        }
+
+        function layoutMasonryRow(entry) {
+          var row = entry.row;
+          var items = entry.items;
+          row.querySelectorAll('.masonry-col').forEach(function (col) { col.remove(); });
+          items.forEach(function (item) { item.remove(); });
+
+          var columnCount = columnCountFor(row.getBoundingClientRect().width || window.innerWidth);
+          if (columnCount <= 1) {
+            row.classList.remove('masonry-row');
+            items.slice(0, MASONRY_DISPLAY_COUNT).forEach(function (item) { row.appendChild(item); });
+            return;
+          }
+
+          var gapPx = 20;
+          var rowWidth = row.getBoundingClientRect().width;
+          var colWidth = (rowWidth - gapPx * (columnCount - 1)) / columnCount;
+
+          var cols = [];
+          var heights = [];
+          for (var i = 0; i < columnCount; i++) {
+            var col = document.createElement('div');
+            col.className = 'masonry-col';
+            // Set explicit pixel widths instead of relying on flex-grow: a
+            // flex-basis distribution alongside `gap` was leaving unexplained
+            // slack at both row edges in some engines.
+            col.style.flex = '0 0 auto';
+            col.style.width = colWidth + 'px';
+            if (i < columnCount - 1) { col.style.marginRight = gapPx + 'px'; }
+            row.appendChild(col);
+            cols.push(col);
+            heights.push(0);
+          }
+          row.classList.add('masonry-row');
+
+          var placed = 0;
+          for (var idx = 0; idx < items.length && placed < MASONRY_DISPLAY_COUNT; idx++) {
+            var shortest = 0;
+            for (var c = 1; c < columnCount; c++) {
+              if (heights[c] < heights[shortest]) { shortest = c; }
+            }
+            cols[shortest].appendChild(items[idx]);
+            heights[shortest] += items[idx].getBoundingClientRect().height + 20;
+            placed++;
+          }
+        }
+
+        function layoutAllMasonryRows() {
+          masonryRows.forEach(layoutMasonryRow);
+        }
+
+        document.querySelectorAll('.recent-projects .row').forEach(function (row) {
+          masonryRows.push({ row: row, items: Array.prototype.slice.call(row.children) });
+        });
+        window.addEventListener('load', layoutAllMasonryRows);
+        var masonryResizeTimer;
+        window.addEventListener('resize', function () {
+          clearTimeout(masonryResizeTimer);
+          masonryResizeTimer = setTimeout(layoutAllMasonryRows, 150);
         });
 
         // Run client scalajs code (for instance, autocomplete)

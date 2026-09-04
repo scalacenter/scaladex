@@ -16,7 +16,12 @@ import org.apache.pekko.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
 
 class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(using ExecutionContext):
-  val limitOfProjects = 12
+  // We fetch a few extra projects beyond what's displayed so the client can
+  // arrange the masonry grid on the homepage using real card heights and
+  // drop whichever ones don't fit well, instead of stretching a card to
+  // force the columns to line up.
+  val displayedProjects = 12
+  val limitOfProjects: Int = displayedProjects + 4
 
   def route(userState: Option[UserState]): Route = pathSingleSlash(complete(frontPage(userState)))
 

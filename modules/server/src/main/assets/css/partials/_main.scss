@@ -15,7 +15,7 @@ main {
 }
 
 .banner {
-  background: #0c353c;
+  background: $gray-darker;
   text-align: center;
   padding: 8px 0;
   color: #fff;
@@ -66,59 +66,101 @@ main {
 // Common Pop-up
 .overlay {
   position: fixed;
-  z-index: 10;
+  z-index: 1000;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.7);
   display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+
+  .overlay-backdrop {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba($gray-darker, 0.7);
+  }
 
   .popup {
-    margin: 70px auto;
-    padding: 40px 20px 20px 20px;
     background: #fff;
-    border-radius: 5px;
-    width: 60%;
-    position: relative;
-    transition: all 5s ease-in-out;
-    max-height: calc(100vh - 100px);
+    @include border-top-radius($border-radius-base * 2);
+    @include border-bottom-radius($border-radius-base * 2);
+    @include box-shadow(0 20px 50px rgba(0, 0, 0, 0.3));
+    padding: 36px;
+    width: 100%;
+    max-width: 520px;
+    max-height: calc(100vh - 40px);
     overflow: auto;
+    position: relative;
+    z-index: 1;
+    transition: transform $base-duration $base-timing, opacity $base-duration $base-timing;
 
     h2 {
       margin-top: 0;
+      font-size: 22px;
+    }
+
+    .intro {
+      color: $gray;
+    }
+
+    .steps {
+      padding-left: 20px;
+      margin-bottom: 0;
+      li {
+        margin-bottom: 10px;
+        padding-left: 6px;
+      }
+      .badge {
+        background: $brand-primary;
+      }
     }
 
     .close {
       position: absolute;
-      top: 20px;
-      right: 30px;
-      transition: all 200ms;
-      font-size: 30px;
-      font-weight: bold;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: $gray;
+      font-size: 22px;
+      line-height: 1;
       text-decoration: none;
+      transition: $base-transition;
 
       &:hover {
-        color: #06D85F;
+        background: $gray-lighter;
+        color: $gray-darker;
+        text-decoration: none;
       }
-    }
-
-    .content {
-      max-height: 30%;
-      overflow: auto;
     }
   }
 
   &:target {
-    display: block;
+    display: flex;
   }
 }
 
 // Result page
 // -----------------------------------------------------------------------------
 #container-search {
-  background: $gray-lighter;
+  background: $gray-darker;
   padding: 30px 0 40px 0;
+  > .container > h2,
+  > .container > .row > h4 {
+    color: $gray-lighter;
+  }
+  .search-subtitle {
+    min-height: 48px;
+  }
   @media screen and (min-width: $screen-md-min) {
     padding: 60px 0 80px 0;
   }
@@ -126,6 +168,7 @@ main {
   .filter-tag {
     margin: 0;
     padding: 10px 0 0 0;
+    color: $gray-lighter;
   }
   .filter-tag {
     li {
@@ -147,6 +190,20 @@ main {
     h3 {
       display: inline-block;
       margin-right: 20px;
+      color: $gray-lighter;
+    }
+
+    .btn-group .btn-default {
+      background: rgba(#fff, 0.08);
+      border-color: transparent;
+      color: $gray-lighter;
+      &:hover {
+        background: rgba(#fff, 0.15);
+      }
+      &.active {
+        background: #fff;
+        color: $gray-darker;
+      }
     }
 
     .btn-primary {
@@ -167,29 +224,70 @@ main {
     }
   }
 
-  .filters {
-    padding-left: 0;
-
-    li {
-      display: block;
-
-      input {
-        margin-right: 12px;
-      }
-    }
-  }
-
   .filters, .list-result {
     margin-top: 20px;
   }
 
   .list-result {
+    // Individual results are their own cards now, not one continuous box.
+    &.box {
+      background: transparent;
+      padding: 0;
+    }
+
+    // .no-results is on the SAME element as .list-result (not a descendant),
+    // hence "&" here instead of plain nesting.
+    &.no-results {
+      background: #fff;
+      padding: 30px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: $gray;
+      @include border-top-radius($border-radius-base);
+      @include border-bottom-radius($border-radius-base);
+
+      .fa-magnifying-glass {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: $gray-lighter;
+        font-size: 18px;
+        color: $gray-light;
+      }
+      p {
+        margin: 0 0 4px 0;
+        font-size: 18px;
+      }
+      .hint {
+        font-size: 14px;
+        color: $gray-light;
+      }
+    }
+
     .item-list {
       display: block;
+      background: #fff;
 
-      padding: 15px 0;
-      margin: 0;
-      border-bottom: 1px solid rgba($gray-dark, 0.12);
+      padding: 20px;
+      margin: 0 0 16px 0;
+      border: 1px solid rgba($gray-dark, 0.08);
+      @include border-top-radius($border-radius-base);
+      @include border-bottom-radius($border-radius-base);
+      @include box-shadow(0 1px 3px rgba(0, 0, 0, 0.05));
+      transition: $base-transition;
+
+      &:hover, &:focus {
+        @include box-shadow(0 6px 16px rgba(0, 0, 0, 0.1));
+      }
+
+      &:last-child {
+        margin-bottom: 0;
+      }
 
       .targets,
       .homepage,
@@ -222,7 +320,6 @@ main {
         padding-left: 22px;
         margin-top: 12px;
         span {
-          margin-left: 20px;
           a {
             &:hover,
             &:focus {
@@ -230,10 +327,31 @@ main {
             }
           }
         }
+        > div:first-child {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          gap: 6px;
+        }
+        // Same pill as the topic tags on the project page (.label.label-default),
+        // but with a solid darker background - the translucent version reads
+        // fine on the dark hero but washes out on these white cards.
         .item-filter-tag {
-          color: $gray-light;
-          font-style: italic;
-          font-weight: 300;
+          display: inline-block;
+          padding: .2em .6em .3em;
+          background-color: $gray-dark;
+          color: #fff;
+          font-style: normal;
+          font-weight: 500;
+          font-size: 75%;
+          line-height: 1;
+          white-space: nowrap;
+          cursor: pointer;
+          border-radius: .25em;
+
+          &:hover {
+            color: #fff;
+          }
         }
         .icons-container{
           display: inline-grid;
@@ -264,6 +382,10 @@ main {
       }
     }
     .contributing-result {
+      ul {
+        list-style: none;
+        padding-left: 0;
+      }
       a {
         display: block;
         padding-bottom: 10px;
@@ -274,12 +396,126 @@ main {
   }
 }
 
-html, body {
-  height: 100%;
+// Used by both the search results sidebar (#container-search) and the
+// Awesome Scala sidebar (#container-awesome-*), which live on different
+// page-level containers, so this stays unscoped rather than tied to one.
+.filters {
+  padding-left: 0;
+
+  // The controls are nested inside a <form>, not direct children of
+  // .filters, hence the descendant (not child) selectors here.
+  .btn {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    margin-top: 0;
+    color: $gray-lighter;
+  }
+
+  fieldset {
+    border: none;
+    margin: 0 0 24px 0;
+    padding: 0 0 20px 0;
+    border-bottom: 1px solid rgba(#fff, 0.12);
+
+    &:last-of-type {
+      border-bottom: none;
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    legend {
+      all: unset;
+      display: block;
+      width: 100%;
+      font-family: $font-family-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: $gray-lighter;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+  }
+
+  li {
+    display: block;
+
+    label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0;
+      padding: 5px 0;
+      font-weight: 400;
+      color: $gray-light;
+      cursor: pointer;
+      transition: $base-transition;
+
+      &:hover {
+        color: #fff;
+      }
+    }
+
+    input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      margin-right: 10px;
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      border: 2px solid rgba(#fff, 0.25);
+      border-radius: 4px;
+      background: transparent;
+      position: relative;
+      cursor: pointer;
+      transition: $base-transition;
+
+      &:hover {
+        border-color: $brand-primary;
+      }
+
+      &:checked {
+        background: $brand-primary;
+        border-color: $brand-primary;
+
+        &::after {
+          content: '';
+          position: absolute;
+          left: 5px;
+          top: 1px;
+          width: 4px;
+          height: 8px;
+          border: solid #fff;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+        }
+      }
+    }
+  }
 }
 
 .white {
   color: #fff;
+}
+
+// Simple standalone pages (404, 403, invalid query) with no page-level
+// container of their own, so they sit directly on the dark body background.
+.error-page {
+  padding: 60px 0;
+  h1 {
+    color: $gray-lighter;
+  }
+  a {
+    color: $brand-primary;
+  }
 }
 
 .float-right {

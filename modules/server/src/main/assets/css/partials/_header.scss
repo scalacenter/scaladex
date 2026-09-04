@@ -10,7 +10,11 @@
     left: 0;
     position: absolute;
     z-index: 9999;
-    @include box-shadow(0 2px 20px rgba(0, 0, 0, 0.2));
+    margin-top: 8px;
+    overflow: hidden;
+    @include border-top-radius($border-radius-base);
+    @include border-bottom-radius($border-radius-base);
+    @include box-shadow(0 8px 24px rgba(0, 0, 0, 0.25));
     ul {
         padding: 0;
         margin: 0;
@@ -62,11 +66,14 @@
         }
 
         .btn-default {
-          padding: 7px 8px;
-          background-color: #224951;
+          padding: 7px 12px;
+          background-color: transparent;
+          border: 1px solid rgba(#fff, 0.3);
           color: white;
           &:hover, &:focus {
-            opacity: 0.75;
+            background-color: rgba(#fff, 0.1);
+            border-color: rgba(#fff, 0.5);
+            opacity: 1;
             text-decoration: none;
           }
         }
@@ -75,6 +82,7 @@
           padding: 3px 8px;
           font-family: Caveat;
           font-size: 21px;
+          font-weight: 400;
         }
 
         .btn {

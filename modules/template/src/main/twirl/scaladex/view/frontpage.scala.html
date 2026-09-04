@@ -2,6 +2,7 @@
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model._
 @import scaladex.view.model.EcosystemHighlight
+@import scaladex.view.Formats
 
 @(
   env: Env,
@@ -102,7 +103,7 @@
       <div class="ecosystem-badge col-sm-4">
         <a href="@highlight.currentVersion.search.target">
           <h4 class="badge-title">@highlight.ecosystem @highlight.currentVersion.version</h4>
-          <p>@highlight.currentVersion.libraryCount projects</p>
+          <p>@Formats.plural(highlight.currentVersion.libraryCount.toLong, "project")</p>
         </a>
         @if(highlight.otherVersions.nonEmpty) {
           <p class="badge-other-versions">Other versions: @highlight.otherVersions.map { ver => <a href="@ver.search.target">@ver.version</a>}</p>

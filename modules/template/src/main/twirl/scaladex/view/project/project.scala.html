@@ -38,11 +38,6 @@
       </div>
     </div>
   </main>
-  <script type="text/javascript">
-          document.addEventListener("DOMContentLoaded", function () {
-            ScaladexClient.createSparkline();
-          })
-  </script>
 }
 
 @statisticsBox(github: GithubInfo, ref: Project.Reference, dependentsCount: Long) = {
@@ -51,13 +46,13 @@
     <div class="row">
       <div >
         <ul class="row">
-          <a href="https://github.com/@ref/watchers"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-eye"></i> @github.watchers watchers</li></a>
-          <a href="https://github.com/@ref/graphs/contributors"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-users"></i> @github.contributors.size Contributors</li></a>
-          <a href="https://github.com/@ref/stargazers"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-star"></i> @github.stars Stars</li></a>
-          <a href="https://github.com/@ref/network"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-code-branch"></i> @github.forks Forks</li></a>
-          <a href="https://github.com/@ref/commits"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-clock-rotate-left"></i> @github.commits Commits</li></a>
-          <a href="https://github.com/@ref/issues"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-circle-exclamation"></i> @github.issues Open issues</li></a>
-          <a href="#dependents"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-sitemap"></i> @dependentsCount Dependents</li></a>
+          <a href="https://github.com/@ref/watchers"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-eye"></i> @Formats.plural(github.watchers.getOrElse(0).toLong, "watcher")</li></a>
+          <a href="https://github.com/@ref/graphs/contributors"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-users"></i> @Formats.plural(github.contributors.size.toLong, "contributor")</li></a>
+          <a href="https://github.com/@ref/stargazers"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-star"></i> @Formats.plural(github.stars.getOrElse(0).toLong, "star")</li></a>
+          <a href="https://github.com/@ref/network"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-code-branch"></i> @Formats.plural(github.forks.getOrElse(0).toLong, "fork")</li></a>
+          <a href="https://github.com/@ref/commits"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-clock-rotate-left"></i> @Formats.plural(github.commits.getOrElse(0).toLong, "commit")</li></a>
+          <a href="https://github.com/@ref/issues"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-circle-exclamation"></i> @Formats.plural(github.issues.getOrElse(0).toLong, "open issue")</li></a>
+          <a href="#dependents"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-sitemap"></i> @Formats.plural(dependentsCount, "dependent")</li></a>
         </ul>
       </div>
     </div>
@@ -142,6 +137,18 @@
   </section>
 }
 
+@scopeDescription(scope: ArtifactDependency.Scope) = @{
+  scope.value match {
+    case "provided" => "Expected to be provided by the runtime environment; not bundled in the final artifact"
+    case "runtime" => "Needed only at runtime, not for compiling against this dependency"
+    case "test" => "Used only for compiling and running tests"
+    case "optional" => "Optional: not pulled in transitively by projects depending on this one"
+    case "macro" => "Used only for macro expansion at compile time"
+    case other => other
+  }
+}
 @scopeSpan(scope: ArtifactDependency.Scope) = {
-  @if(scope.value != "compile") { <span class="label label-default">@scope</span> }
+  @if(scope.value != "compile") {
+    <span class="label label-default" data-toggle="tooltip" data-placement="top" title="@scopeDescription(scope)">@scope</span>
+  }
 }
