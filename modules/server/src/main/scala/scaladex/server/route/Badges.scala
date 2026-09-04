@@ -118,7 +118,9 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
       binaryVersion: Option[BinaryVersion],
       artifact: Option[Artifact.Name]
   ): Future[Option[Artifact.Reference]] =
-    projectService.getHeader(project.reference).map(_.map(_.getDefaultArtifact0(binaryVersion, artifact).reference))
+    projectService
+      .getHeader(project.reference)
+      .map(_.flatMap(_.getDefaultArtifact0(binaryVersion, artifact).map(_.reference)))
 end Badges
 
 object Badges:
