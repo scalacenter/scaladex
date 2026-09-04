@@ -9,7 +9,7 @@ object ProjectHeader:
       defaultArtifactName: Option[Artifact.Name],
       preferStableVersion: Boolean
   ): Option[ProjectHeader] =
-    // A header only exists if it has a default artifact, which is the case iff artifacts is non-empty.
+    // A header only exists if it has a default artifact, which is the case if artifacts is non-empty.
     resolveDefaultArtifact(artifacts, defaultArtifactName, preferStableVersion, None, None, None)
       .map(defaultArtifact =>
         new ProjectHeader(ref, artifacts, defaultArtifactName, preferStableVersion, defaultArtifact)
