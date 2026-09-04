@@ -101,6 +101,7 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
               val artifacts = header.artifacts(artifactName, platform)
               val summary = Badges.summaryOfLatestVersions(artifacts.map(_.reference), platform)
               shieldsSvg(s"$artifactName - $platform", summary, color, style, logo, logoWidth)
+            end if
         }
         onSuccess(res)(identity)
       }
