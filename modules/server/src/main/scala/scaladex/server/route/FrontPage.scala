@@ -21,7 +21,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(usi
   // drop whichever ones don't fit well, instead of stretching a card to
   // force the columns to line up.
   val displayedProjects = 12
-  val limitOfProjects = displayedProjects + 4
+  val limitOfProjects: Int = displayedProjects + 4
 
   def route(userState: Option[UserState]): Route = pathSingleSlash(complete(frontPage(userState)))
 
