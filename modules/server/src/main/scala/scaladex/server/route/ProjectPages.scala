@@ -187,7 +187,9 @@ class ProjectPages(
         }
       },
       get {
-        path(projectM / "badges")(ref => getBadges(ref, user))
+        path(projectM / "badges") { ref =>
+          parameter("artifact".?) { artifactName => getBadges(ref, artifactName.map(Artifact.Name.apply), user) }
+        }
       },
       get {
         path(projectM / "settings") { projectRef =>
@@ -333,14 +335,16 @@ class ProjectPages(
         complete(page)
     }
 
-  private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
+  private def getBadges(ref: Project.Reference, artifactName: Option[Artifact.Name], user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for header <- projectService.getHeader(project) yield header.map(_.getDefaultArtifact(None, None)) match
-        case Some(artifact) =>
-          val page = html.badges(env, user, project, header, artifact)
-          complete(StatusCodes.OK, page)
-        case None =>
-          complete(StatusCodes.NotFound)
+      for header <- projectService.getHeader(project) yield
+        val validArtifactName = artifactName.filter(name => header.exists(_.allArtifactNames.contains(name)))
+        header.map(_.getDefaultArtifact(None, None, validArtifactName)) match
+          case Some(artifact) =>
+            val page = html.badges(env, user, project, header, artifact)
+            complete(StatusCodes.OK, page)
+          case None =>
+            complete(StatusCodes.NotFound)
     }
 
   private val editForm: Directive1[Project.Settings] =
