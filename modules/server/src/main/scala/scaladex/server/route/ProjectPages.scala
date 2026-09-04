@@ -188,9 +188,7 @@ class ProjectPages(
       },
       get {
         path(projectM / "badges") { ref =>
-          parameter("artifact".?) { artifactName =>
-            getBadges(ref, artifactName.map(Artifact.Name.apply), user)
-          }
+          parameter("artifact".?) { artifactName => getBadges(ref, artifactName.map(Artifact.Name.apply), user) }
         }
       },
       get {
