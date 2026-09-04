@@ -188,9 +188,13 @@ class InMemoryDatabase extends SchedulerDatabase:
 
   override def getProjectDependencies(
       ref: Project.Reference,
-      version: Version
+      version: Version,
+      limit: Int,
+      offset: Int
   ): Future[Seq[ProjectDependency]] =
     Future.successful(Seq.empty)
+  override def countProjectDependencies(ref: Project.Reference, version: Version): Future[Long] =
+    Future.successful(0)
   override def getProjectReverseDependencies(
       ref: Project.Reference,
       limit: Int,

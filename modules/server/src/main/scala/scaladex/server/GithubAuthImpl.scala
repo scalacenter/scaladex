@@ -70,10 +70,14 @@ private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri
     githubClient.getUserState().map {
       case GithubResponse.Ok(userState) => Some(userState)
       case GithubResponse.MovedPermanently(userState) => Some(userState)
-      case GithubResponse.Failed(errorCode, errorMessage) =>
-        logger.warn(s"Failed to get user state: $errorCode, $errorMessage")
+      // Any other failure (rate-limit, 5xx, network) is transient and must not be reported as "unauthenticated".
+      case GithubResponse.Failed(StatusCodes.Unauthorized.intValue, errorMessage) =>
+        logger.warn(s"Rejected invalid GitHub token: $errorMessage")
         None
+      case GithubResponse.Failed(errorCode, errorMessage) =>
+        throw Exception(s"Failed to get user state from GitHub: $errorCode, $errorMessage")
     }
+  end getUserState
 end GithubAuthImpl
 
 object GithubAuthImpl:

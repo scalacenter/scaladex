@@ -1,10 +1,20 @@
 package scaladex.core.api
 
 import scaladex.core.model.*
+import scaladex.core.model.search.Page
+import scaladex.core.model.search.PageParams
 
+import endpoints4s.Invalid
+import endpoints4s.Valid
 import endpoints4s.Validated
+import endpoints4s.algebra.BasicAuthentication
+import endpoints4s.algebra.BasicAuthentication.Credentials
 
-trait Endpoints extends JsonSchemas with endpoints4s.algebra.Endpoints with endpoints4s.algebra.JsonEntitiesFromSchemas:
+trait Endpoints
+    extends JsonSchemas
+    with endpoints4s.algebra.Endpoints
+    with endpoints4s.algebra.JsonEntitiesFromSchemas
+    with BasicAuthentication:
 
   val v0 = None
   val v1: Some[String] = Some("v1")
@@ -30,11 +40,16 @@ trait Endpoints extends JsonSchemas with endpoints4s.algebra.Endpoints with endp
 
   private val projectVersionsPath: Path[Project.Reference] = projectPath / "versions"
   private val projectArtifactsPath: Path[Project.Reference] = projectPath / "artifacts"
+  private val projectSettingsPath: Path[Project.Reference] = projectPath / "settings"
+  private val projectDependenciesPath: Path[Project.Reference] = projectPath / "dependencies"
+  private val projectDependentsPath: Path[Project.Reference] = projectPath / "dependents"
+  private val usersPath: Path[Unit] = staticPathSegment("users")
 
   private val artifactPath: Path[Artifact.Reference] =
     (artifactsPath / groupIdSegment / artifactIdSegment / versionSegment)
       .xmap((Artifact.Reference.apply _).tupled)(Tuple.fromProductTyped)
 
+  private given QueryStringParam[Version] = stringQueryString.xmap(Version(_))(_.value)
   private given QueryStringParam[Platform] = stringQueryString
     .xmapPartial(v => Validated.fromOption(Platform.parse(v))(s"Cannot parse $v"))(_.value)
   private given QueryStringParam[Language] = stringQueryString
@@ -90,6 +105,33 @@ trait Endpoints extends JsonSchemas with endpoints4s.algebra.Endpoints with endp
     (binaryVersionFilter & artifactNameFilter & stableOnlyFilter)
       .xmap((ProjectArtifactsParams.apply _).tupled)(Tuple.fromProductTyped)
 
+  private val versionFilter: QueryString[Option[Version]] =
+    qs[Option[Version]]("version", Some("Version of the project to resolve dependencies for. Default is the latest."))
+
+  private val pageParams: QueryString[PageParams] =
+    (qs[Option[Int]]("page", Some("Page number, starting at 1. (Default is 1)")) &
+      qs[Option[Int]](
+        "size",
+        Some(
+          s"Number of items per page, one of ${PageParams.AllowedSizes.mkString(", ")}. (Default is ${PageParams.DefaultSize})"
+        )
+      ))
+      .xmapPartial {
+        case (page, size) =>
+          val resolvedSize = size.getOrElse(PageParams.DefaultSize)
+          if PageParams.AllowedSizes.contains(resolvedSize) then
+            Valid(PageParams(page.getOrElse(1).max(1), resolvedSize))
+          else Invalid(s"size must be one of ${PageParams.AllowedSizes.mkString(", ")}")
+      } { params => (Some(params.page), Some(params.size)) }
+
+  private val projectSearchParams: QueryString[ProjectSearchParams] = (
+    qs[Option[String]]("q", Some("Main query (e.g., 'json', 'testing', etc.)")).xmap(_.getOrElse("*"))(Some(_)) &
+      qs[Seq[String]]("topic", Some("Filter on Github topics")) &
+      languageFilters &
+      platformFilters &
+      qs[Option[String]]("sort", qsDoc("Sort results", Seq("stars", "commit-activity", "contributors", "dependent")))
+  ).xmap((ProjectSearchParams.apply _).tupled)(Tuple.fromProductTyped)
+
   private val autocompletionParams: QueryString[AutocompletionParams] = (
     qs[String]("q", docs = Some("Main query (e.g., 'json', 'testing', etc.)")) &
       qs[Seq[String]]("topic", docs = Some("Filter on Github topics")) &
@@ -144,6 +186,41 @@ trait Endpoints extends JsonSchemas with endpoints4s.algebra.Endpoints with endp
 
   val autocomplete: Endpoint[AutocompletionParams, Seq[AutocompletionResponse]] =
     endpoint(get(root / "autocomplete" /? autocompletionParams), ok(jsonResponse[Seq[AutocompletionResponse]]))
+
+  val searchProjectsV1: Endpoint[(ProjectSearchParams, PageParams), Page[SearchResult]] =
+    endpoint(
+      get(api(v1) / "search" /? (projectSearchParams & pageParams)),
+      ok(jsonResponse[Page[SearchResult]])
+    )
+
+  val getProjectDependenciesV1
+      : Endpoint[(Project.Reference, Option[Version], PageParams), Option[Page[ProjectDependency]]] =
+    endpoint(
+      get(api(v1) / projectDependenciesPath /? (versionFilter & pageParams)),
+      ok(jsonResponse[Page[ProjectDependency]]).orNotFound()
+    )
+
+  val getProjectDependentsV1: Endpoint[(Project.Reference, PageParams), Option[Page[ProjectDependency]]] =
+    endpoint(
+      get(api(v1) / projectDependentsPath /? pageParams),
+      ok(jsonResponse[Page[ProjectDependency]]).orNotFound()
+    )
+
+  val getAuthenticatedUserV1: Endpoint[Credentials, Option[UserResponse]] =
+    authenticatedEndpoint(Get, api(v1) / usersPath / "me", ok(jsonResponse[UserResponse]))
+
+  val getProjectSettingsV1: Endpoint[(Project.Reference, Credentials), Option[Option[Project.Settings]]] =
+    authenticatedEndpoint(Get, api(v1) / projectSettingsPath, ok(jsonResponse[Project.Settings]).orNotFound())
+
+  // Read-modify-write with no optimistic locking: two patches racing on the same project can lose an update, same as
+  // the web settings form.
+  val patchProjectSettingsV1: Endpoint[(Project.Reference, ProjectSettingsPatch, Credentials), Option[Option[Unit]]] =
+    authenticatedEndpoint(
+      Patch,
+      api(v1) / projectSettingsPath,
+      ok(emptyResponse).orNotFound(),
+      requestEntity = jsonRequest[ProjectSettingsPatch]
+    )
 
   private def qsDoc(desc: String, examples: Seq[String]): Some[String] =
     Some(

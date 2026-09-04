@@ -99,6 +99,13 @@ class SqlDatabase(
         run(ProjectDependenciesTable.getReverseDependenciesPage.to[Seq]((ref, limit.toLong, offset.toLong)))
     }
 
+  private val projectDependenciesPageCache
+      : AsyncLoadingCache[(Project.Reference, Version, Int, Int), Seq[ProjectDependency]] =
+    buildCache {
+      case (ref, version, limit, offset) =>
+        run(ProjectDependenciesTable.getDependenciesPage.to[Seq]((ref, version, limit.toLong, offset.toLong)))
+    }
+
   override def insertArtifact(artifact: Artifact): Future[Boolean] =
     run(ArtifactTable.insertIfNotExist.run(artifact)).map { inserted =>
       invalidateArtifactRefs(artifact)
@@ -247,9 +254,14 @@ class SqlDatabase(
 
   override def getProjectDependencies(
       ref: Project.Reference,
-      version: Version
+      version: Version,
+      limit: Int,
+      offset: Int
   ): Future[Seq[ProjectDependency]] =
-    run(ProjectDependenciesTable.getDependencies.to[Seq]((ref, version)))
+    projectDependenciesPageCache.get((ref, version, limit, offset))
+
+  override def countProjectDependencies(ref: Project.Reference, version: Version): Future[Long] =
+    run(ProjectDependenciesTable.countDependencies.unique((ref, version)))
 
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] =
     run(ProjectTable.selectByNewReference.to[Seq](projectRef))
