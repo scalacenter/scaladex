@@ -64,6 +64,16 @@ class BadgesTests extends ControllerBaseSuite with BeforeAndAfterAll:
     }
   }
 
+  it("fallback when the requested platform is valid but not published for the artifact") {
+    Get(s"/${Cats.reference}/cats-core/latest-by-scala-version.svg?platform=sbt1.0") ~> route ~> check {
+      status shouldEqual StatusCodes.TemporaryRedirect
+      val redirection = headers.collectFirst { case Location(uri) => uri }
+      redirection should contain(
+        Uri("https://img.shields.io/badge/cats--core_--_JVM-2.6.1_(Scala_3.x),_2.5.0_(Scala_2.13)-green.svg?")
+      )
+    }
+  }
+
   it("error badge instead of crashing for an unknown project") {
     Get("/nebula-contrib/zio-nebula/zio-nebula/latest-by-scala-version.svg?platform=jvm") ~> route ~> check {
       status shouldEqual StatusCodes.TemporaryRedirect

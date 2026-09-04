@@ -95,6 +95,7 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
             else
               val platform = platformParam
                 .flatMap(Platform.parse)
+                .filter(platforms.contains)
                 .orElse(targetTypeParam.flatMap(selectPlatformFromTargetType(_, platforms)))
                 .getOrElse(platforms.max)
               val artifacts = header.artifacts(artifactName, platform)
