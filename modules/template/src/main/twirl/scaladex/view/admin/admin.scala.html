@@ -3,9 +3,10 @@
 @import scaladex.view.html._
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Env
+@import scaladex.core.model.DiscoveredGroupId
 @import scaladex.core.util.ScalaExtensions._
 
-@(env: Env, user: UserState, jobs: Seq[(Job, Job.Status)], tasks: Seq[Task.Status])
+@(env: Env, user: UserState, jobs: Seq[(Job, Job.Status)], tasks: Seq[Task.Status], discovered: Seq[DiscoveredGroupId.View])
 @main(env, title = "Admin page", Some(user)) {
   <div class="container admin-content">
     <h2>Background jobs</h2>
@@ -130,8 +131,86 @@
             <td><button type="submit" class="btn btn-primary">Submit</button></td>
           </form>
         </tr>
+        <tr>
+          <td>
+            <h5>@Task.rewindDiscoveryCursor.name</h5>
+            <p>@Task.rewindDiscoveryCursor.description</p>
+          </td>
+          <form action="/admin/tasks/@Task.rewindDiscoveryCursor.name" method="POST">
+            <td>
+              <div class="input-group">
+                <span class="input-group-addon" id="chunks-back">Chunks back</span>
+                <input type="number" class="form-control" name="chunks-back" min="0" max="8" value="8">
+              </div>
+            </td>
+            <td><button type="submit" class="btn btn-primary">Submit</button></td>
+          </form>
+        </tr>
       </tbody>
     </table>
+    <h2>Discovered projects (review queue)</h2>
+    <p>
+      Group IDs found on Maven Central by the <code>discover-maven-namespaces</code> job and auto-indexed.
+      Nothing is filtered out &mdash; use this list to sanity-check what came in.
+      <strong>Reviewed</strong> just clears the row; <strong>Reject</strong> also stops the group ID from being surfaced again.
+    </p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Group ID</th>
+          <th scope="col">Discovered</th>
+          <th scope="col">Sync result</th>
+          <th scope="col">Projects</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if(discovered.isEmpty) {
+          <tr><td colspan="5"><em>Nothing to review.</em></td></tr>
+        }
+        @discovered.map { view =>
+          <tr>
+            <td>
+              <a href="https://central.sonatype.com/namespace/@view.discovered.groupId.value" target="_blank" rel="noopener">
+                @view.discovered.groupId.value
+              </a>
+              <br/><small>via @view.discovered.source</small>
+            </td>
+            <td><small>@view.discovered.discoveredAt.toString</small></td>
+            <td>
+              <small>@view.discovered.syncSummary.getOrElse("not synced yet")</small>
+            </td>
+            <td>
+              @if(view.projects.isEmpty) {
+                <small>&mdash;</small>
+              }
+              @view.projects.map { project =>
+                <div>
+                  <a href="/@project.reference.organization/@project.reference.repository">@project.reference</a>
+                  @project.githubInfo.map { gh =>
+                    <small>
+                      &#9733; @gh.stars.getOrElse(0)
+                      @gh.scalaPercentage.map(p => s"· Scala $p%").getOrElse("")
+                    </small>
+                  }
+                </div>
+              }
+            </td>
+            <td>
+              <form action="/admin/discovered/@view.discovered.groupId.value/review" method="post" style="display:inline">
+                <input type="hidden" name="decision" value="reviewed"/>
+                <button type="submit" class="btn btn-success btn-sm">Reviewed</button>
+              </form>
+              <form action="/admin/discovered/@view.discovered.groupId.value/review" method="post" style="display:inline">
+                <input type="hidden" name="decision" value="reject"/>
+                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+              </form>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
     <h2>Task History</h2>
     <table class="table">
       <thead>

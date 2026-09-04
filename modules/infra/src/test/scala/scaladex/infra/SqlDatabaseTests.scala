@@ -313,4 +313,77 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       obtained1 should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`)
       obtained2 should contain theSameElementsAs Seq(Cats.`core_2.13:2.5.0`)
   }
+
+  it("insert, list by status and review discovered group ids") {
+    val now = java.time.Instant.now
+    val newGroup = DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.new"), now)
+    val rejected = DiscoveredGroupId
+      .pending(DiscoveredGroupId.Source.Manual, Artifact.GroupId("dev.spam"), now)
+      .copy(status = DiscoveredGroupId.Status.Rejected)
+    for
+      inserted <- database.insertDiscoveredGroupIds(Seq(newGroup, rejected))
+      // re-inserting must not overwrite the rejected status
+      reinserted <- database.insertDiscoveredGroupIds(
+        Seq(DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.spam"), now))
+      )
+      _ <- database.updateDiscoveredGroupIdSync(
+        Artifact.GroupId("dev.new"),
+        now,
+        "Inserted 3 poms",
+        Seq(Cats.reference)
+      )
+      pending <- database.getDiscoveredGroupIds(DiscoveredGroupId.Status.Pending)
+      _ <- database.updateDiscoveredGroupIdStatus(
+        Artifact.GroupId("dev.new"),
+        DiscoveredGroupId.Status.Reviewed,
+        "admin",
+        now
+      )
+      afterReview <- database.getDiscoveredGroupIds(DiscoveredGroupId.Status.Pending)
+      all <- database.getAllDiscoveredGroupIds()
+    yield
+      inserted shouldBe 2
+      reinserted shouldBe 0
+      pending.map(_.groupId.value) shouldBe Seq("dev.new")
+      pending.head.syncSummary shouldBe Some("Inserted 3 poms")
+      pending.head.projectRefs shouldBe Seq(Cats.reference)
+      afterReview shouldBe empty
+      all.map(_.groupId.value).sorted shouldBe Seq("dev.new", "dev.spam")
+    end for
+  }
+
+  it("sync queue is FIFO and an error keeps a group retryable") {
+    val t0 = java.time.Instant.parse("2026-01-01T00:00:00Z")
+    val older = DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.older"), t0)
+    val newer = DiscoveredGroupId.pending(
+      DiscoveredGroupId.Source.MavenIndex,
+      Artifact.GroupId("dev.newer"),
+      t0.plusSeconds(3600)
+    )
+    for
+      _ <- database.insertDiscoveredGroupIds(Seq(newer, older))
+      toSync <- database.getPendingDiscoveredGroupIdsToSync(10)
+      _ <- database.updateDiscoveredGroupIdError(Artifact.GroupId("dev.older"), "error: boom")
+      stillQueued <- database.getPendingDiscoveredGroupIdsToSync(10)
+      _ <- database.updateDiscoveredGroupIdSync(Artifact.GroupId("dev.newer"), t0, "Inserted 0 poms", Nil)
+      afterOneSynced <- database.getPendingDiscoveredGroupIdsToSync(10)
+    yield
+      toSync.map(_.groupId.value) shouldBe Seq("dev.older", "dev.newer") // oldest first
+      stillQueued.map(_.groupId.value) shouldBe Seq("dev.older", "dev.newer") // error did not set last_synced_at
+      afterOneSynced.map(_.groupId.value) shouldBe Seq("dev.older") // dev.newer left the queue
+    end for
+  }
+
+  it("stores and reads back the maven index cursor") {
+    for
+      empty <- database.getMavenIndexCursor()
+      _ <- database.setMavenIndexCursor(IndexCursor("chain-1", 900))
+      first <- database.getMavenIndexCursor()
+      _ <- database.setMavenIndexCursor(IndexCursor("chain-1", 912))
+      second <- database.getMavenIndexCursor()
+    yield
+      empty shouldBe None
+      first shouldBe Some(IndexCursor("chain-1", 900))
+      second shouldBe Some(IndexCursor("chain-1", 912))
+  }
 end SqlDatabaseTests
