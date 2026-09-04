@@ -552,10 +552,14 @@
   }
   
   .project-badges {
+    .badges-header {
+      margin-bottom: 20px;
+    }
+
     .badge-section {
       overflow: hidden;
     }
-  
+
     img {
       margin-bottom: 24px;
     }
