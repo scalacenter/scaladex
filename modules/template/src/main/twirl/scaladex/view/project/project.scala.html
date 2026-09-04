@@ -10,7 +10,6 @@
   project: Project,
   header: Option[ProjectHeader],
   directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[Version])],
-  reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, Version)],
   reverseDependencyCount: Long,
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta, extraMetaProperty = project.ogp.toHeadMetaProperty) {
@@ -32,7 +31,6 @@
             @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependencyCount))
             @commitActivityBox
             @directDependenciesBox(directDependencies)
-            @reverseDependenciesBox(reverseDependency, reverseDependencyCount)
           </div>
         </div>
       </div>
@@ -52,7 +50,7 @@
           <a href="https://github.com/@ref/network"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-code-branch"></i> @Formats.plural(github.forks.getOrElse(0).toLong, "fork")</li></a>
           <a href="https://github.com/@ref/commits"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-clock-rotate-left"></i> @Formats.plural(github.commits.getOrElse(0).toLong, "commit")</li></a>
           <a href="https://github.com/@ref/issues"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-circle-exclamation"></i> @Formats.plural(github.issues.getOrElse(0).toLong, "open issue")</li></a>
-          <a href="#dependents"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-sitemap"></i> @Formats.plural(dependentsCount, "dependent")</li></a>
+          <a href="/@ref/dependents"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-sitemap"></i> @Formats.plural(dependentsCount, "dependent")</li></a>
         </ul>
       </div>
     </div>
@@ -116,25 +114,6 @@
       }
     </ul>
   </div>
-}
-
-@reverseDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Version)], count: Long) = {
-  <section class="dependencies box" id="dependents">
-    <h4>@Formats.plural(count, "Dependent")</h4>
-    <ul>
-      @for((ref, (scope, version)) <- dependencies.toSeq.sortBy { case (ref, _) => ref }){
-        <li>
-          <div class="row">
-            <div class="col-xs-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
-            <div class="col-xs-4">on @version</div>
-          </div>
-        </li>
-      }
-      @if(count > 100) {
-        <p>and @{count - 100} more</p>
-      }
-    </ul>
-  </section>
 }
 
 @scopeDescription(scope: ArtifactDependency.Scope) = @{

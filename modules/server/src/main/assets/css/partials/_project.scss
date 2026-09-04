@@ -353,7 +353,7 @@
     }
   }
 
-  .artifacts, .versions {
+  .artifacts, .versions, .dependents {
     .artifacts-header {
       display: flex;
       align-items: center;
@@ -444,6 +444,20 @@
       color: $headings-color;
       font-size: 20px;
       margin-left: 12px;
+    }
+  }
+
+  .dependents {
+    .dependent-name {
+      color: $brand-secondary;
+      font-size: 24px;
+      &:active, &:focus, &:hover {
+        text-decoration: none;
+        color: $brand-primary;
+      }
+    }
+    .dependent-info {
+      font-size: 16px;
     }
   }
 

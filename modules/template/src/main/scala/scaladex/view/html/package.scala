@@ -87,6 +87,9 @@ package object html:
     Uri(s"/$ref/artifacts")
       .appendQuery("binary-version", binaryVersion.map(_.value))
 
+  def dependentsUri(ref: Project.Reference)(page: Int): Uri =
+    Uri(s"/$ref/dependents").appendQuery("page" -> page.toString)
+
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) =
     val min = 1

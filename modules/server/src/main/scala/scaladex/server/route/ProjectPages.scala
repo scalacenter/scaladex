@@ -10,6 +10,7 @@ import scala.util.Failure
 import scala.util.Success
 
 import scaladex.core.model.*
+import scaladex.core.model.search.Pagination
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
@@ -187,6 +188,33 @@ class ProjectPages(
         }
       },
       get {
+        path(projectM / "dependents") { ref =>
+          paging(size = 20) { page =>
+            getProjectOrRedirect(ref, user) { project =>
+              for
+                header <- projectService.getHeader(project)
+                offset = (page.page - 1) * page.size
+                dependents <- database.getProjectReverseDependencies(ref, limit = page.size, offset = offset)
+                count <- database.countProjectDependents(ref)
+              yield
+                val groupedDependents = dependents
+                  .groupBy(_.source)
+                  .view
+                  .mapValues { deps =>
+                    val scope = deps.map(_.scope).min
+                    val version = deps.map(_.targetVersion).max
+                    (scope, version)
+                  }
+                  .toMap
+                val pageCount = math.max(1, math.ceil(count.toDouble / page.size).toInt)
+                val pagination = Pagination(page.page, pageCount, count)
+                val dependentsPage = html.dependents(env, user, project, header, groupedDependents, pagination)
+                complete(dependentsPage)
+            }
+          }
+        }
+      },
+      get {
         path(projectM / "badges")(ref => getBadges(ref, user))
       },
       get {
@@ -301,7 +329,6 @@ class ProjectPages(
           header
             .map(h => database.getProjectDependencies(ref, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))
-        reverseDependencies <- database.getProjectReverseDependencies(ref, limit = 100, offset = 0)
         reverseDependencyCount <- database.countProjectDependents(ref)
       yield
         val groupedDirectDependencies = directDependencies
@@ -312,14 +339,6 @@ class ProjectPages(
             val versions = deps.map(_.targetVersion).distinct
             (scope, versions)
           }
-        val groupedReverseDependencies = reverseDependencies
-          .groupBy(_.source)
-          .view
-          .mapValues { deps =>
-            val scope = deps.map(_.scope).min
-            val version = deps.map(_.targetVersion).max
-            (scope, version)
-          }
         val page =
           html.project(
             env,
@@ -327,7 +346,6 @@ class ProjectPages(
             project,
             header,
             groupedDirectDependencies.toMap,
-            groupedReverseDependencies.toMap,
             reverseDependencyCount
           )
         complete(page)
