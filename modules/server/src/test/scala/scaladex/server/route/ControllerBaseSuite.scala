@@ -12,6 +12,7 @@ import scaladex.infra.DataPaths
 import scaladex.infra.FilesystemStorage
 import scaladex.server.config.ServerConfig
 import scaladex.server.service.ArtifactService
+import scaladex.server.service.ProjectSettingsService
 import scaladex.server.service.SearchSynchronizer
 
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
@@ -31,6 +32,7 @@ trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRoute
   val projectService = new ProjectService(database, searchEngine)
   val artifactService = new ArtifactService(database)
   val searchSync = new SearchSynchronizer(database, projectService, searchEngine)
+  val settingsService = new ProjectSettingsService(database, projectService, artifactService, searchEngine)
 
   val dataPaths: DataPaths = DataPaths.from(config.filesystem)
   val localStorage: FilesystemStorage = FilesystemStorage(config.filesystem)

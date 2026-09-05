@@ -10,6 +10,7 @@
   project: Project,
   header: Option[ProjectHeader],
   directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[Version])],
+  directDependencyCount: Long,
   reverseDependencyCount: Long,
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta, extraMetaProperty = project.ogp.toHeadMetaProperty) {
@@ -30,7 +31,7 @@
             @communityBox
             @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependencyCount))
             @commitActivityBox
-            @directDependenciesBox(directDependencies)
+            @directDependenciesBox(directDependencies, directDependencyCount)
           </div>
         </div>
       </div>
@@ -100,9 +101,9 @@
   }
 }
 
-@directDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[Version])]) = {
+@directDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[Version])], count: Long) = {
   <div class="dependencies box">
-    <h4>@Formats.plural(dependencies.size, "Dependency")</h4>
+    <h4>@Formats.plural(count, "Dependency")</h4>
     <ul>
       @for((ref, (scope, versions)) <- dependencies.toSeq.sortBy { case (ref, _) => ref }){
         <li>
@@ -111,6 +112,9 @@
             <div class="col-xs-4">@versions.mkString(", ")</div>
           </div>
         </li>
+      }
+      @if(count > 100) {
+        <p>and @{count - 100} more</p>
       }
     </ul>
   </div>

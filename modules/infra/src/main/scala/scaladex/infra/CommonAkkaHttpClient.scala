@@ -20,6 +20,7 @@ import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCode
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.pattern.after
 import org.apache.pekko.stream.OverflowStrategy
 import org.apache.pekko.stream.QueueOfferResult
@@ -39,7 +40,7 @@ abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.
     Http.HostConnectionPool
   ]
 
-  val queue: SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])] =
+  private val queue: SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])] =
     val requests =
       Source
         .queue[(HttpRequest, Promise[HttpResponse])](10000, OverflowStrategy.dropNew: @nowarn)
@@ -53,7 +54,12 @@ abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.
       .run()
   end queue
 
-  def queueRequest(
+  def queueRequestWithRetry(request: HttpRequest)(using ExecutionContextExecutor): Future[HttpResponse] =
+    breaker match
+      case Some(cb) => cb.withCircuitBreaker(retryLoop(request, attempt = 0), isBreakerFailure)
+      case None => retryLoop(request, attempt = 0)
+
+  private def tryEnqueue(
       request: HttpRequest
   )(using ExecutionContextExecutor): Future[HttpResponse] =
     val responsePromise = Promise[HttpResponse]()
@@ -66,9 +72,9 @@ abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.
           new RuntimeException("Queue was closed (pool shut down) while running the request. Try again later.")
         )
     }
-  end queueRequest
+  end tryEnqueue
 
-  private val retriableStatusCodes: Set[StatusCode] = Set(
+  private val retryableStatusCodes: Set[StatusCode] = Set(
     StatusCodes.RequestTimeout,
     StatusCodes.TooManyRequests,
     StatusCodes.InternalServerError,
@@ -77,20 +83,28 @@ abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.
     StatusCodes.GatewayTimeout
   )
 
-  def queueRequestWithRetry(
-      request: HttpRequest,
-      attempt: Int = 0
-  )(using ExecutionContextExecutor): Future[HttpResponse] =
-    queueRequest(request).flatMap { response =>
+  private val breaker: Option[CircuitBreaker] =
+    config.circuitBreaker.map(cb => CircuitBreaker(system.scheduler, cb.maxFailures, cb.callTimeout, cb.resetTimeout))
+
+  protected def isRetryable(response: HttpResponse): Boolean =
+    retryableStatusCodes(response.status)
+
+  protected def isBreakerFailure(result: Try[HttpResponse]): Boolean =
+    result match
+      case Success(response) => response.status.isFailure
+      case Failure(_) => true
+
+  private def retryLoop(request: HttpRequest, attempt: Int)(using ExecutionContextExecutor): Future[HttpResponse] =
+    tryEnqueue(request).flatMap { response =>
       config.retry match
-        case Some(retry) if retriableStatusCodes(response.status) && attempt < retry.maxRetries =>
+        case Some(retry) if isRetryable(response) && attempt < retry.maxRetries =>
           val backoff = retryDelay(response, retry, attempt)
           logger.warn(
             s"${response.status.intValue} for ${request.uri}, retrying in ${backoff.shortPrint} " +
               s"(attempt ${attempt + 1}/${retry.maxRetries})"
           )
           response.discardEntityBytes()
-          after(backoff, system.scheduler)(queueRequestWithRetry(request, attempt + 1))
+          after(backoff, system.scheduler)(retryLoop(request, attempt + 1))
         case _ =>
           Future.successful(response)
     }

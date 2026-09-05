@@ -119,7 +119,8 @@ class Deployment(
           |  -Djava.rmi.server.hostname=localhost \\
           |  -Dcom.sun.management.jmxremote.rmi.port=9998 \\
           |  -Dlogback.output-file=server.log \\
-          |  -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
+          |  -Dlogback.logs-dir=/home/$userName/server/logs \\
+          |  -Dlogback.configurationFile=logback-prod.xml \\
           |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
           |  &>/dev/null &
           |""".stripMargin
@@ -199,7 +200,8 @@ class Deployment(
           |  nohup /home/$userName/data/current/bin/data \\
           |    -J-Xmx2g \\
           |    -Dlogback.output-file=data.log \\
-          |    -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
+          |    -Dlogback.logs-dir=/home/$userName/data/logs \\
+          |    -Dlogback.configurationFile=logback-prod.xml \\
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
           |    init \\
           |    &>/dev/null &

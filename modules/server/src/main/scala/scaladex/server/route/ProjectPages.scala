@@ -13,12 +13,10 @@ import scaladex.core.model.*
 import scaladex.core.model.search.Pagination
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.service.SearchEngine
 import scaladex.core.web.ArtifactPageParams
 import scaladex.core.web.ArtifactsPageParams
 import scaladex.server.TwirlSupport.given
-import scaladex.server.service.ArtifactService
-import scaladex.server.service.SearchSynchronizer
+import scaladex.server.service.ProjectSettingsService
 import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
 import scaladex.view.project.html
@@ -32,14 +30,11 @@ import org.apache.pekko.http.scaladsl.server.Directives.*
 class ProjectPages(
     env: Env,
     projectService: ProjectService,
-    artifactService: ArtifactService,
-    database: SchedulerDatabase,
-    searchEngine: SearchEngine
+    settingsService: ProjectSettingsService,
+    database: SchedulerDatabase
 )(
     using ExecutionContext
 ) extends LazyLogging:
-
-  private val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
 
   def route(user: Option[UserState]): Route =
     concat(
@@ -229,11 +224,7 @@ class ProjectPages(
       post {
         path(projectM / "settings") { projectRef =>
           editForm { form =>
-            val updateF = for
-              _ <- database.updateProjectSettings(projectRef, form)
-              _ <- artifactService.updateLatestVersions(projectRef, form.preferStableVersion)
-              _ <- searchSynchronizer.syncProject(projectRef)
-            yield ()
+            val updateF = settingsService.updateSettings(projectRef, form)
             val projectUri = Uri((Path.Empty / projectRef.organization.value / projectRef.repository.value).toString)
             onComplete(updateF) {
               case Success(()) => redirect(projectUri, StatusCodes.SeeOther)
@@ -327,8 +318,12 @@ class ProjectPages(
         header <- projectService.getHeader(project)
         directDependencies <-
           header
-            .map(h => database.getProjectDependencies(ref, h.latestVersion))
+            .map(h => database.getProjectDependencies(ref, h.latestVersion, limit = 100, offset = 0))
             .getOrElse(Future.successful(Seq.empty))
+        directDependencyCount <-
+          header
+            .map(h => database.countProjectDependencies(ref, h.latestVersion))
+            .getOrElse(Future.successful(0L))
         reverseDependencyCount <- database.countProjectDependents(ref)
       yield
         val groupedDirectDependencies = directDependencies
@@ -346,6 +341,7 @@ class ProjectPages(
             project,
             header,
             groupedDirectDependencies.toMap,
+            directDependencyCount,
             reverseDependencyCount
           )
         complete(page)

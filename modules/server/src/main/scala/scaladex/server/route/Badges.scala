@@ -95,11 +95,13 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
             else
               val platform = platformParam
                 .flatMap(Platform.parse)
+                .filter(platforms.contains)
                 .orElse(targetTypeParam.flatMap(selectPlatformFromTargetType(_, platforms)))
                 .getOrElse(platforms.max)
               val artifacts = header.artifacts(artifactName, platform)
               val summary = Badges.summaryOfLatestVersions(artifacts.map(_.reference), platform)
               shieldsSvg(s"$artifactName - $platform", summary, color, style, logo, logoWidth)
+            end if
         }
         onSuccess(res)(identity)
       }
@@ -118,7 +120,9 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
       binaryVersion: Option[BinaryVersion],
       artifact: Option[Artifact.Name]
   ): Future[Option[Artifact.Reference]] =
-    projectService.getHeader(project.reference).map(_.map(_.getDefaultArtifact0(binaryVersion, artifact).reference))
+    projectService
+      .getHeader(project.reference)
+      .map(_.flatMap(_.getDefaultArtifact0(binaryVersion, artifact).map(_.reference)))
 end Badges
 
 object Badges:
