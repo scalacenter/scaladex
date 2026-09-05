@@ -14,6 +14,7 @@ a PR.
 scaladex-contrib
 ├── claims.json
 ├── licensesByName.json
+├── new-groups.json
 └── non-standard.json
 
 scaladex-credentials (optionnal)
@@ -28,11 +29,12 @@ case class DataPaths(contrib: Path):
 
   val claims: Path = initJsonFile(contrib, "claims.json")
   val nonStandard: Path = initJsonFile(contrib, "non-standard.json")
+  val newGroups: Path = initJsonFile(contrib, "new-groups.json", "[]")
 
-  private def initJsonFile(parent: Path, name: String): Path =
+  private def initJsonFile(parent: Path, name: String, defaultContent: String = "{}"): Path =
     val file = parent.resolve(name)
     if !Files.exists(file) then
       Files.createFile(file)
-      Files.write(file, "{}".getBytes(StandardCharsets.UTF_8))
+      Files.write(file, defaultContent.getBytes(StandardCharsets.UTF_8))
     file
 end DataPaths
