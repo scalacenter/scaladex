@@ -94,8 +94,8 @@ class ProjectPages(
                       params.binaryVersions.forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
                   }
                   .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
-                val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(using
-                  Ordering.Tuple2(using Ordering[Instant].reverse, Ordering[Version].reverse)
+                val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(
+                  using Ordering.Tuple2(using Ordering[Instant].reverse, Ordering[Version].reverse)
                 )
                 val page = html.versions(
                   env,

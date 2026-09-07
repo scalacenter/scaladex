@@ -130,7 +130,7 @@ trait Endpoints
       languageFilters &
       platformFilters &
       qs[Option[String]]("sort", qsDoc("Sort results", Seq("stars", "commit-activity", "contributors", "dependent")))
-  ).xmap((ProjectSearchParams.apply _).tupled)(Tuple.fromProductTyped)
+  ).xmap(ProjectSearchParams.apply.tupled)(Tuple.fromProductTyped)
 
   private val autocompletionParams: QueryString[AutocompletionParams] = (
     qs[String]("q", docs = Some("Main query (e.g., 'json', 'testing', etc.)")) &

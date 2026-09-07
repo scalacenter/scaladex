@@ -28,8 +28,8 @@ object ProjectHeader:
     def ofVersion(version: Version): Option[Artifact.Name] =
       filteredArtifacts
         .filter(_.version == version)
-        .maxByOption(a => (a.binaryVersion, a.name, a.releaseDate))(
-          Ordering.Tuple3(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse, Ordering[Instant])
+        .maxByOption(a => (a.binaryVersion, a.name, a.releaseDate))(using
+          Ordering.Tuple3(using Ordering[BinaryVersion], Ordering[Artifact.Name].reverse, Ordering[Instant])
         )
         .map(_.name)
 
