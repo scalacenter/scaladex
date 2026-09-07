@@ -25,18 +25,18 @@ trait Endpoints
   private val artifactsPath: Path[Unit] = staticPathSegment("artifacts")
 
   private val organizationSegment: Path[Project.Organization] =
-    segment[Project.Organization]("organization")(stringSegment.xmap(Project.Organization(_))(_.value))
+    segment[Project.Organization]("organization")(using stringSegment.xmap(Project.Organization(_))(_.value))
   private val repositorySegment: Path[Project.Repository] =
-    segment[Project.Repository]("repository")(stringSegment.xmap(Project.Repository(_))(_.value))
+    segment[Project.Repository]("repository")(using stringSegment.xmap(Project.Repository(_))(_.value))
   private val groupIdSegment: Path[Artifact.GroupId] =
-    segment[Artifact.GroupId]("groupId")(stringSegment.xmap(Artifact.GroupId(_))(_.value))
+    segment[Artifact.GroupId]("groupId")(using stringSegment.xmap(Artifact.GroupId(_))(_.value))
   private val artifactIdSegment: Path[Artifact.ArtifactId] =
-    segment[Artifact.ArtifactId]("artifactId")(stringSegment.xmap(Artifact.ArtifactId(_))(_.value))
-  private val versionSegment: Path[Version] = segment[Version]("version")(stringSegment.xmap(Version(_))(_.value))
+    segment[Artifact.ArtifactId]("artifactId")(using stringSegment.xmap(Artifact.ArtifactId(_))(_.value))
+  private val versionSegment: Path[Version] = segment[Version]("version")(using stringSegment.xmap(Version(_))(_.value))
 
   private val projectPath: Path[Project.Reference] =
     (projectsPath / organizationSegment / repositorySegment)
-      .xmap((Project.Reference.apply _).tupled)(Tuple.fromProductTyped)
+      .xmap(Project.Reference.apply.tupled)(Tuple.fromProductTyped)
 
   private val projectVersionsPath: Path[Project.Reference] = projectPath / "versions"
   private val projectArtifactsPath: Path[Project.Reference] = projectPath / "artifacts"
@@ -47,7 +47,7 @@ trait Endpoints
 
   private val artifactPath: Path[Artifact.Reference] =
     (artifactsPath / groupIdSegment / artifactIdSegment / versionSegment)
-      .xmap((Artifact.Reference.apply _).tupled)(Tuple.fromProductTyped)
+      .xmap(Artifact.Reference.apply.tupled)(Tuple.fromProductTyped)
 
   private given QueryStringParam[Version] = stringQueryString.xmap(Version(_))(_.value)
   private given QueryStringParam[Platform] = stringQueryString
@@ -95,15 +95,15 @@ trait Endpoints
 
   private val projectsParams: QueryString[ProjectsParams] =
     (languageFilters & platformFilters)
-      .xmap((ProjectsParams.apply _).tupled)(Tuple.fromProductTyped)
+      .xmap(ProjectsParams.apply.tupled)(Tuple.fromProductTyped)
 
   private val projectVersionsParams: QueryString[ProjectVersionsParams] =
     (binaryVersionFilters & artifactNameFilters & stableOnlyFilter)
-      .xmap((ProjectVersionsParams.apply _).tupled)(Tuple.fromProductTyped)
+      .xmap(ProjectVersionsParams.apply.tupled)(Tuple.fromProductTyped)
 
   private val projectArtifactsParams: QueryString[ProjectArtifactsParams] =
     (binaryVersionFilter & artifactNameFilter & stableOnlyFilter)
-      .xmap((ProjectArtifactsParams.apply _).tupled)(Tuple.fromProductTyped)
+      .xmap(ProjectArtifactsParams.apply.tupled)(Tuple.fromProductTyped)
 
   private val versionFilter: QueryString[Option[Version]] =
     qs[Option[Version]]("version", Some("Version of the project to resolve dependencies for. Default is the latest."))
@@ -139,7 +139,7 @@ trait Endpoints
       platformFilters &
       qs[Option[Boolean]]("contributingSearch").xmap(_.getOrElse(false))(Option.when(_)(true)) &
       qs[Option[String]]("you", docs = Some("internal usage")).xmap[Boolean](_.contains("✓"))(Option.when(_)("✓"))
-  ).xmap((AutocompletionParams.apply _).tupled)(Tuple.fromProductTyped)
+  ).xmap(AutocompletionParams.apply.tupled)(Tuple.fromProductTyped)
 
   def getProjects(v: Option[String]): Endpoint[ProjectsParams, Seq[Project.Reference]] =
     endpoint(

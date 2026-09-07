@@ -313,7 +313,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
           language <- Language.parse(version)
         yield (language, count)
       }
-      .map(_.sortBy(_._1)(Language.ordering.reverse))
+      .map(_.sortBy(_._1)(using Language.ordering.reverse))
 
   private def platformAggregations(query: Query): Future[Seq[(Platform, Int)]] =
     countAllUnique("platforms", query, maxLanguagesOrPlatforms)
@@ -323,7 +323,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
           platform <- Platform.parse(version)
         yield (platform, count)
       }
-      .map(_.sortBy(_._1)(Platform.ordering.reverse))
+      .map(_.sortBy(_._1)(using Platform.ordering.reverse))
 
   private def countAllUnique(field: String, query: Query, limit: Int): Future[Seq[(String, Int)]] =
     aggregation(field, query, limit).map(_.map(b => b.key -> b.docCount.toInt))
@@ -495,7 +495,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
   private def addMissing[T: Ordering](required: Seq[T])(result: Seq[(T, Int)]): Seq[(T, Int)] =
     val missingLabels = required.toSet -- result.map(_._1)
     val toAdd = missingLabels.map(label => (label, 0))
-    (result ++ toAdd).sortBy(_._1)(implicitly[Ordering[T]].reverse)
+    (result ++ toAdd).sortBy(_._1)(using Ordering[T].reverse)
 
   private def optionalQuery(condition: Boolean, query: Query): Query =
     if condition then query else matchAllQuery()

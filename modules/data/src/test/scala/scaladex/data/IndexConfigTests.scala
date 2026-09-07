@@ -9,6 +9,6 @@ import org.scalatest.matchers.should.Matchers
 class IndexConfigTests extends AnyFunSpec with Matchers:
   describe("AppConf") {
     it("should load the conf") {
-      Try(IndexConfig.load()) shouldBe a[Success[_]]
+      Try(IndexConfig.load()) shouldBe a[Success[?]]
     }
   }

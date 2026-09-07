@@ -83,7 +83,7 @@ final case class ProjectHeader private (
 
   def allArtifactNames: Seq[Artifact.Name] = artifacts.map(_.name).distinct.sorted
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
-    artifacts.filter(_.name == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
+    artifacts.filter(_.name == artifactName).map(_.platform).distinct.sorted(using Platform.ordering.reverse)
   def artifacts(artifactName: Artifact.Name, platform: Platform): Seq[Artifact] =
     artifacts.filter(a => a.name == artifactName && a.platform == platform)
 
