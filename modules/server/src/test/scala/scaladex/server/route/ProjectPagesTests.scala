@@ -31,7 +31,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
     yield ()
 
   val projectPages = new ProjectPages(config.env, projectService, settingsService, database)
-  val artifactPages = new ArtifactPages(config.env, database)
+  val artifactPages = new ArtifactPages(config.env, database, scaladocService)
   val route: Route = projectPages.route(None) ~ artifactPages.route(None)
 
   it("should return NotFound") {
