@@ -62,8 +62,8 @@ class ScaladocService(cacheDir: Path, mavenCentralClient: MavenCentralClient)(us
             false
     }
 
-  /** Unpacks into a sibling temp directory, then atomically moves it into place - so a concurrent request never sees
-    * a partially-unpacked directory.
+  /** Unpacks into a sibling temp directory, then atomically moves it into place - so a concurrent request never sees a
+    * partially-unpacked directory.
     */
   private def unpack(bytes: Array[Byte], destination: Path): Unit =
     val staging = Files.createTempDirectory(cacheDir, "unpacking-")
@@ -86,14 +86,13 @@ class ScaladocService(cacheDir: Path, mavenCentralClient: MavenCentralClient)(us
       Files.createDirectories(destination.getParent)
       Files.move(staging, destination, StandardCopyOption.ATOMIC_MOVE)
     finally deleteRecursively(staging)
+    end try
   end unpack
 
   // no-op once `unpack` has already moved `staging` away; only cleans up on failure
   private def deleteRecursively(dir: Path): Unit =
     if Files.exists(dir) then
-      Using.resource(Files.walk(dir)) { stream =>
-        stream.iterator.asScala.toSeq.reverse.foreach(Files.deleteIfExists)
-      }
+      Using.resource(Files.walk(dir)) { stream => stream.iterator.asScala.toSeq.reverse.foreach(Files.deleteIfExists) }
 end ScaladocService
 
 object ScaladocService:
