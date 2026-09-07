@@ -8,6 +8,13 @@
     border-top-left-radius: 0;
     margin-bottom: 10px;
     margin-top: -40px;
+
+    // On the single-artifact page, .content-project is a bare wrapper around
+    // separate boxes rather than the box itself - the first one needs the
+    // same square-top-left treatment so it still lines up with the tab above.
+    > .box:first-child {
+      border-top-left-radius: 0;
+    }
   }
 
   @media screen and (min-width: $screen-md-min) {
@@ -237,23 +244,19 @@
   }
 
   .install {
-    .nav-tabs {
-      margin-bottom: 0;
-      border-bottom: none;
-      > li > a {
-        background: transparent;
-        border: none;
-        color: $gray;
-      }
-      > li.active > a {
-        &,
-        &:hover,
-        &:focus {
-          background: #fff;
-          border: none;
-          color: $brand-primary;
-        }
-      }
+    // Same treatment as .project-nav-bar's tabs: only recolor the text,
+    // everything else (background, spacing) is the site's global .nav-tabs style.
+    .nav-tabs > li > a {
+      color: $gray;
+    }
+
+    .nav-tabs > li.active > a {
+      color: $brand-primary;
+      cursor: pointer;
+    }
+
+    .box.tab-content {
+      border-top-left-radius: 0;
     }
 
     .tab-pane {
