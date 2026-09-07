@@ -353,7 +353,7 @@ class ProjectPages(
     getProjectOrRedirect(ref, user) { project =>
       for header <- projectService.getHeader(project) yield
         val validArtifactName = artifactName.filter(name => header.exists(_.allArtifactNames.contains(name)))
-        header.map(_.getDefaultArtifact(None, None, validArtifactName)) match
+        header.flatMap(_.getDefaultArtifact0(None, validArtifactName)) match
           case Some(artifact) =>
             val page = html.badges(env, user, project, header, artifact)
             complete(StatusCodes.OK, page)
