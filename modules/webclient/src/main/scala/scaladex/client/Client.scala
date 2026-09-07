@@ -26,7 +26,26 @@ object Client:
   trait Repo extends js.Object:
     val default_branch: String = js.native
 
-  private def fetchAndReplaceReadme(element: Element, token: Option[String]): Unit =
+  private[client] def resolveReadmeLinkUrl(
+      isAnchor: Boolean,
+      attrValue: String,
+      root: String,
+      raw: String,
+      blob: String
+  ): (String, String) =
+    val newBase =
+      if isAnchor then if attrValue.startsWith("#") then root else blob
+      else raw
+    val newUrl =
+      if !attrValue.startsWith("/") then s"$newBase/$attrValue"
+      else s"$newBase$attrValue"
+    (if isAnchor then "href" else "src", newUrl)
+  end resolveReadmeLinkUrl
+
+  // The readme is already rendered server-side (fetched with an authenticated request during indexing);
+  // here we only rewrite its relative links/images to point at GitHub, without re-fetching or replacing
+  // the readme content itself (an unauthenticated client-side re-fetch is prone to GitHub API rate limits).
+  private def fixReadmeLinks(element: Element, token: Option[String]): Unit =
 
     val organization = element.attributes.getNamedItem("data-organization").value
     val repository = element.attributes.getNamedItem("data-repository").value
@@ -37,74 +56,43 @@ object Client:
         .map(t => headers + ("Authorization" -> s"bearer $t"))
         .getOrElse(headers)
 
-    def setReadme(): Future[Unit] =
-      val readmeRequest: Request = new Request(
-        s"https://api.github.com/repos/$organization/$repository/readme",
-        new RequestInit:
-          this.headers = headersWithCreds.toJSDictionary
-      )
+    def extractDefaultBranch(text: String): String =
+      js.JSON.parse(text).asInstanceOf[Repo].default_branch
 
-      fetch(readmeRequest).toFuture
-        .flatMap { res =>
-          if res.status == 200 then res.text().toFuture
-          else Future.successful("No README found for this project, please check the repository")
+    def fixImages(branch: String, organization: String, repository: String): Unit =
+      val root = s"https://github.com/$organization/$repository"
+      val raw = s"$root/raw/$branch"
+      val blob = s"$root/blob/$branch"
+
+      element
+        .querySelectorAll("img,a")
+        .filter(e => !Seq("href", "src").flatMap(a => Option(e.getAttribute(a))).head.startsWith("http"))
+        .foreach { e =>
+          val isAnchor = e.tagName == "A"
+          val attr = if isAnchor then "href" else "src"
+          if isAnchor then e.setAttribute("target", "_blank")
+
+          Option(e.getAttribute(attr))
+            .filter(_.nonEmpty)
+            .foreach { oldUrl =>
+              val (_, newUrl) = resolveReadmeLinkUrl(isAnchor, oldUrl, root, raw, blob)
+              e.setAttribute(attr, newUrl)
+            }
         }
-        .map(res => element.innerHTML = res)
-    end setReadme
+    end fixImages
 
-    def getDefaultBranchAndFixImages(): Future[Unit] =
-      def extractDefaultBranch(text: String): String =
-        js.JSON.parse(text).asInstanceOf[Repo].default_branch
-
-      def fixImages(branch: String, organization: String, repository: String): Unit =
-        val root = s"https://github.com/$organization/$repository"
-        val raw = s"$root/raw/$branch"
-        val blob = s"$root/blob/$branch"
-
-        element
-          .querySelectorAll("img,a")
-          .filter(e => !Seq("href", "src").flatMap(a => Option(e.getAttribute(a))).head.startsWith("http"))
-          .foreach { e =>
-            val (at, newBase) =
-              if e.tagName == "A" then
-                val attr = "href"
-                val href =
-                  if e.getAttribute(attr).startsWith("#") then root
-                  else blob
-
-                e.setAttribute("target", "_blank")
-                (attr, href)
-              else ("src", raw)
-
-            Option(e.getAttribute(at))
-              .foreach { oldUrl =>
-                if oldUrl.nonEmpty then
-                  val newUrl =
-                    if !oldUrl.startsWith("/") then s"$newBase/$oldUrl"
-                    else s"$newBase$oldUrl"
-                  e.setAttribute(at, newUrl)
-              }
-          }
-      end fixImages
-
-      val repoRequest: Request = new Request(
-        s"https://api.github.com/repos/$organization/$repository",
-        new RequestInit:
-          this.headers = headersWithCreds.toJSDictionary
-      )
-      fetch(repoRequest).toFuture
-        .flatMap { res =>
-          if res.status == 200 then res.text().toFuture.map(extractDefaultBranch)
-          else Future.successful("master")
-        }
-        .map(branch => fixImages(branch, organization, repository))
-    end getDefaultBranchAndFixImages
-
-    for
-      _ <- setReadme()
-      _ <- getDefaultBranchAndFixImages()
-    yield ()
-  end fetchAndReplaceReadme
+    val repoRequest: Request = new Request(
+      s"https://api.github.com/repos/$organization/$repository",
+      new RequestInit:
+        this.headers = headersWithCreds.toJSDictionary
+    )
+    fetch(repoRequest).toFuture
+      .flatMap { res =>
+        if res.status == 200 then res.text().toFuture.map(extractDefaultBranch)
+        else Future.successful("master")
+      }
+      .foreach(branch => fixImages(branch, organization, repository))
+  end fixReadmeLinks
 
   @JSExport
   def main(token: UndefOr[String]): Unit =
@@ -117,7 +105,7 @@ object Client:
       input.addEventListener[KeyboardEvent]("keydown", autocompletion.navigate _)
     }
 
-    Dom.getById[Element]("README").foreach(fetchAndReplaceReadme(_, token.toOption))
+    Dom.getById[Element]("README").foreach(fixReadmeLinks(_, token.toOption))
 
     val config =
       js.Dictionary[js.Any]("img_dir" -> "https://cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/images/basic")
