@@ -1,0 +1,69 @@
+@import scaladex.core.model._
+@import scaladex.core.model.search.Pagination
+@import scaladex.view.html.main
+@import scaladex.view.html._
+@import scaladex.view.Formats
+@import scaladex.view.ProjectTab
+
+@(
+    env: Env,
+    user: Option[UserState],
+    project: Project,
+    header: Option[ProjectHeader],
+    dependents: Map[Project.Reference, (ArtifactDependency.Scope, Version)],
+    pagination: Pagination
+)
+
+@main(env, title = project.repository.toString, user) {
+  <main id="container-project">
+    @headproject(env, user, project, header, ProjectTab.Dependents)
+    <div class="container">
+      <div class="content-project dependents box" data-organization="@project.reference.organization"
+      data-repository="@project.reference.repository">
+        <div class="artifacts-header">
+          <h2>Dependents</h2>
+        </div>
+        <div class="result-count">
+          Found <b>@pagination.totalSize</b> @Formats.wordPlural(pagination.totalSize, "dependent")
+        </div>
+        @if(dependents.isEmpty) {
+          <div>This project has no known dependents yet</div>
+        } else {
+          <div>
+            @for((ref, (scope, version)) <- dependents.toSeq.sortBy { case (ref, _) => ref }) {
+              <div class="panel">
+                <div class="dependent-row panel-body center">
+                  <div class="col-md-6">
+                    <a class="dependent-name" href="/@ref">@ref</a>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="artifact-info dependent-info">
+                      depends on <b>@version</b> @scopeSpan(scope)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+          @paginate(pagination, dependentsUri(project.reference))
+        }
+      </div>
+    </div>
+  </main>
+}
+
+@scopeDescription(scope: ArtifactDependency.Scope) = @{
+  scope.value match {
+    case "provided" => "Expected to be provided by the runtime environment; not bundled in the final artifact"
+    case "runtime" => "Needed only at runtime, not for compiling against this dependency"
+    case "test" => "Used only for compiling and running tests"
+    case "optional" => "Optional: not pulled in transitively by projects depending on this one"
+    case "macro" => "Used only for macro expansion at compile time"
+    case other => other
+  }
+}
+@scopeSpan(scope: ArtifactDependency.Scope) = {
+  @if(scope.value != "compile") {
+    <span class="label label-default" data-toggle="tooltip" data-placement="top" title="@scopeDescription(scope)">@scope</span>
+  }
+}
