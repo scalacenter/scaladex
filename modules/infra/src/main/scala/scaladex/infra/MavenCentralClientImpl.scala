@@ -27,6 +27,7 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 
 class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
     extends CommonAkkaHttpClient(config)
@@ -82,6 +83,38 @@ class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default
         Future.successful(None)
     }
   end getPomFile
+
+  override def getJavadocJar(ref: Artifact.Reference): Future[Option[Array[Byte]]] =
+    val jarUri = getJavadocJarUri(ref)
+    val future = for
+      response <- queueRequestWithRetry(HttpRequest(uri = jarUri))
+      res <- getJarBytes(response, jarUri)
+    yield res
+    future.recoverWith {
+      case NonFatal(exception) =>
+        logger.warn(s"Could not get javadoc jar of $ref because of $exception")
+        Future.successful(None)
+    }
+  end getJavadocJar
+
+  private def getJarBytes(response: HttpResponse, uri: String): Future[Option[Array[Byte]]] =
+    response match
+      case _ @HttpResponse(StatusCodes.OK, _, entity, _) =>
+        entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map(bytes => Some(bytes.toArray))
+      case _ =>
+        logger.warn(s"Cannot get $uri: ${response.status}")
+        response.discardEntityBytes()
+        Future.successful(None)
+
+  private def getJavadocJarUri(ref: Artifact.Reference): String =
+    val groupIdUrl: String = ref.groupId.value.replace('.', '/')
+    val jarFileName = getJavadocJarFileName(ref.artifactId, ref.version)
+    s"$baseUri/${groupIdUrl}/${ref.artifactId.value}/${ref.version.value}/$jarFileName"
+
+  private def getJavadocJarFileName(artifactId: Artifact.ArtifactId, version: Version): String =
+    artifactId.binaryVersion.platform match
+      case SbtPlugin(Version.Minor(0, 13)) => s"${artifactId.name.value}-${version.value}-javadoc.jar"
+      case _ => s"${artifactId.value}-${version.value}-javadoc.jar"
 
   private def getPomFileWithLastModifiedTime(response: HttpResponse, uri: String): Future[Option[(String, Instant)]] =
     response match
