@@ -237,16 +237,25 @@
   }
 
   .install {
-    .nav-tabs>li>a {
-      background: transparent;
+    .nav-tabs {
+      margin-bottom: 0;
+      border-bottom: none;
+      > li > a {
+        background: transparent;
+        border: none;
+        color: $gray;
+      }
+      > li.active > a {
+        &,
+        &:hover,
+        &:focus {
+          background: #fff;
+          border: none;
+          color: $brand-primary;
+        }
+      }
     }
-    .nav-tabs>li.active {
-      background: white;
-    }
-    .nav-tabs.nav-justified>.active>a {
-      border: none;
-    }
-  
+
     .tab-pane {
       overflow: hidden;
       pre {

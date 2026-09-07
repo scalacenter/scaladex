@@ -183,7 +183,7 @@
 
 @installBox(tabs: Seq[InstallTab]) = {
   <div class="install">
-    <ul class="nav nav-tabs nav-justified">
+    <ul class="nav nav-tabs">
       @for((tab, i) <- tabs.zipWithIndex) {
         <li role="presentation" @if(i == 0 ){ class="active" }>
           <a href="#@tab.ref" aria-controls="@tab.ref" role="tab" data-toggle="tab">@tab.title</a>
