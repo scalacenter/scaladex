@@ -65,5 +65,5 @@ object BinaryVersion:
   def parse(input: String): Option[BinaryVersion] =
     input match
       case "java" => Some(BinaryVersion(Jvm, Java))
-      case _ => Parsers.tryParse(input, x => FullParser(x))
+      case _ => Parsers.tryParse(input, FullParser)
 end BinaryVersion

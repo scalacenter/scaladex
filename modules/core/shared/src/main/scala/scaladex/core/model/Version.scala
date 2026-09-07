@@ -97,7 +97,7 @@ object Version:
 
   private def Parser[A: P]: P[Version.SemanticLike] = Start ~ SemanticParser ~ End
 
-  def parseSemantically(version: String): Option[Version.SemanticLike] = tryParse(version, x => Parser(x))
+  def parseSemantically(version: String): Option[Version.SemanticLike] = tryParse(version, Parser)
 
   def apply(version: String): Version = parseSemantically(version).getOrElse(Version.Custom(version))
 end Version
