@@ -37,7 +37,7 @@ lazy val scalacOptionsSettings = Def.settings(
     "-feature",
     "-unchecked",
     "-Wunused:all"
-  ) ++ { if (isCI) Some("-Xfatal-warnings") else None }
+  ) ++ { if (isCI) Some("-Werror") else None }
 )
 
 lazy val scaladex = project
@@ -49,7 +49,7 @@ lazy val template = project
   .in(file("modules/template"))
   .settings(
     scalacOptionsSettings,
-    scalacOptions -= "-Xfatal-warnings",
+    scalacOptions -= "-Werror",
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTime,
       "com.typesafe" % "config" % "1.4.9",
