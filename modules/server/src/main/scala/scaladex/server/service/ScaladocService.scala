@@ -1,22 +1,18 @@
 package scaladex.server.service
 
-import java.io.ByteArrayInputStream
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import java.util.zip.ZipInputStream
-
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.CollectionConverters.*
-import scala.util.Using
-import scala.util.control.NonFatal
-
+import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.service.MavenCentralClient
 
-import com.typesafe.scalalogging.LazyLogging
+import java.io.ByteArrayInputStream
+import java.nio.file.{Files, Path, StandardCopyOption}
+import java.util.zip.ZipInputStream
+import java.util.Comparator
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.*
+import scala.util.Using
+import scala.util.control.NonFatal
 
 /** Serves a project's scaladoc by lazily downloading and unpacking its `-javadoc.jar` from Maven Central on first
   * request, then serving the unpacked files from disk on every subsequent request. There is deliberately no eviction:
@@ -30,7 +26,7 @@ class ScaladocService(cacheDir: Path, mavenCentralClient: MavenCentralClient)(us
 
   def localDir(ref: Artifact.Reference): Path =
     cacheDir
-      .resolve(ref.groupId.value.replace('.', '/'))
+      .resolve(ref.groupId.mavenUrl)
       .resolve(ref.artifactId.value)
       .resolve(ref.version.value)
 
@@ -43,7 +39,7 @@ class ScaladocService(cacheDir: Path, mavenCentralClient: MavenCentralClient)(us
     else
       inFlight.getOrElseUpdate(
         ref,
-        download(ref).andThen { case _ => inFlight.remove(ref) }
+        download(ref).andThen(_ => inFlight.remove(ref))
       )
 
   private def isUnpacked(ref: Artifact.Reference): Boolean =
@@ -92,7 +88,9 @@ class ScaladocService(cacheDir: Path, mavenCentralClient: MavenCentralClient)(us
   // no-op once `unpack` has already moved `staging` away; only cleans up on failure
   private def deleteRecursively(dir: Path): Unit =
     if Files.exists(dir) then
-      Using.resource(Files.walk(dir)) { stream => stream.iterator.asScala.toSeq.reverse.foreach(Files.deleteIfExists) }
+      Using.resource(Files.walk(dir)) { stream =>
+        stream.sorted(Comparator.reverseOrder()).forEach(Files.deleteIfExists(_))
+      }
 end ScaladocService
 
 object ScaladocService:
