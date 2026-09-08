@@ -5,6 +5,7 @@
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Version
 @import scaladex.view.html.main
+@import scaladex.view.html._
 @import scaladex.view.ProjectTab
 @import scaladex.core.model.Platform
 @import scala.collection.SortedSet
@@ -21,6 +22,19 @@
     @headproject(env, user, project, header, ProjectTab.Badges)
     <div class="container">
       <div class="content-project box project-badges">
+        @if(header.exists(_.allArtifactNames.size > 1)) {
+          <div class="badges-header">
+            <select class="selectpicker" title="Other Artifacts"
+              data-style="btn-default" data-selected-text-format="static"
+              onchange="window.location=this.value">
+              @for(name <- header.map(_.allArtifactNames).getOrElse(Seq.empty)) {
+                <option value="@badgesUri(project.reference, name)" @if(name == artifact.name) {selected}>
+                  @name
+                </option>
+              }
+            </select>
+          </div>
+        }
         <section class="badge-section" id="latest">
           <h2>Latest version</h2>
           <img src="@artifact.latestBadgeUrl(env)" />
