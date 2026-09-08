@@ -162,7 +162,7 @@ object GithubModel:
   val userInfoCaseClassDecoder: Decoder[UserInfo] = deriveDecoder
 
   given Decoder[UserInfo] =
-    (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](userInfoCaseClassDecoder)
+    (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](using userInfoCaseClassDecoder)
 
   given Decoder[GithubCommitActivity] = new Decoder[GithubCommitActivity]:
     final def apply(c: HCursor): Decoder.Result[GithubCommitActivity] =

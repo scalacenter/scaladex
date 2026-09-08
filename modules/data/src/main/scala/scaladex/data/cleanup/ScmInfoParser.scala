@@ -27,8 +27,5 @@ object ScmInfoParser extends Parsers:
   )
 
   def parse(scmInfo: String): Option[Project.Reference] =
-    fastparse.parse(scmInfo, x => ScmUrl(x)) match
-      case Parsed.Success((organization, repo), _) =>
-        Some(Project.Reference.from(organization, repo))
-      case _ => None
+    tryParse(scmInfo, ScmUrl).map(Project.Reference.from)
 end ScmInfoParser

@@ -96,13 +96,13 @@ object Client:
 
   @JSExport
   def main(token: UndefOr[String]): Unit =
-    document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput _)
+    document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput(_))
 
     val autocompletion = new Autocompletion()
 
     Dom.getSearchInput.foreach { input =>
-      input.addEventListener[Event]("input", autocompletion.run _)
-      input.addEventListener[KeyboardEvent]("keydown", autocompletion.navigate _)
+      input.addEventListener[Event]("input", autocompletion.run(_))
+      input.addEventListener[KeyboardEvent]("keydown", autocompletion.navigate(_))
     }
 
     Dom.getById[Element]("README").foreach(fixReadmeLinks(_, token.toOption))

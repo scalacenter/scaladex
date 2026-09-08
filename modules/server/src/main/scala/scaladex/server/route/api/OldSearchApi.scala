@@ -185,7 +185,7 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(using Exec
           .distinct
           .partition(project.settings.deprecatedArtifacts.contains)
         // Sort semantic versions by descending order
-        val versions = filteredArtifacts.map(_.version).distinct.sorted(Ordering[Version].reverse)
+        val versions = filteredArtifacts.map(_.version).distinct.sorted(using Ordering[Version].reverse)
         OldSearchApi.ArtifactOptions(
           artifacts = artifacts.map(_.value),
           deprecatedArtifacts = deprecatedArtifacts.map(_.value),

@@ -51,7 +51,7 @@ class ProjectPages(
                 val binaryVersions = allArtifacts
                   .map(_.binaryVersion)
                   .distinct
-                  .sorted(BinaryVersion.ordering.reverse)
+                  .sorted(using BinaryVersion.ordering.reverse)
 
                 val groupedArtifacts = allArtifacts
                   .groupBy(_.name)
@@ -68,7 +68,7 @@ class ProjectPages(
                   }
                   .toSeq
                   .sortBy { case (name, version, _) => (version, name) }(
-                    Ordering.Tuple2(Version.ordering.reverse, Artifact.Name.ordering)
+                    using Ordering.Tuple2(using Version.ordering.reverse, Artifact.Name.ordering)
                   )
                 val page = html.artifacts(env, user, project, header, groupedArtifacts, params, binaryVersions)
                 complete(page)
@@ -86,7 +86,7 @@ class ProjectPages(
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
                   .distinct
-                  .sorted(BinaryVersion.ordering.reverse)
+                  .sorted(using BinaryVersion.ordering.reverse)
 
                 val artifactsByVersion = artifacts
                   .groupBy(_.version)
@@ -96,7 +96,7 @@ class ProjectPages(
                   }
                   .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
                 val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(
-                  Ordering.Tuple2(Ordering[Instant].reverse, Ordering[Version].reverse)
+                  using Ordering.Tuple2(using Ordering[Instant].reverse, Ordering[Version].reverse)
                 )
                 val page = html.versions(
                   env,
@@ -123,7 +123,7 @@ class ProjectPages(
               for
                 artifacts <- artifactsF
                 header <- headerF
-                binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted(BinaryVersion.ordering.reverse)
+                binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted(using BinaryVersion.ordering.reverse)
                 selectedArtifact = params.binaryVersion
                   .orElse(binaryVersions.headOption)
                   .flatMap(bv => artifacts.find(_.binaryVersion == bv))
@@ -167,16 +167,16 @@ class ProjectPages(
                 .distinct
                 .groupBy(_.platform)
                 .view
-                .mapValues(_.sorted(BinaryVersion.ordering.reverse))
+                .mapValues(_.sorted(using BinaryVersion.ordering.reverse))
                 .toSeq
-                .sortBy(_._1)(Platform.ordering.reverse)
+                .sortBy(_._1)(using Platform.ordering.reverse)
 
               val artifactsByVersions = artifacts
                 .groupBy(_.version)
                 .view
                 .mapValues(artifacts => artifacts.groupMap(_.name)(_.binaryVersion).toSeq.sortBy(_._1))
                 .toSeq
-                .sortBy(_._1)(Version.ordering.reverse)
+                .sortBy(_._1)(using Version.ordering.reverse)
               val page = html.versionMatrix(env, user, project, header, binaryVersionByPlatforms, artifactsByVersions)
               complete(page)
           }
@@ -288,7 +288,7 @@ class ProjectPages(
         val binaryVersions = rawbinaryVersions
           .flatMap(BinaryVersion.parse)
           .toSeq
-          .sorted(Ordering[BinaryVersion].reverse)
+          .sorted(using Ordering[BinaryVersion].reverse)
         Tuple1(ArtifactsPageParams(binaryVersions, preReleases))
     }
 

@@ -11,6 +11,6 @@ import org.scalatest.matchers.should.Matchers
 class ServerConfigTests extends AnyFunSpec with Matchers:
   describe("AppConf") {
     it("should load the conf") {
-      Try(ServerConfig.load()) shouldBe a[Success[_]]
+      Try(ServerConfig.load()) shouldBe a[Success[?]]
     }
   }
