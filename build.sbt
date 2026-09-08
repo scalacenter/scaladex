@@ -68,8 +68,8 @@ lazy val infra = project
     loggingSettings,
     libraryDependencies ++= Seq(
       "nl.gn0s1s" %% "elastic4s-client-esjava" % V.elastic4s,
-      "org.flywaydb" % "flyway-core" % "11.20.3", // for database migration
-      "org.flywaydb" % "flyway-database-postgresql" % "11.20.3", // split out of flyway-core since 10.x
+      "org.flywaydb" % "flyway-core" % "12.11.0", // for database migration
+      "org.flywaydb" % "flyway-database-postgresql" % "12.11.0", // split out of flyway-core since 10.x
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "com.github.pjfanning" %% "pekko-http-circe" % "3.9.2",
