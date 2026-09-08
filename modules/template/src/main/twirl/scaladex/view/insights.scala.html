@@ -97,14 +97,17 @@
 
 @main(env, title = "Insights - Scaladex", user, showSearch = false) {
   <main id="container-insights">
-    <div class="container">
-      <h1>Insights</h1>
-      <p class="lead">
-        How many projects in Scaladex currently publish at least one artifact for each Scala version -
-        counted per artifact's own latest release, so a project can show up under more than one version
-        if some of its modules are updated more often than others.
-      </p>
-
+    <div class="insights-header">
+      <div class="container">
+        <h1>Insights</h1>
+        <p class="lead">
+          How many projects in Scaladex currently publish at least one artifact for each Scala version -
+          counted per artifact's own latest release, so a project can show up under more than one version
+          if some of its modules are updated more often than others.
+        </p>
+      </div>
+    </div>
+    <div class="container insights-content">
       <h2>By binary compatibility</h2>
       <p class="section-note">
         The Scala target a project can actually be relied on to cross-build for - every 3.x release
