@@ -187,7 +187,9 @@
           });
           $scope.find('.edit-project input[type="checkbox"]').bootstrapSwitch();
           if (window.emojify) { emojify.run(); }
-          if (window.ScaladexClient) { ScaladexClient.createSparkline(); }
+          // Scala.js's NoModule output declares this top-level export with `let`, which - unlike `var` -
+          // does not become a `window` property, so `window.ScaladexClient` is always undefined here.
+          if (typeof ScaladexClient !== 'undefined') { ScaladexClient.createSparkline(); }
         }
 
         // Several links/forms (the artifacts/versions filters, the project
