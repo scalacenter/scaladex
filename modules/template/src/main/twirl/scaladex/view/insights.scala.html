@@ -1,5 +1,6 @@
 @import scaladex.core.model.InsightsGranularity
 @import scaladex.core.model.Scala
+@import scaladex.core.model.Scala3MigrationInsight
 @import scaladex.core.model.ScalaVersionInsight
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Version
@@ -8,6 +9,7 @@
     env: scaladex.core.model.Env,
     user: Option[UserState],
     binaryCompat: Seq[ScalaVersionInsight],
+    migration: Seq[Scala3MigrationInsight],
     minor2x: Seq[ScalaVersionInsight],
     minor3x: Seq[ScalaVersionInsight]
 )
@@ -23,8 +25,39 @@
 }
 
 @eolVersions = @{ Set("2.10", "2.11", "2.12") }
+@activeColor = @{ "rgb(242, 101, 39)" }
+@eolColor = @{ "rgb(137, 146, 149)" }
 @versionColor(insight: ScalaVersionInsight) = @{
-  if (eolVersions.contains(insight.language.label)) "rgb(137, 146, 149)" else "rgb(242, 101, 39)"
+  if (eolVersions.contains(insight.language.label)) eolColor else activeColor
+}
+
+@chartAndTable(id: String, labels: Seq[String], counts: Seq[Long], colors: Seq[String], columnHeader: String) = {
+  @defining(counts.sum) { total =>
+    <div class="box insights-chart-box">
+      <canvas class="insights-chart" id="@id"
+        data-labels="@labels.mkString(",")"
+        data-counts="@counts.mkString(",")"
+        data-colors="@colors.mkString(";")"></canvas>
+    </div>
+    <table class="table insights-table">
+      <thead>
+        <tr>
+          <th>@columnHeader</th>
+          <th>Projects</th>
+          <th>Share</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for((label, count) <- labels.zip(counts)) {
+          <tr>
+            <td>@label</td>
+            <td>@count</td>
+            <td>@share(count, total)</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
 }
 
 @chartPanel(id: String, title: String, insights: Seq[ScalaVersionInsight]) = {
@@ -33,31 +66,30 @@
     @if(insights.isEmpty) {
       <p>No data yet - the insights job hasn't run yet.</p>
     } else {
-      @defining(insights.map(_.projectCount).sum) { total =>
-        <div class="box insights-chart-box">
-          <canvas class="insights-chart" id="@id"
-            data-labels="@insights.map(versionLabel).mkString(",")"
-            data-counts="@insights.map(_.projectCount).mkString(",")"
-            data-colors="@insights.map(versionColor).mkString(";")"></canvas>
-        </div>
-        <table class="table insights-table">
-          <thead>
-            <tr>
-              <th>Scala version</th>
-              <th>Projects</th>
-              <th>Share</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for(insight <- insights) {
-              <tr>
-                <td>@versionLabel(insight)</td>
-                <td>@insight.projectCount</td>
-                <td>@share(insight.projectCount, total)</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      @chartAndTable(id, insights.map(versionLabel), insights.map(_.projectCount), insights.map(versionColor), "Scala version")
+    }
+  </div>
+}
+
+@migrationLabel(insight: Scala3MigrationInsight) = @{
+  if (insight.migrated) "Migrated to Scala 3" else "Scala 2.x only"
+}
+@migrationColor(insight: Scala3MigrationInsight) = @{ if (insight.migrated) activeColor else eolColor }
+
+@migrationPanel = {
+  <div class="insights-panel">
+    <h3>Scala 3 migration</h3>
+    @if(migration.isEmpty) {
+      <p>No data yet - the insights job hasn't run yet.</p>
+    } else {
+      @defining(migration.sortBy(_.migrated)) { sorted =>
+        @chartAndTable(
+          "insights-chart-migration",
+          sorted.map(migrationLabel),
+          sorted.map(_.projectCount),
+          sorted.map(migrationColor),
+          "Status"
+        )
       }
     }
   </div>
@@ -76,9 +108,13 @@
       <h2>By binary compatibility</h2>
       <p class="section-note">
         The Scala target a project can actually be relied on to cross-build for - every 3.x release
-        is one binary-compatible version. Grayed-out versions are no longer supported.
+        is one binary-compatible version. Grayed-out versions are no longer supported. "Migrated to
+        Scala 3" means at least one module has started - not that every module has finished.
       </p>
-      @chartPanel("insights-chart-binary", "All projects", binaryCompat)
+      <div class="insights-detail-row">
+        @chartPanel("insights-chart-binary", "All projects", binaryCompat)
+        @migrationPanel
+      </div>
 
       <h2>Detailed breakdown</h2>
       <p class="section-note">

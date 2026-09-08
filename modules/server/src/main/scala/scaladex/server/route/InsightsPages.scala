@@ -27,10 +27,12 @@ class InsightsPages(env: Env, database: WebDatabase)(using ExecutionContext):
     case _ => -1
 
   private def insightsPage(user: Option[UserState]): Future[Html] =
-    database.getScalaVersionInsights().map { rawInsights =>
+    for
+      rawInsights <- database.getScalaVersionInsights()
+      migration <- database.getScala3MigrationInsights()
+    yield
       val sorted = rawInsights.sortBy(_.language)
       val (binaryCompat, minor) = sorted.partition(_.granularity == InsightsGranularity.BinaryCompat)
       val (minor2x, minor3x) = minor.partition(majorVersion(_) == 2)
-      insights(env, user, binaryCompat, minor2x, minor3x)
-    }
+      insights(env, user, binaryCompat, migration.sortBy(_.migrated), minor2x, minor3x)
 end InsightsPages

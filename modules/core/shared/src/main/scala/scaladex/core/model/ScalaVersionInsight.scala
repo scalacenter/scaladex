@@ -8,3 +8,7 @@ enum InsightsGranularity:
 
 // How many projects have, among their latest artifacts, at least one built for this Scala version.
 case class ScalaVersionInsight(granularity: InsightsGranularity, language: Language, projectCount: Long)
+
+// How many projects have, among their latest artifacts, at least one built for Scala 3 (migrated = true)
+// versus only Scala 2.x ones (migrated = false).
+case class Scala3MigrationInsight(migrated: Boolean, projectCount: Long)

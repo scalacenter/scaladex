@@ -322,6 +322,19 @@ class SqlDatabase(
   override def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
     run(ScalaVersionInsightsTable.selectAll.to[Seq])
 
+  override def computeScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
+    run(Scala3MigrationTable.computeProjectCounts.to[Seq])
+
+  override def insertScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int] =
+    if insights.isEmpty then Future.successful(0)
+    else run(Scala3MigrationTable.insert.updateMany(insights))
+
+  override def deleteAllScala3MigrationInsights(): Future[Int] =
+    run(Scala3MigrationTable.deleteAll.run(()))
+
+  override def getScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
+    run(Scala3MigrationTable.selectAll.to[Seq])
+
   override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))
 

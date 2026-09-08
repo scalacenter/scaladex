@@ -14,5 +14,8 @@ class InsightsService(database: SchedulerDatabase)(using ExecutionContext) exten
       insights <- database.computeScalaVersionInsights()
       _ <- database.deleteAllScalaVersionInsights()
       _ <- database.insertScalaVersionInsights(insights)
-    yield s"Updated Scala version insights for ${insights.size} versions"
+      migration <- database.computeScala3MigrationInsights()
+      _ <- database.deleteAllScala3MigrationInsights()
+      _ <- database.insertScala3MigrationInsights(migration)
+    yield s"Updated Scala version insights for ${insights.size} versions and Scala 3 migration status"
 end InsightsService

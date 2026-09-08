@@ -8,6 +8,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.Scala3MigrationInsight
 import scaladex.core.model.ScalaVersionInsight
 import scaladex.core.model.Version
 
@@ -29,6 +30,11 @@ trait SchedulerDatabase extends WebDatabase:
   def computeScalaVersionInsights(): Future[Seq[ScalaVersionInsight]]
   def insertScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int]
   def deleteAllScalaVersionInsights(): Future[Int]
+
+  // scala 3 migration insights
+  def computeScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]]
+  def insertScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int]
+  def deleteAllScala3MigrationInsights(): Future[Int]
 
   // artifacts and its dependencies
   def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] // for init process

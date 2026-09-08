@@ -75,6 +75,7 @@ trait WebDatabase:
 
   // scala version insights
   def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]]
+  def getScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]]
 
   // users
   def insertUser(userId: UUID, user: UserInfo): Future[Unit]
