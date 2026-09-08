@@ -16,8 +16,8 @@ object ScalaVersionInsightsTable:
   val fields: Seq[String] = Seq("kind", "language_version", "project_count")
 
   // Scala 3.x is a single binary version (language_version is always "3"), unlike 2.x where every
-  // minor is its own binary version - so for the "Minor" granularity we bucket 3.x by the minor of
-  // full_scala_version (the exact compiler version a release was built with) instead, e.g. "3.3.4" -> "3.3".
+  // minor is its own binary version. For the "Minor" granularity we bucket 3.x by the minor of
+  // full_scala_version instead, the exact compiler version a release was built with, e.g. "3.3.4" -> "3.3".
   private val minorVersionBucket: String =
     """CASE
       |  WHEN language_version = '3' AND full_scala_version IS NOT NULL
@@ -28,7 +28,7 @@ object ScalaVersionInsightsTable:
   private val excludeJava = Seq(ArtifactTable.isLatestVersion, "language_version != 'java'")
 
   // Counted from artifacts.is_latest_version, so it reflects the current state of the ecosystem,
-  // not every version ever published. Java artifacts are excluded - this is a Scala-version breakdown.
+  // not every version ever published. Java artifacts are excluded; this is a Scala-version breakdown.
   val computeBinaryCompatCounts: Query0[ScalaVersionInsight] =
     selectRequest[(Language, Long)](
       ArtifactTable.table,

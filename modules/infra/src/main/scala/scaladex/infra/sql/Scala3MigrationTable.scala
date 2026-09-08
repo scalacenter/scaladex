@@ -1,7 +1,6 @@
 package scaladex.infra.sql
 
 import scaladex.core.model.Scala3MigrationInsight
-import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
 
 import doobie.*
@@ -11,8 +10,8 @@ object Scala3MigrationTable:
 
   val fields: Seq[String] = Seq("migrated", "project_count")
 
-  // A project counts as migrated if ANY of its latest artifacts targets Scala 3 - it may still also
-  // publish Scala 2.x artifacts for other modules, this is "has it started", not "is it done".
+  // A project counts as migrated if any of its latest artifacts targets Scala 3. It may still also
+  // publish Scala 2.x artifacts for other modules; this tracks "has it started", not "is it done".
   val computeProjectCounts: Query0[Scala3MigrationInsight] =
     Query0[(Boolean, Long)](
       s"""|WITH project_scala3 AS (
