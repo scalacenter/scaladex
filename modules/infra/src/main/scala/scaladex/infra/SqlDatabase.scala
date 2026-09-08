@@ -306,6 +306,22 @@ class SqlDatabase(
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.deleteBySource.run(ref))
 
+  override def computeScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
+    for
+      binaryCompat <- run(ScalaVersionInsightsTable.computeBinaryCompatCounts.to[Seq])
+      minor <- run(ScalaVersionInsightsTable.computeMinorVersionCounts.to[Seq])
+    yield binaryCompat ++ minor
+
+  override def insertScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int] =
+    if insights.isEmpty then Future.successful(0)
+    else run(ScalaVersionInsightsTable.insert.updateMany(insights))
+
+  override def deleteAllScalaVersionInsights(): Future[Int] =
+    run(ScalaVersionInsightsTable.deleteAll.run(()))
+
+  override def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
+    run(ScalaVersionInsightsTable.selectAll.to[Seq])
+
   override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))
 

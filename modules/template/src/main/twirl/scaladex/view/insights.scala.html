@@ -1,0 +1,75 @@
+@import scaladex.core.model.ScalaVersionInsight
+@import scaladex.core.model.UserState
+
+@(
+    env: scaladex.core.model.Env,
+    user: Option[UserState],
+    binaryCompat: Seq[ScalaVersionInsight],
+    minor2x: Seq[ScalaVersionInsight],
+    minor3x: Seq[ScalaVersionInsight]
+)
+
+@share(count: Long, total: Long) = @{ if (total > 0) f"${count * 100.0 / total}%.1f%%" else "-" }
+
+@chartPanel(id: String, title: String, insights: Seq[ScalaVersionInsight]) = {
+  <div class="insights-panel">
+    <h3>@title</h3>
+    @if(insights.isEmpty) {
+      <p>No data yet - the insights job hasn't run yet.</p>
+    } else {
+      @defining(insights.map(_.projectCount).sum) { total =>
+        <div class="box insights-chart-box">
+          <canvas class="insights-chart" id="@id"
+            data-labels="@insights.map(_.language.label).mkString(",")"
+            data-counts="@insights.map(_.projectCount).mkString(",")"></canvas>
+        </div>
+        <table class="table insights-table">
+          <thead>
+            <tr>
+              <th>Scala version</th>
+              <th>Projects</th>
+              <th>Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(insight <- insights) {
+              <tr>
+                <td>@insight.language.label</td>
+                <td>@insight.projectCount</td>
+                <td>@share(insight.projectCount, total)</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  </div>
+}
+
+@main(env, title = "Insights - Scaladex", user, showSearch = false) {
+  <main id="container-insights">
+    <div class="container">
+      <h1>Insights</h1>
+      <p class="lead">
+        How many projects in Scaladex have a latest artifact built for each Scala version.
+      </p>
+
+      <h2>By binary compatibility</h2>
+      <p class="section-note">
+        The Scala target a project can actually be relied on to cross-build for - every 3.x release
+        is one binary-compatible version.
+      </p>
+      @chartPanel("insights-chart-binary", "All projects", binaryCompat)
+
+      <h2>Detailed breakdown</h2>
+      <p class="section-note">
+        The exact minor version projects' latest releases were built with - Scala 3.x split out, since
+        it's a single binary version above but adoption of individual minors still varies a lot.
+      </p>
+      <div class="insights-detail-row">
+        @chartPanel("insights-chart-2x", "Scala 2.x", minor2x)
+        @chartPanel("insights-chart-3x", "Scala 3.x, by minor", minor3x)
+      </div>
+    </div>
+  </main>
+}

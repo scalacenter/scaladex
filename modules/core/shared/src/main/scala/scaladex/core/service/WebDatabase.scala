@@ -73,6 +73,9 @@ trait WebDatabase:
   def countProjectDependencies(ref: Project.Reference, version: Version): Future[Long]
   def getProjectReverseDependencies(ref: Project.Reference, limit: Int, offset: Int): Future[Seq[ProjectDependency]]
 
+  // scala version insights
+  def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]]
+
   // users
   def insertUser(userId: UUID, user: UserInfo): Future[Unit]
   def updateUser(userId: UUID, userState: UserState): Future[Unit]

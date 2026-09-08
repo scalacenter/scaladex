@@ -42,6 +42,7 @@ object DoobieMappings extends Instances with JavaTimeInstances:
   given Meta[Language] =
     Meta[String]
       .timap(x => Language.parse(x).getOrElse(throw new Exception(s"Failed to parse $x as Language")))(_.value)
+  given Meta[InsightsGranularity] = Meta[String].timap(InsightsGranularity.valueOf)(_.toString)
   given Meta[ArtifactDependency.Scope] = Meta[String].timap(ArtifactDependency.Scope.apply)(_.value)
   given Meta[License] =
     Meta[String]

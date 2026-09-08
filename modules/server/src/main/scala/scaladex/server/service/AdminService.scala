@@ -35,6 +35,7 @@ class AdminService(
   val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
   val userSessionService = new UserSessionService(database)
   val artifactService = new ArtifactService(database)
+  val insightsService = new InsightsService(database)
   val githubUpdaterOpt: Option[GithubUpdater] = githubClientOpt.map(client => new GithubUpdater(database, client))
 
   private val jobs: Map[String, JobScheduler] =
@@ -44,7 +45,8 @@ class AdminService(
       new JobScheduler(Job.projectCreationDates, updateProjectCreationDate),
       new JobScheduler(Job.moveArtifacts, artifactService.moveAll),
       new JobScheduler(Job.userSessions, userSessionService.updateAll),
-      new JobScheduler(Job.latestArtifacts, artifactService.updateAllLatestVersions)
+      new JobScheduler(Job.latestArtifacts, artifactService.updateAllLatestVersions),
+      new JobScheduler(Job.scalaVersionInsights, insightsService.updateAll)
     ) ++
       githubClientOpt.map { client =>
         val githubUpdater = new GithubUpdater(database, client)
