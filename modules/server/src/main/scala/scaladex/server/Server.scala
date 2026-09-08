@@ -162,7 +162,12 @@ object Server extends LazyLogging:
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, adminService)
     val projectPages = new ProjectPages(config.env, projectService, settingsService, webDatabase)
-    val scaladocService = ScaladocService(config.filesystem.scaladoc, mavenCentralClient)
+    val scaladocService = ScaladocService(
+      config.filesystem.scaladoc,
+      mavenCentralClient,
+      config.scaladoc.maxCacheBytes,
+      config.scaladoc.maxUnpackedBytes
+    )
     val artifactPages = new ArtifactPages(config.env, webDatabase, scaladocService)
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)

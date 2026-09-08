@@ -51,5 +51,10 @@ trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRoute
 
   val dataPaths: DataPaths = DataPaths.from(config.filesystem)
   val localStorage: FilesystemStorage = FilesystemStorage(config.filesystem)
-  val scaladocService: ScaladocService = ScaladocService(config.filesystem.scaladoc, NoopMavenCentralClient)
+  val scaladocService: ScaladocService = ScaladocService(
+    config.filesystem.scaladoc,
+    NoopMavenCentralClient,
+    config.scaladoc.maxCacheBytes,
+    config.scaladoc.maxUnpackedBytes
+  )
 end ControllerBaseSuite
