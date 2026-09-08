@@ -42,7 +42,7 @@ lazy val scalacOptionsSettings = Def.settings(
 
 lazy val scaladex = project
   .in(file("."))
-  .aggregate(webclient, data, core.jvm, core.js, infra, server, template, loadtest)
+  .aggregate(webclient, data, core.jvm, core.js, infra, infraIt, server, serverIt, template, loadtest)
   .settings(Deployment(data, server))
 
 lazy val template = project
@@ -62,7 +62,6 @@ lazy val template = project
 
 lazy val infra = project
   .in(file("modules/infra"))
-  .configs(IntegrationTest)
   .settings(
     scalacOptionsSettings,
     loggingSettings,
@@ -82,7 +81,7 @@ lazy val infra = project
       "io.circe" %% "circe-core" % V.circe,
       "io.circe" %% "circe-generic" % V.circe,
       "io.circe" %% "circe-parser" % V.circe,
-      "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
     Elasticsearch.settings(defaultPort = 9200),
     Postgres.settings(Compile, defaultPort = 5432, database = "scaladex"),
@@ -117,12 +116,20 @@ lazy val infra = project
     Test / fork := true,
     // testing the database requests need to delete and create the tables,
     // which can fail if many tests are running in parallel
-    Test / parallelExecution := false,
-    Defaults.itSettings,
-    IntegrationTest / fork := true,
-    IntegrationTest / javaOptions ++= (Test / javaOptions).value
+    Test / parallelExecution := false
   )
-  .dependsOn(core.jvm % "compile->compile;test->test;it->test")
+  .dependsOn(core.jvm % "compile->compile;test->test")
+
+lazy val infraIt = project
+  .in(file("modules/infra-it"))
+  .settings(
+    scalacOptionsSettings,
+    libraryDependencies += "org.scalatest" %% "scalatest" % V.scalatest % Test,
+    Test / fork := true,
+    test / aggregate := false,
+    Test / javaOptions ++= (infra / Test / javaOptions).value
+  )
+  .dependsOn(infra, core.jvm % "compile->compile;test->test")
 
 lazy val webclient = project
   .in(file("modules/webclient"))
@@ -141,7 +148,6 @@ lazy val webclient = project
 
 lazy val server = project
   .in(file("modules/server"))
-  .configs(IntegrationTest)
   .settings(
     scalacOptionsSettings,
     javaOptions ++= Seq(
@@ -156,8 +162,8 @@ lazy val server = project
     ),
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
-      "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
-      "org.apache.pekko" %% "pekko-testkit" % V.pekko % "test,it",
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.apache.pekko" %% "pekko-testkit" % V.pekko % Test,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
@@ -185,12 +191,24 @@ lazy val server = project
     fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
     reStart / javaOptions ++= (infra / Compile / run / javaOptions).value,
-    Test / javaOptions ++= (infra / javaOptions).value,
-    Defaults.itSettings,
-    IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value
+    Test / javaOptions ++= (infra / javaOptions).value
   )
   .dependsOn(template, data, infra, core.jvm % "compile->compile;test->test")
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
+
+lazy val serverIt = project
+  .in(file("modules/server-it"))
+  .settings(
+    scalacOptionsSettings,
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.apache.pekko" %% "pekko-testkit" % V.pekko % Test
+    ),
+    Test / fork := true,
+    test / aggregate := false,
+    Test / javaOptions ++= (infra / Compile / run / javaOptions).value
+  )
+  .dependsOn(server)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform)
   .in(file("modules/core"))
