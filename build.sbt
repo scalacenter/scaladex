@@ -42,7 +42,7 @@ lazy val scalacOptionsSettings = Def.settings(
 
 lazy val scaladex = project
   .in(file("."))
-  .aggregate(webclient, data, core.jvm, core.js, infra, infraIt, server, serverIt, template, loadtest)
+  .aggregate(webclient, data, core.jvm, core.js, infra, server, template, loadtest)
   .settings(Deployment(data, server))
 
 lazy val template = project
@@ -126,7 +126,6 @@ lazy val infraIt = project
     scalacOptionsSettings,
     libraryDependencies += "org.scalatest" %% "scalatest" % V.scalatest % Test,
     Test / fork := true,
-    test / aggregate := false,
     Test / javaOptions ++= (infra / Test / javaOptions).value
   )
   .dependsOn(infra, core.jvm % "compile->compile;test->test")
@@ -205,7 +204,6 @@ lazy val serverIt = project
       "org.apache.pekko" %% "pekko-testkit" % V.pekko % Test
     ),
     Test / fork := true,
-    test / aggregate := false,
     Test / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
   .dependsOn(server)

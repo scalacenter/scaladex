@@ -7,15 +7,15 @@ import scala.concurrent.duration.*
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubResponse.*
 import scaladex.core.model.Project
+import scaladex.core.model.UserState
 import scaladex.core.test.Values.*
+import scaladex.core.util.Secret
 import scaladex.infra.config.GithubConfig
 
 import org.apache.pekko.actor.ActorSystem
 import org.scalactic.source.Position
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.util.Secret
-import scaladex.core.model.UserState
 
 class GithubClientImplTests extends AsyncFunSpec with Matchers:
   given ActorSystem = ActorSystem("github-client-tests")
