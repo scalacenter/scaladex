@@ -34,5 +34,5 @@ class InsightsPages(env: Env, database: WebDatabase)(using ExecutionContext):
       val sorted = rawInsights.sortBy(_.language)
       val (binaryCompat, minor) = sorted.partition(_.granularity == InsightsGranularity.BinaryCompat)
       val (minor2x, minor3x) = minor.partition(majorVersion(_) == 2)
-      insights(env, user, binaryCompat, migration.sortBy(_.migrated), minor2x, minor3x)
+      insights(env, user, binaryCompat, migration, minor2x, minor3x)
 end InsightsPages

@@ -28,13 +28,13 @@ trait SchedulerDatabase extends WebDatabase:
 
   // scala version insights
   def computeScalaVersionInsights(): Future[Seq[ScalaVersionInsight]]
-  def insertScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int]
-  def deleteAllScalaVersionInsights(): Future[Int]
+  // Deletes the previous snapshot and inserts the new one in a single transaction, so a concurrent
+  // page request never observes an empty table between the two.
+  def replaceScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int]
 
   // scala 3 migration insights
   def computeScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]]
-  def insertScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int]
-  def deleteAllScala3MigrationInsights(): Future[Int]
+  def replaceScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int]
 
   // artifacts and its dependencies
   def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] // for init process

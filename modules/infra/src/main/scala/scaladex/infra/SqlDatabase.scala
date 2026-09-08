@@ -312,12 +312,15 @@ class SqlDatabase(
       minor <- run(ScalaVersionInsightsTable.computeMinorVersionCounts.to[Seq])
     yield binaryCompat ++ minor
 
-  override def insertScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int] =
-    if insights.isEmpty then Future.successful(0)
-    else run(ScalaVersionInsightsTable.insert.updateMany(insights))
-
-  override def deleteAllScalaVersionInsights(): Future[Int] =
-    run(ScalaVersionInsightsTable.deleteAll.run(()))
+  // Delete + insert as one transaction, so a concurrent page request never sees an empty table
+  // between the two statements.
+  override def replaceScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int] =
+    val transaction =
+      for
+        _ <- ScalaVersionInsightsTable.deleteAll.run(())
+        inserted <- ScalaVersionInsightsTable.insert.updateMany(insights)
+      yield inserted
+    run(transaction)
 
   override def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
     run(ScalaVersionInsightsTable.selectAll.to[Seq])
@@ -325,12 +328,13 @@ class SqlDatabase(
   override def computeScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
     run(Scala3MigrationTable.computeProjectCounts.to[Seq])
 
-  override def insertScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int] =
-    if insights.isEmpty then Future.successful(0)
-    else run(Scala3MigrationTable.insert.updateMany(insights))
-
-  override def deleteAllScala3MigrationInsights(): Future[Int] =
-    run(Scala3MigrationTable.deleteAll.run(()))
+  override def replaceScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int] =
+    val transaction =
+      for
+        _ <- Scala3MigrationTable.deleteAll.run(())
+        inserted <- Scala3MigrationTable.insert.updateMany(insights)
+      yield inserted
+    run(transaction)
 
   override def getScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
     run(Scala3MigrationTable.selectAll.to[Seq])
