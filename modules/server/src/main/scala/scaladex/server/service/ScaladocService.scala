@@ -1,18 +1,22 @@
 package scaladex.server.service
 
-import com.typesafe.scalalogging.LazyLogging
+import java.io.ByteArrayInputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.util.Comparator
+import java.util.zip.ZipInputStream
+
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Using
+import scala.util.control.NonFatal
+
 import scaladex.core.model.Artifact
 import scaladex.core.service.MavenCentralClient
 
-import java.io.ByteArrayInputStream
-import java.nio.file.{Files, Path, StandardCopyOption}
-import java.util.zip.ZipInputStream
-import java.util.Comparator
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.*
-import scala.util.Using
-import scala.util.control.NonFatal
+import com.typesafe.scalalogging.LazyLogging
 
 /** Serves a project's scaladoc by lazily downloading and unpacking its `-javadoc.jar` from Maven Central on first
   * request, then serving the unpacked files from disk on every subsequent request. There is deliberately no eviction:

@@ -1,18 +1,22 @@
 package scaladex.server.route
 
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.http.scaladsl.model.*
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.Route
-import scaladex.core.model.{Artifact, Env, Project, UserState}
+import scala.concurrent.ExecutionContext
+import scala.util.Success
+
+import scaladex.core.model.Artifact
+import scaladex.core.model.Env
+import scaladex.core.model.Project
+import scaladex.core.model.UserState
 import scaladex.core.service.WebDatabase
 import scaladex.server.TwirlSupport.given
 import scaladex.server.service.ScaladocService
 import scaladex.view.html
 import scaladex.view.project.html.scaladoc
 
-import scala.concurrent.ExecutionContext
-import scala.util.Success
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.Route
 
 class ArtifactPages(env: Env, database: WebDatabase, scaladocService: ScaladocService)(using ExecutionContext)
     extends LazyLogging:

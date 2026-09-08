@@ -1,23 +1,34 @@
 package scaladex.infra
 
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.{model, Http}
-import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
-import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
-import org.apache.pekko.stream.scaladsl.Flow
-import org.apache.pekko.util.ByteString
-import scaladex.core.model.{Artifact, BinaryVersion, SbtPlugin, Version}
+import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+
+import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.util.Try
+import scala.util.control.NonFatal
+
+import scaladex.core.model.Artifact
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.SbtPlugin
+import scaladex.core.model.Version
 import scaladex.core.service.MavenCentralClient
 import scaladex.core.util.JsoupUtils
 import scaladex.infra.config.HttpClientConfig
 
-import java.time.{Instant, ZonedDateTime}
-import java.time.format.DateTimeFormatter
-import scala.concurrent.{ExecutionContextExecutor, Future, Promise}
-import scala.util.Try
-import scala.util.control.NonFatal
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.util.ByteString
 
 class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
     extends CommonAkkaHttpClient(config)
