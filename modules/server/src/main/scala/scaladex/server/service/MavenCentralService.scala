@@ -12,7 +12,8 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.data.cleanup.NonStandardLib
 import scaladex.infra.DataPaths
-import scaladex.infra.Resilience
+import scaladex.infra.Resilience.tolerateHttpClientErrors
+import scaladex.infra.Resilience.tolerateHttpClientErrorsWith
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
@@ -43,10 +44,7 @@ class MavenCentralService(
           knownRefs <- loadKnownRefs(groupId)
           inserted <- findAndIndexMissingArtifacts(groupId, artifactId, knownRefs)
         yield inserted
-        indexed.recover(Resilience.tolerate { cause =>
-          logger.error(s"Failed to index ${lib.groupId}:${lib.artifactId}", cause)
-          0
-        })
+        indexed.recover(tolerateHttpClientErrors(0))
       }
     yield s"Inserted ${result.sum} missing poms"
   end findNonStandard
@@ -67,10 +65,7 @@ class MavenCentralService(
         mavenCentralClient
           .getPomFile(ref)
           .map(_.map(ref -> _))
-          .recover(Resilience.tolerate { cause =>
-            logger.error(s"Failed to fetch pom of $ref", cause)
-            None
-          })
+          .recover(tolerateHttpClientErrors(None))
       )
       publishResult <- missingPomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>
@@ -78,10 +73,7 @@ class MavenCentralService(
             _ <- delay(publishDelay)
             result <- publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
           yield result
-          published.recover(Resilience.tolerate { cause =>
-            logger.error(s"Failed to publish pom of $mavenRef", cause)
-            PublishResult.Failed(cause.getMessage)
-          })
+          published.recover(tolerateHttpClientErrors(PublishResult.Failed("unexpected error")))
       }
     yield publishResult.count {
       case PublishResult.Success => true
@@ -94,12 +86,7 @@ class MavenCentralService(
         batch <- database.getGroupIds(limit = groupIdPageSize, offset = page * groupIdPageSize)
         _ = logger.info(s"Processing group ID page $page (${batch.size} groups)")
         inserted <- batch
-          .mapSync(g =>
-            findAndIndexMissingArtifacts(g, None).recover(Resilience.tolerate { cause =>
-              logger.error(s"Failed to index group ${g.value}", cause)
-              0
-            })
-          )
+          .mapSync(g => findAndIndexMissingArtifacts(g, None).recover(tolerateHttpClientErrors(0)))
           .map(_.sum)
         total = totalInserted + inserted
         result <-
@@ -131,12 +118,7 @@ class MavenCentralService(
         )
       result <- processPages(scalaArtifactIds, artifactIdPageSize) { batch =>
         batch
-          .mapSync(id =>
-            findAndIndexMissingArtifacts(groupId, id, knownRefs).recover(Resilience.tolerate { cause =>
-              logger.error(s"Failed to index ${groupId.value}:${id.value}", cause)
-              0
-            })
-          )
+          .mapSync(id => findAndIndexMissingArtifacts(groupId, id, knownRefs).recover(tolerateHttpClientErrors(0)))
           .map(_.sum)
       }
     yield result
@@ -186,12 +168,7 @@ class MavenCentralService(
     for
       projectStatuses <- database.getAllProjectsStatuses()
       refs = projectStatuses.collect { case (ref, status) if status.isOk || status.isUnknown || status.isFailed => ref }
-      counts <- refs.mapSync(ref =>
-        republishArtifacts(ref).recover(Resilience.tolerate { cause =>
-          logger.error(s"Failed to re-publish artifacts of $ref", cause)
-          (0, 0)
-        })
-      )
+      counts <- refs.mapSync(republishArtifacts)
     yield
       val successes = counts.map(_._1).sum
       val failures = counts.map(_._2).sum
@@ -201,10 +178,8 @@ class MavenCentralService(
     for
       refs <- database.getProjectArtifactRefs(projectRef, stableOnly = false)
       publishResult <- refs.mapSync(ref =>
-        republishArtifact(projectRef, ref).recover(Resilience.tolerate { cause =>
-          logger.error(s"Failed to re-publish $ref", cause)
-          PublishResult.Failed(cause.getMessage)
-        })
+        republishArtifact(projectRef, ref)
+          .recover(tolerateHttpClientErrorsWith(t => PublishResult.Failed(t.getMessage)))
       )
     yield
       val successes = publishResult.count(_ == PublishResult.Success)

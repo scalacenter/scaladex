@@ -12,7 +12,7 @@ import scaladex.core.model.Project
 import scaladex.core.service.GithubClient
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions.*
-import scaladex.infra.Resilience
+import scaladex.infra.Resilience.tolerateHttpClientErrors
 
 import com.typesafe.scalalogging.LazyLogging
 
@@ -29,10 +29,11 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(using Execution
       logger.info(s"Updating github info of ${projectToUpdate.size} projects")
       projectToUpdate
         .mapSync { ref =>
-          update(ref).recover(Resilience.tolerate { cause =>
-            logger.error(s"Failed to update github info of $ref", cause)
-            GithubStatus.Failed(Instant.now(), errorCode = -1, errorMessage = cause.getMessage)
-          })
+          update(ref).recover(
+            tolerateHttpClientErrors(
+              GithubStatus.Failed(Instant.now(), errorCode = -1, errorMessage = "unexpected error")
+            )
+          )
         }
         .map { statuses =>
           val totalOk = statuses.count(_.isOk)
