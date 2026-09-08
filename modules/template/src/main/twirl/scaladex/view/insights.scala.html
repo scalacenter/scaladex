@@ -1,5 +1,8 @@
+@import scaladex.core.model.InsightsGranularity
+@import scaladex.core.model.Scala
 @import scaladex.core.model.ScalaVersionInsight
 @import scaladex.core.model.UserState
+@import scaladex.core.model.Version
 
 @(
     env: scaladex.core.model.Env,
@@ -11,6 +14,19 @@
 
 @share(count: Long, total: Long) = @{ if (total > 0) f"${count * 100.0 / total}%.1f%%" else "-" }
 
+@* In the "Minor" breakdown, a bare "3" means we know it's Scala 3 but don't have full_scala_version
+   to bucket it by minor - labeling it "3.x" there reads as a parent category, not a fallback. *@
+@versionLabel(insight: ScalaVersionInsight) = @{
+  if (insight.granularity == InsightsGranularity.Minor && insight.language == Scala(Version(3)))
+    "Unknown minor"
+  else insight.language.label
+}
+
+@eolVersions = @{ Set("2.10", "2.11", "2.12") }
+@versionColor(insight: ScalaVersionInsight) = @{
+  if (eolVersions.contains(insight.language.label)) "rgb(137, 146, 149)" else "rgb(242, 101, 39)"
+}
+
 @chartPanel(id: String, title: String, insights: Seq[ScalaVersionInsight]) = {
   <div class="insights-panel">
     <h3>@title</h3>
@@ -20,8 +36,9 @@
       @defining(insights.map(_.projectCount).sum) { total =>
         <div class="box insights-chart-box">
           <canvas class="insights-chart" id="@id"
-            data-labels="@insights.map(_.language.label).mkString(",")"
-            data-counts="@insights.map(_.projectCount).mkString(",")"></canvas>
+            data-labels="@insights.map(versionLabel).mkString(",")"
+            data-counts="@insights.map(_.projectCount).mkString(",")"
+            data-colors="@insights.map(versionColor).mkString(";")"></canvas>
         </div>
         <table class="table insights-table">
           <thead>
@@ -34,7 +51,7 @@
           <tbody>
             @for(insight <- insights) {
               <tr>
-                <td>@insight.language.label</td>
+                <td>@versionLabel(insight)</td>
                 <td>@insight.projectCount</td>
                 <td>@share(insight.projectCount, total)</td>
               </tr>
@@ -51,19 +68,21 @@
     <div class="container">
       <h1>Insights</h1>
       <p class="lead">
-        How many projects in Scaladex have a latest artifact built for each Scala version.
+        How many projects in Scaladex currently publish at least one artifact for each Scala version -
+        counted per artifact's own latest release, so a project can show up under more than one version
+        if some of its modules are updated more often than others.
       </p>
 
       <h2>By binary compatibility</h2>
       <p class="section-note">
         The Scala target a project can actually be relied on to cross-build for - every 3.x release
-        is one binary-compatible version.
+        is one binary-compatible version. Grayed-out versions are no longer supported.
       </p>
       @chartPanel("insights-chart-binary", "All projects", binaryCompat)
 
       <h2>Detailed breakdown</h2>
       <p class="section-note">
-        The exact minor version projects' latest releases were built with - Scala 3.x split out, since
+        The exact minor version of each currently-published artifact - Scala 3.x split out, since
         it's a single binary version above but adoption of individual minors still varies a lot.
       </p>
       <div class="insights-detail-row">

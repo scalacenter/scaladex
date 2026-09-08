@@ -12,9 +12,13 @@ object Insights:
   private def renderChart(canvas: HTMLCanvasElement): Unit =
     val labelsAttr = canvas.getAttribute("data-labels")
     val countsAttr = canvas.getAttribute("data-counts")
+    val colorsAttr = canvas.getAttribute("data-colors")
     if labelsAttr != null && labelsAttr.nonEmpty && countsAttr != null && countsAttr.nonEmpty then
       val labels = labelsAttr.split(",").toIndexedSeq
       val counts = countsAttr.split(",").map(_.toDouble).toIndexedSeq
+      val colors =
+        if colorsAttr != null && colorsAttr.nonEmpty then colorsAttr.split(";").toIndexedSeq
+        else labels.map(_ => "rgb(242, 101, 39)")
       val ctx = canvas.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
       val chartOptions = ChartOptions(
         plugins = PluginOptions(legend = LegendOptions(display = false, FontOptions(size = 10))),
@@ -27,7 +31,7 @@ object Insights:
       new Chart(
         ctx,
         Chart.Bar(
-          ChartData(labels, Seq(ChartDataset.bar(counts, "Projects", "rgb(242, 101, 39)"))),
+          ChartData(labels, Seq(ChartDataset.bar(counts, "Projects", colors))),
           chartOptions
         )
       )

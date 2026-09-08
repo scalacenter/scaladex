@@ -35,9 +35,7 @@ object ScalaVersionInsightsTable:
       Seq("language_version", "COUNT(DISTINCT (organization, repository))"),
       where = excludeJava,
       groupBy = Seq("language_version")
-    ).map {
-      case (language, count) => ScalaVersionInsight(InsightsGranularity.BinaryCompat, language, count)
-    }
+    ).map { case (language, count) => ScalaVersionInsight(InsightsGranularity.BinaryCompat, language, count) }
 
   val computeMinorVersionCounts: Query0[ScalaVersionInsight] =
     selectRequest[(String, Long)](

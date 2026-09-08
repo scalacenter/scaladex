@@ -19,9 +19,10 @@ object ChartDataset:
       .asInstanceOf[ChartDataset]
 
   // For a bar chart: plain values (not x/y points) paired positionally with ChartData's labels.
-  def bar(data: Seq[Double], label: String, backgroundColor: String): ChartDataset =
+  // backgroundColor is one color per bar (Chart.js supports an array here), same order as data.
+  def bar(data: Seq[Double], label: String, backgroundColor: Seq[String]): ChartDataset =
     js.Dynamic
-      .literal(data = data.toJSArray, label = label, backgroundColor = backgroundColor)
+      .literal(data = data.toJSArray, label = label, backgroundColor = backgroundColor.toJSArray)
       .asInstanceOf[ChartDataset]
 end ChartDataset
 @js.native

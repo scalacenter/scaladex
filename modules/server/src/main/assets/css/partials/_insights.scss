@@ -16,13 +16,15 @@
     font-size: 22px;
   }
 
-  .lead,
-  .section-note {
+  .lead {
     color: $gray-lighter;
     max-width: 640px;
   }
 
   .section-note {
+    color: $gray-lighter;
+    // No max-width, unlike .lead: this sits right above a chart that spans the
+    // full container, and wrapping to a narrow column there reads as misaligned.
     font-size: 14px;
     margin-top: -6px;
   }
