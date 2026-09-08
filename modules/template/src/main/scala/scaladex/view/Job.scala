@@ -57,7 +57,7 @@ object Job:
   val scalaVersionInsights: Job = Job(
     "scala-version-insights",
     "Compute, per Scala binary version, how many projects have a latest artifact built for it.",
-    1.hour
+    24.hours
   )
 
   case class Status(state: State, results: Seq[Result], progress: Option[Progress]):
