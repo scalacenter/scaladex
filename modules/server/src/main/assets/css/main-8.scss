@@ -12,8 +12,7 @@
 // 3. Vendors Extensions
 @import
     'vendors-extensions/bootstrap',
-    'vendors-extensions/bootstrap-select',
-    'vendors-extensions/bootstrap-switch';
+    'vendors-extensions/bootstrap-select';
 
 // 4. Base
 @import
@@ -22,7 +21,8 @@
     'base/buttons',
     'base/forms',
     'base/navigation',
-    'base/tooltips';
+    'base/tooltips',
+    'base/toggles';
 
 // 5. Partials
 @import

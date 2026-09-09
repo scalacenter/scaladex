@@ -33,7 +33,6 @@
     <meta name="msapplication-config" content="/assets/img/browserconfig.xml">
 
     <link rel="stylesheet" href="/assets/lib/font-awesome/css/all.min.css">
-    <link rel="stylesheet" href="/assets/lib/bootstrap-switch/css/bootstrap3/bootstrap-switch.css">
     <link rel="stylesheet" href="/assets/lib/bootstrap-select/css/bootstrap-select.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/css/basic/emojify.min.css" />
     <link rel="stylesheet" type="text/css" href="/assets/css/main-8.css" />
@@ -160,7 +159,6 @@
     <script src="/assets/lib/bootstrap-sass/javascripts/bootstrap.min.js"></script>
     <script src="/assets/lib/bootstrap-select/js/bootstrap-select.min.js"></script>
     <script src="/assets/lib/select2/dist/js/select2.min.js"></script>
-    <script src="/assets/lib/bootstrap-switch/js/bootstrap-switch.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/js/emojify.js"></script>
     <script src="/assets/lib/chartjs/dist/chart.umd.min.js"></script>
     <script src="/assets/lib/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -174,19 +172,15 @@
         // Init/re-init widgets on a chunk of content, so they still work
         // after an AJAX content swap (see ajaxSwap below).
         function initPageWidgets(scope) {
+          var root = scope || document;
           var $scope = $(scope || document);
           $scope.find('.selectpicker').selectpicker();
-          $scope.find('#stable-only').bootstrapSwitch({
-            handleWidth: 30,
-            labelWidth: 78,
-            labelText: 'Stable Only',
-            onColor: 'brand',
-            offColor: 'brand-off',
-            onSwitchChange: function (event, state) {
+          var stableOnly = root.querySelector('#stable-only');
+          if (stableOnly) {
+            stableOnly.addEventListener('change', function (event) {
               submitFilterFormAjax(event.target.form);
-            }
-          });
-          $scope.find('.edit-project input[type="checkbox"]').bootstrapSwitch();
+            });
+          }
           if (window.emojify) { emojify.run(); }
           if (window.ScaladexClient) { ScaladexClient.createSparkline(); }
         }

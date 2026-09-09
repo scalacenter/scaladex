@@ -1,0 +1,66 @@
+// Toggle switches -- a vanilla replacement for the bootstrap-switch
+// jQuery plugin. .switch is the bare track+thumb; .switch-filter adds
+// the boxed, button-like look for a switch that carries its own label
+// (e.g. the Stable Only filter, sized to match the .btn-secondary
+// dropdown it sits next to).
+
+.switch {
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: 34px;
+    height: 18px;
+    vertical-align: middle;
+
+    input {
+        position: absolute;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+
+    .switch-track {
+        position: absolute;
+        inset: 0;
+        background: $gray-lighter;
+        border-radius: 9px;
+        transition: background-color 0.15s;
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            transition: transform 0.15s;
+        }
+    }
+
+    input:checked + .switch-track {
+        background: $brand-secondary;
+
+        &::after {
+            transform: translateX(16px);
+        }
+    }
+}
+
+.switch-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 14px;
+    color: $gray-dark;
+    background: #fff;
+    border: 1px solid $input-border;
+    border-radius: $border-radius-base;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    user-select: none;
+}

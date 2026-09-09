@@ -59,7 +59,10 @@
                     <label for="contributorsWanted">Contributors Wanted</label>
                     <p class="help">Shows a badge on the project page inviting contributors.</p>
                   </div>
-                  <input type="checkbox" id="contributorsWanted" name="contributorsWanted" @if(project.settings.contributorsWanted){ checked }>
+                  <label class="switch">
+                    <input type="checkbox" id="contributorsWanted" name="contributorsWanted" @if(project.settings.contributorsWanted){ checked }>
+                    <span class="switch-track"></span>
+                  </label>
                 </div>
               </section>
 
@@ -91,7 +94,10 @@
                     <label for="preferStableVersion">Stable version filter</label>
                     <p class="help">If enabled, Scaladex filters pre-release versions out to compute the latest version.</p>
                   </div>
-                  <input type="checkbox" id="preferStableVersion" name="preferStableVersion" @if(project.settings.preferStableVersion){ checked }>
+                  <label class="switch">
+                    <input type="checkbox" id="preferStableVersion" name="preferStableVersion" @if(project.settings.preferStableVersion){ checked }>
+                    <span class="switch-track"></span>
+                  </label>
                 </div>
 
                 <div class="form-group">
