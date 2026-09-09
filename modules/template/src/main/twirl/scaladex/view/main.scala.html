@@ -259,6 +259,43 @@
           window.location.reload();
         });
 
+        // Dropdown toggle (the navbar user menu): vanilla replacement for
+        // Bootstrap's data-toggle="dropdown".
+        document.addEventListener('click', function (event) {
+          var toggle = event.target.closest('[data-toggle="dropdown"]');
+          var openMenu = document.querySelector('.dropdown-menu.show');
+          if (toggle) {
+            event.preventDefault();
+            var menu = toggle.nextElementSibling;
+            if (!menu || !menu.classList.contains('dropdown-menu')) { return; }
+            var isOpen = menu.classList.contains('show');
+            if (openMenu && openMenu !== menu) { openMenu.classList.remove('show'); }
+            menu.classList.toggle('show', !isOpen);
+            toggle.setAttribute('aria-expanded', String(!isOpen));
+          } else if (openMenu && !event.target.closest('.dropdown-menu')) {
+            openMenu.classList.remove('show');
+          }
+        });
+
+        // Tab switching (e.g. the sbt/Mill/Scala CLI/... install instructions):
+        // vanilla replacement for Bootstrap's data-toggle="tab".
+        document.addEventListener('click', function (event) {
+          var tabLink = event.target.closest('[data-toggle="tab"]');
+          if (!tabLink) { return; }
+          event.preventDefault();
+          var tabList = tabLink.closest('.nav-tabs');
+          var tabContent = tabList && tabList.nextElementSibling;
+          var pane = tabContent && tabContent.querySelector(tabLink.getAttribute('href'));
+          if (tabList) {
+            tabList.querySelectorAll('li').forEach(function (li) { li.classList.remove('active'); });
+            tabLink.closest('li').classList.add('active');
+          }
+          if (tabContent && pane) {
+            tabContent.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('active'); });
+            pane.classList.add('active');
+          }
+        });
+
         // Tooltips
         $(function () {
           $('[data-toggle="tooltip"]').tooltip({container: 'body'});
