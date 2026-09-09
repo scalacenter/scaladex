@@ -1,5 +1,7 @@
 import sbt._
 
+import com.github.dockerjava.api.model.Bind
+import com.github.dockerjava.api.model.Volume
 import org.testcontainers.dockerclient.DockerClientProviderStrategy
 import org.testcontainers.utility.DockerImageName
 
@@ -8,7 +10,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.io.IOException
 import org.testcontainers.elasticsearch.ElasticsearchContainer
-import org.testcontainers.containers.BindMode
 import scala.collection.mutable
 import scala.collection.concurrent.TrieMap
 import java.nio.file.Path
@@ -58,22 +59,27 @@ object Elasticsearch extends AutoPlugin {
   )
 
   private def startContainer(dataFolder: File, logger: Logger): (String, Int) = {
-    if (!dataFolder.exists) IO.createDirectory(dataFolder)
-    IO.setPermissions(dataFolder, "rwxrwxrwx")
-
     CurrentThread.setContextClassLoader[DockerClientProviderStrategy]
     val image = DockerImageName
       .parse("docker.elastic.co/elasticsearch/elasticsearch")
-      .withTag("7.17.27")
+      .withTag("8.19.15")
+    // A host bind mount doesn't work here: the image runs as the unprivileged
+    // `elasticsearch` user (uid 1000) and refuses to start as root, so it can never
+    // chown a host-owned directory itself (unlike e.g. the postgres image, which
+    // starts as root and chowns its bind-mounted data dir before dropping privileges).
+    // A named volume is created and owned by Docker with the image's baked-in
+    // permissions, so it avoids the AccessDeniedException on node.lock entirely.
+    val volumeName = s"scaladex-elasticsearch-data-${Math.abs(dataFolder.toString.hashCode)}"
     val container = new ElasticsearchContainer(image)
     container
       .withEnv("discovery.type", "single-node")
       .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
-      .withFileSystemBind(
-        dataFolder.toString,
-        "/usr/share/elasticsearch/data",
-        BindMode.READ_WRITE
-      )
+      // 8.x+ enables security (TLS + auth) by default; the app talks plain HTTP with no
+      // credentials, so this must be off for local dev/test.
+      .withEnv("xpack.security.enabled", "false")
+      .withCreateContainerCmdModifier { cmd =>
+        cmd.getHostConfig.withBinds(new Bind(volumeName, new Volume("/usr/share/elasticsearch/data")))
+      }
     // container.withLogConsumer(frame => logger.info(frame.getUtf8StringWithoutLineEnding))
     val port =
       try {
