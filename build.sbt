@@ -138,7 +138,7 @@ lazy val webclient = project
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.13.1",
-      "org.endpoints4s" %%% "fetch-client" % "4.0.1",
+      "org.endpoints4s" %%% "fetch-client" % "4.1.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test
     )
   )
@@ -172,7 +172,7 @@ lazy val server = project
       "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
       "com.github.blemale" %% "scaffeine" % V.scaffeine,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "org.endpoints4s" %% "pekko-http-server" % "2.0.1",
+      "org.endpoints4s" %% "pekko-http-server" % "2.1.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
@@ -215,7 +215,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "fastparse" % "3.1.1",
       "io.github.cquiroz" %%% "scala-java-time" % "2.7.0",
-      "org.endpoints4s" %%% "algebra" % "1.12.1",
+      "org.endpoints4s" %%% "algebra" % "1.13.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "org.jsoup" % "jsoup" % "1.23.1",
       "io.circe" %%% "circe-core" % V.circe,
