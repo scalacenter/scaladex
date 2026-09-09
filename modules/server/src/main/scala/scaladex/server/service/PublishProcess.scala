@@ -30,6 +30,7 @@ object PublishResult:
   object NoGithubRepo extends PublishResult
   object Success extends PublishResult
   case class Forbidden(login: String, repo: Project.Reference) extends PublishResult
+  case class Failed(reason: String) extends PublishResult
 
 class PublishProcess(
     filesystem: Storage,

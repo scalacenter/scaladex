@@ -12,6 +12,8 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.data.cleanup.NonStandardLib
 import scaladex.infra.DataPaths
+import scaladex.infra.Resilience.tolerateHttpClientErrors
+import scaladex.infra.Resilience.tolerateHttpClientErrorsWith
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
@@ -38,10 +40,11 @@ class MavenCentralService(
         val groupId = Artifact.GroupId(lib.groupId)
         // get should not throw: it is a fixed set of artifactIds
         val artifactId = Artifact.ArtifactId(lib.artifactId)
-        for
+        val indexed = for
           knownRefs <- loadKnownRefs(groupId)
           inserted <- findAndIndexMissingArtifacts(groupId, artifactId, knownRefs)
         yield inserted
+        indexed.recover(tolerateHttpClientErrors(0))
       }
     yield s"Inserted ${result.sum} missing poms"
   end findNonStandard
@@ -58,13 +61,19 @@ class MavenCentralService(
         if missingVersions.nonEmpty then
           logger.info(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
         else if versions.isEmpty then logger.warn(s"No versions listed for ${groupId.value}:${artifactId.value}")
-      missingPomFiles <- missingVersions.mapSync(ref => mavenCentralClient.getPomFile(ref).map(_.map(ref -> _)))
+      missingPomFiles <- missingVersions.mapSync(ref =>
+        mavenCentralClient
+          .getPomFile(ref)
+          .map(_.map(ref -> _))
+          .recover(tolerateHttpClientErrors(None))
+      )
       publishResult <- missingPomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>
-          for
+          val published = for
             _ <- delay(publishDelay)
             result <- publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
           yield result
+          published.recover(tolerateHttpClientErrors(PublishResult.Failed("unexpected error")))
       }
     yield publishResult.count {
       case PublishResult.Success => true
@@ -76,7 +85,9 @@ class MavenCentralService(
       for
         batch <- database.getGroupIds(limit = groupIdPageSize, offset = page * groupIdPageSize)
         _ = logger.info(s"Processing group ID page $page (${batch.size} groups)")
-        inserted <- batch.mapSync(g => findAndIndexMissingArtifacts(g, None)).map(_.sum)
+        inserted <- batch
+          .mapSync(g => findAndIndexMissingArtifacts(g, None).recover(tolerateHttpClientErrors(0)))
+          .map(_.sum)
         total = totalInserted + inserted
         result <-
           if batch.size == groupIdPageSize then delay(pageDelay).flatMap(_ => loop(page + 1, total))
@@ -106,7 +117,9 @@ class MavenCentralService(
           s"All artifact IDs for ${groupId.value} were filtered out: ${artifactIds.map(_.value).mkString(", ")}"
         )
       result <- processPages(scalaArtifactIds, artifactIdPageSize) { batch =>
-        batch.mapSync(id => findAndIndexMissingArtifacts(groupId, id, knownRefs)).map(_.sum)
+        batch
+          .mapSync(id => findAndIndexMissingArtifacts(groupId, id, knownRefs).recover(tolerateHttpClientErrors(0)))
+          .map(_.sum)
       }
     yield result
 
@@ -164,7 +177,10 @@ class MavenCentralService(
   private def republishArtifacts(projectRef: Project.Reference): Future[(Int, Int)] =
     for
       refs <- database.getProjectArtifactRefs(projectRef, stableOnly = false)
-      publishResult <- refs.mapSync(republishArtifact(projectRef, _))
+      publishResult <- refs.mapSync(ref =>
+        republishArtifact(projectRef, ref)
+          .recover(tolerateHttpClientErrorsWith(t => PublishResult.Failed(t.getMessage)))
+      )
     yield
       val successes = publishResult.count(_ == PublishResult.Success)
       val failures = publishResult.size - successes
