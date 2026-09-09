@@ -154,9 +154,6 @@
         <script src="/assets/webclient-fastopt.js"></script>
     }
 
-    <script src="/assets/lib/jquery/jquery.min.js"></script>
-    <script src="/assets/lib/bootstrap-sass/javascripts/bootstrap.min.js"></script>
-    <script src="/assets/lib/select2/dist/js/select2.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/js/emojify.js"></script>
     <script src="/assets/lib/chartjs/dist/chart.umd.min.js"></script>
     <script src="/assets/lib/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -461,9 +458,7 @@
           }
         });
 
-        $(function () {
-          $(".js-keywords-multiple").select2({tags: true});
-          $(".js-stackoverflowtags-multiple").select2({tags: true});
+        document.addEventListener('DOMContentLoaded', function () {
           initPageWidgets(document);
         });
 
