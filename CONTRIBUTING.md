@@ -85,7 +85,7 @@ sbt:scaladex> test
 ```
 3. To check your Github token you can run the integration tests of the `infra` module.
 ```shell
-sbt:scaladex> infra / IntegrationTest / test
+sbt:scaladex> infraIt / test
 ```
 4. Import the project in your code editor.
 
