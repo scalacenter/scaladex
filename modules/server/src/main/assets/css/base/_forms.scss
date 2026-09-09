@@ -1,8 +1,6 @@
 // Forms, panels and input groups -- a vanilla replacement for the
 // Bootstrap 3 components of the same name.
 
-$input-height-base: $line-height-computed + ($padding-base-vertical * 2) + 2;
-
 .form-control {
     display: block;
     width: 100%;

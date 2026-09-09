@@ -46,23 +46,6 @@ body {
     left: 0;
 }
 
-// Code
-//------------------------------------------------------------------------------
-code {
-    padding: 2px 4px;
-    font-size: 14px;
-    color: $code-color;
-    background-color: $code-bg;
-    border-radius: $border-radius-base;
-}
-
-pre {
-    padding: ($line-height-computed / 1.5);
-    margin: 0 0 $line-height-computed;
-    border: none;
-    font-size: ($font-size-base - 2);
-}
-
 // Tabs
 //------------------------------------------------------------------------------
 .nav-tabs {
