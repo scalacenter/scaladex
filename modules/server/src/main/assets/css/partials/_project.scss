@@ -17,6 +17,21 @@
     }
   }
 
+  // Shared by .project-nav-bar (Project/Artifacts/...) and .install
+  // (sbt/Mill/...): both sit on the same dark translucent .nav-tabs
+  // background, so both need light text instead of the site's default
+  // .nav-tabs color, which is tuned for a white background.
+  .project-nav-bar .nav-tabs > li > a,
+  .install .nav-tabs > li > a {
+    color: $gray-lighter;
+  }
+
+  .project-nav-bar .nav-tabs > li.active > a,
+  .install .nav-tabs > li.active > a {
+    color: $brand-primary;
+    cursor: pointer;
+  }
+
   @media screen and (min-width: $screen-md-min) {
     padding-bottom: 80px;
   }
@@ -244,17 +259,6 @@
   }
 
   .install {
-    // Same treatment as .project-nav-bar's tabs: only recolor the text,
-    // everything else (background, spacing) is the site's global .nav-tabs style.
-    .nav-tabs > li > a {
-      color: $gray;
-    }
-
-    .nav-tabs > li.active > a {
-      color: $brand-primary;
-      cursor: pointer;
-    }
-
     .box.tab-content {
       border-top-left-radius: 0;
     }
@@ -353,15 +357,6 @@
       margin-bottom: 20px;
       margin-top: 0px;
       font-size: 18px;
-  
-      .nav-tabs > li > a {
-        color: $gray-lighter;
-      }
-  
-      .nav-tabs > li.active > a {
-        color: $brand-primary;
-        cursor: pointer;
-      }
     }
   }
 
