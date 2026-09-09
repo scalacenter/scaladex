@@ -44,6 +44,11 @@
         display: block;
     }
 
+    &.dropdown-menu-right {
+        right: 0;
+        left: auto;
+    }
+
     .divider {
         height: 1px;
         margin: 9px 0;
@@ -92,7 +97,6 @@
             &:hover,
             &:focus {
                 text-decoration: none;
-                background-color: $gray-lighter;
             }
         }
     }

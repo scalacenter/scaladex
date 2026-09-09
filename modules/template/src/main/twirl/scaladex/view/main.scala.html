@@ -79,6 +79,7 @@
                   <a class="btn btn-default" href="/api/doc/">API Doc</a>
                   <a class="btn btn-default awesome" href="/awesome">Awesome Scala</a>
                   @user.map{ u =>
+                    <div class="dropdown user-menu">
                     <button class="btn btn-default dropdown-toggle you"
                     type="button" id="userLogging"
                     data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -86,7 +87,7 @@
                         <span style="vertical-align: middle">@u.info.login</span>
                         <span class="caret"></span>
                     </button>
-                    <ul class="dropdown-menu" aria-labelledby="userLogging">
+                    <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="userLogging">
                         <li><a href="/search?q=@params.queryString@if(!you){&you=✓}">My projects</a></li>
                         @if(u.isAdmin(env)) {
                             <li><a href="/admin">Admin</a></li>
@@ -94,6 +95,7 @@
                         <li role="separator" class="divider"></li>
                         <li><a href="/logout">Logout</a></li>
                     </ul>
+                    </div>
                   }.getOrElse {
                       <a class="btn btn-primary pull-right" href="/login">
                           <i class="fa-brands fa-github fa-lg" aria-hidden="true"></i> Login
