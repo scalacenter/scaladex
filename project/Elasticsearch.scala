@@ -62,21 +62,12 @@ object Elasticsearch extends AutoPlugin {
     CurrentThread.setContextClassLoader[DockerClientProviderStrategy]
     val image = DockerImageName
       .parse("docker.elastic.co/elasticsearch/elasticsearch")
-      .withTag("9.5.3")
-    // A host bind mount doesn't work here: the image runs as the unprivileged
-    // `elasticsearch` user (uid 1000) and refuses to start as root, so it can never
-    // chown a host-owned directory itself (unlike e.g. the postgres image, which
-    // starts as root and chowns its bind-mounted data dir before dropping privileges).
-    // A named volume is created and owned by Docker with the image's baked-in
-    // permissions, so it avoids the AccessDeniedException on node.lock entirely.
+      .withTag("8.19.15")
     val volumeName = s"scaladex-elasticsearch-data-${Math.abs(dataFolder.toString.hashCode)}"
     val container = new ElasticsearchContainer(image)
     container
       .withEnv("discovery.type", "single-node")
       .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
-      // 9.x enables security (TLS + auth) by default; the app talks plain HTTP with no
-      // credentials, so this must be off for local dev/test just like it was implicitly
-      // off on 7.x.
       .withEnv("xpack.security.enabled", "false")
       .withCreateContainerCmdModifier { cmd =>
         cmd.getHostConfig.withBinds(new Bind(volumeName, new Volume("/usr/share/elasticsearch/data")))
