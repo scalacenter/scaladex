@@ -33,7 +33,6 @@
     <meta name="msapplication-config" content="/assets/img/browserconfig.xml">
 
     <link rel="stylesheet" href="/assets/lib/font-awesome/css/all.min.css">
-    <link rel="stylesheet" href="/assets/lib/bootstrap-select/css/bootstrap-select.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/css/basic/emojify.min.css" />
     <link rel="stylesheet" type="text/css" href="/assets/css/main-8.css" />
 
@@ -157,7 +156,6 @@
 
     <script src="/assets/lib/jquery/jquery.min.js"></script>
     <script src="/assets/lib/bootstrap-sass/javascripts/bootstrap.min.js"></script>
-    <script src="/assets/lib/bootstrap-select/js/bootstrap-select.min.js"></script>
     <script src="/assets/lib/select2/dist/js/select2.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/js/emojify.js"></script>
     <script src="/assets/lib/chartjs/dist/chart.umd.min.js"></script>
@@ -169,12 +167,176 @@
     }
 
     <script>
+        // Comboboxes (single/multi-select dropdowns, optionally searchable):
+        // a vanilla replacement for the bootstrap-select plugin. The
+        // original <select> stays in the DOM (hidden via CSS) as the
+        // source of truth for value/name/form submission and for any
+        // onchange="..." attribute already on it - only the visible
+        // button + menu are built here, and they just drive that <select>.
+        function comboboxLabel(select) {
+          var title = select.getAttribute('title') || '';
+          var selected = Array.prototype.filter.call(select.options, function (o) { return o.selected; });
+          var staticFormat = select.getAttribute('data-selected-text-format') === 'static';
+          if (staticFormat) { return title; }
+          if (selected.length === 0) {
+            if (title) { return title; }
+            if (select.multiple) { return 'Select...'; }
+            return select.options[0] ? select.options[0].textContent.trim() : '';
+          }
+          if (select.multiple && selected.length > 1) {
+            return selected.length + ' selected';
+          }
+          return selected[0].textContent.trim();
+        }
+
+        function buildCombobox(select) {
+          if (select.dataset.comboboxInit) { return; }
+          select.dataset.comboboxInit = 'true';
+
+          var style = select.getAttribute('data-style') || 'btn-default';
+          var liveSearch = select.getAttribute('data-live-search') === 'true';
+          var actionsBox = select.getAttribute('data-actions-box') === 'true';
+          var maxOptions = parseInt(select.getAttribute('data-max-options'), 10) || 0;
+          var optionItems = [];
+
+          var wrapper = document.createElement('div');
+          wrapper.className = 'dropdown combobox';
+
+          var toggle = document.createElement('button');
+          toggle.type = 'button';
+          toggle.className = 'btn ' + style + ' dropdown-toggle';
+          toggle.setAttribute('data-toggle', 'dropdown');
+          toggle.setAttribute('aria-haspopup', 'true');
+          toggle.setAttribute('aria-expanded', 'false');
+
+          var labelSpan = document.createElement('span');
+          labelSpan.className = 'combobox-label';
+          var caret = document.createElement('span');
+          caret.className = 'caret';
+          toggle.appendChild(labelSpan);
+          toggle.appendChild(caret);
+
+          var menu = document.createElement('div');
+          menu.className = 'dropdown-menu combobox-menu';
+
+          function syncFromSelect() {
+            labelSpan.textContent = comboboxLabel(select);
+            optionItems.forEach(function (item) {
+              item.li.classList.toggle('selected', item.option.selected);
+            });
+          }
+
+          var groupItems = [];
+
+          if (liveSearch) {
+            var searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'combobox-search';
+            searchInput.placeholder = 'Search...';
+            searchInput.addEventListener('input', function () {
+              var q = searchInput.value.trim().toLowerCase();
+              optionItems.forEach(function (item) {
+                item.li.hidden = item.option.textContent.toLowerCase().indexOf(q) === -1;
+              });
+              groupItems.forEach(function (group) {
+                group.label.hidden = group.items.every(function (item) { return item.li.hidden; });
+              });
+            });
+            menu.appendChild(searchInput);
+          }
+
+          if (actionsBox) {
+            var actions = document.createElement('div');
+            actions.className = 'combobox-actions';
+            var selectAllBtn = document.createElement('button');
+            selectAllBtn.type = 'button';
+            selectAllBtn.textContent = 'Select All';
+            var deselectAllBtn = document.createElement('button');
+            deselectAllBtn.type = 'button';
+            deselectAllBtn.textContent = 'Deselect All';
+            actions.appendChild(selectAllBtn);
+            actions.appendChild(deselectAllBtn);
+            menu.appendChild(actions);
+
+            selectAllBtn.addEventListener('click', function () {
+              Array.prototype.forEach.call(select.options, function (o) { o.selected = true; });
+              syncFromSelect();
+              select.dispatchEvent(new Event('change', {bubbles: true}));
+            });
+            deselectAllBtn.addEventListener('click', function () {
+              Array.prototype.forEach.call(select.options, function (o) { o.selected = false; });
+              syncFromSelect();
+              select.dispatchEvent(new Event('change', {bubbles: true}));
+            });
+          }
+
+          var list = document.createElement('ul');
+          list.className = 'combobox-options';
+          menu.appendChild(list);
+
+          function renderOption(opt) {
+            var li = document.createElement('li');
+            li.className = 'combobox-option';
+            if (select.multiple) {
+              var check = document.createElement('span');
+              check.className = 'combobox-option-check';
+              li.appendChild(check);
+            }
+            li.appendChild(document.createTextNode(opt.textContent.trim()));
+            if (opt.selected) { li.classList.add('selected'); }
+            list.appendChild(li);
+            optionItems.push({li: li, option: opt});
+
+            li.addEventListener('click', function () {
+              if (select.multiple) {
+                var willSelect = !opt.selected;
+                if (willSelect && maxOptions > 0) {
+                  var selectedNow = Array.prototype.filter.call(select.options, function (o) { return o.selected; });
+                  if (selectedNow.length >= maxOptions) { selectedNow[0].selected = false; }
+                }
+                opt.selected = willSelect;
+                syncFromSelect();
+                select.dispatchEvent(new Event('change', {bubbles: true}));
+              } else {
+                Array.prototype.forEach.call(select.options, function (o) { o.selected = (o === opt); });
+                syncFromSelect();
+                select.dispatchEvent(new Event('change', {bubbles: true}));
+                menu.classList.remove('show');
+                toggle.setAttribute('aria-expanded', 'false');
+              }
+            });
+          }
+
+          Array.prototype.forEach.call(select.children, function (child) {
+            if (child.tagName === 'OPTGROUP') {
+              var groupLabel = document.createElement('li');
+              groupLabel.className = 'combobox-optgroup-label';
+              groupLabel.textContent = child.label;
+              list.appendChild(groupLabel);
+              var beforeCount = optionItems.length;
+              Array.prototype.forEach.call(child.children, renderOption);
+              groupItems.push({label: groupLabel, items: optionItems.slice(beforeCount)});
+            } else if (child.tagName === 'OPTION') {
+              renderOption(child);
+            }
+          });
+
+          wrapper.appendChild(toggle);
+          wrapper.appendChild(menu);
+          select.insertAdjacentElement('afterend', wrapper);
+          syncFromSelect();
+        }
+
+        function initComboboxes(scope) {
+          var root = scope || document;
+          root.querySelectorAll('.selectpicker').forEach(buildCombobox);
+        }
+
         // Init/re-init widgets on a chunk of content, so they still work
         // after an AJAX content swap (see ajaxSwap below).
         function initPageWidgets(scope) {
           var root = scope || document;
-          var $scope = $(scope || document);
-          $scope.find('.selectpicker').selectpicker();
+          initComboboxes(root);
           var stableOnly = root.querySelector('#stable-only');
           if (stableOnly) {
             stableOnly.addEventListener('change', function (event) {
@@ -267,6 +429,14 @@
             if (openMenu && openMenu !== menu) { openMenu.classList.remove('show'); }
             menu.classList.toggle('show', !isOpen);
             toggle.setAttribute('aria-expanded', String(!isOpen));
+            if (!isOpen) {
+              menu.classList.remove('dropdown-menu-right');
+              if (menu.getBoundingClientRect().right > window.innerWidth) {
+                menu.classList.add('dropdown-menu-right');
+              }
+              var search = menu.querySelector('.combobox-search');
+              if (search) { search.value = ''; search.dispatchEvent(new Event('input')); search.focus(); }
+            }
           } else if (openMenu && !event.target.closest('.dropdown-menu')) {
             openMenu.classList.remove('show');
           }

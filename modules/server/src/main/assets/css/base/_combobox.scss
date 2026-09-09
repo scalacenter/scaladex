@@ -1,0 +1,124 @@
+// Combobox -- a vanilla replacement for the bootstrap-select plugin.
+// The original <select> stays in the DOM (hidden) as the source of
+// truth for value/name/form submission; the visible button + menu are
+// built by JS in main.scala.html and only drive that <select>.
+
+.selectpicker {
+    display: none;
+}
+
+.combobox {
+    display: inline-block;
+
+    .dropdown-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 120px;
+        font-family: $font-family-sans-serif;
+        font-weight: 400;
+        text-align: left;
+    }
+
+    .combobox-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.combobox-menu {
+    min-width: 220px;
+    max-width: 320px;
+    padding: 8px 0;
+}
+
+.combobox-search {
+    display: block;
+    width: calc(100% - 20px);
+    margin: 0 10px 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid $input-border;
+    border-radius: $border-radius-base;
+
+    &:focus {
+        outline: none;
+        border-color: $input-border-focus;
+    }
+}
+
+.combobox-actions {
+    display: flex;
+    gap: 8px;
+    margin: 0 10px 8px;
+
+    button {
+        flex: 1;
+        padding: 4px 8px;
+        font-size: 12px;
+        color: $brand-secondary;
+        background: none;
+        border: 1px solid $input-border;
+        border-radius: $border-radius-base;
+        cursor: pointer;
+
+        &:hover {
+            background: $gray-lighter;
+        }
+    }
+}
+
+.combobox-options {
+    max-height: 260px;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.combobox-optgroup-label {
+    padding: 6px 20px 2px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: $gray-light;
+}
+
+.combobox-option {
+    padding: 6px 20px;
+    font-size: 14px;
+    color: $gray-dark;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover {
+        background: $gray-lighter;
+    }
+
+    &[hidden] {
+        display: none;
+    }
+
+    &.selected {
+        font-weight: 700;
+        color: $brand-primary;
+    }
+}
+
+.combobox-option-check {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
+    vertical-align: middle;
+    border: 1px solid $input-border;
+    border-radius: 3px;
+}
+
+.combobox-option.selected .combobox-option-check {
+    background: $brand-secondary;
+    border-color: $brand-secondary;
+}

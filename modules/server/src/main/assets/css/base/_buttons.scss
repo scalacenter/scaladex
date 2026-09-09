@@ -89,6 +89,22 @@ a.btn.disabled {
 .btn-primary {
     @include btn-variant(#fff, $brand-primary, darken($brand-primary, 5%));
 }
+// bootstrap-sass has no built-in "secondary" button variant, so a combobox
+// styled data-style="btn-secondary" would otherwise get no background/
+// border (just the browser's native button default) - give it the same
+// white/bordered look as .btn-default.
+.btn-secondary {
+    background-color: #fff;
+    border-color: $input-border;
+    color: $headings-color;
+
+    &:hover,
+    &:focus,
+    &.focus {
+        background-color: #fff;
+        border-color: $input-border;
+    }
+}
 .btn-success {
     @include btn-variant(#fff, $brand-success, darken($brand-success, 5%));
 }

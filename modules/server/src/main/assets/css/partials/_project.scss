@@ -201,14 +201,16 @@
       }
 
       .form-control,
-      .selectpicker + .dropdown-toggle,
-      .bootstrap-select {
+      .combobox {
         max-width: 480px;
       }
 
-      .selectpicker + .dropdown-toggle,
-      .bootstrap-select {
-        width: 100% !important;
+      .combobox {
+        width: 100%;
+
+        .dropdown-toggle {
+          width: 100%;
+        }
       }
     }
 
@@ -288,14 +290,6 @@
     color: #fff;
     .head-last-version {
       color: $gray-lighter;
-    }
-    .bootstrap-select > {
-      .dropdown-toggle {
-        width: auto;
-        min-width: 140px;
-        padding-right: 25px;
-        z-index: 1;
-      }
     }
     .info-project {
       margin-bottom: 40px;
@@ -473,7 +467,7 @@
       margin-top: 0;
       margin-bottom: 24px;
       color: $brand-secondary;
-      .bootstrap-select {
+      .combobox {
         margin-left: 7px;
         width: 150px;
       }
@@ -483,7 +477,7 @@
       .btn-default {
         color: $gray-light;
       }
-      .filter-option {
+      .combobox-label {
         padding-right: 4px;
       }
       .caret {
