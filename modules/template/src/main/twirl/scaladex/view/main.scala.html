@@ -171,9 +171,9 @@
         // onchange="..." attribute already on it - only the visible
         // button + menu are built here, and they just drive that <select>.
         function comboboxLabel(select) {
-          var title = select.getAttribute('title') || '';
-          var selected = Array.prototype.filter.call(select.options, function (o) { return o.selected; });
-          var staticFormat = select.getAttribute('data-selected-text-format') === 'static';
+          const title = select.getAttribute('title') || '';
+          const selected = Array.from(select.options).filter((o) => o.selected);
+          const staticFormat = select.getAttribute('data-selected-text-format') === 'static';
           if (staticFormat) { return title; }
           if (selected.length === 0) {
             if (title) { return title; }
@@ -190,92 +190,95 @@
           if (select.dataset.comboboxInit) { return; }
           select.dataset.comboboxInit = 'true';
 
-          var style = select.getAttribute('data-style') || 'btn-default';
-          var liveSearch = select.getAttribute('data-live-search') === 'true';
-          var actionsBox = select.getAttribute('data-actions-box') === 'true';
-          var maxOptions = parseInt(select.getAttribute('data-max-options'), 10) || 0;
-          var optionItems = [];
+          const style = select.getAttribute('data-style') || 'btn-default';
+          const liveSearch = select.getAttribute('data-live-search') === 'true';
+          const actionsBox = select.getAttribute('data-actions-box') === 'true';
+          const maxOptions = parseInt(select.getAttribute('data-max-options'), 10) || 0;
+          const optionItems = [];
 
-          var wrapper = document.createElement('div');
+          const wrapper = document.createElement('div');
           wrapper.className = 'dropdown combobox';
 
-          var toggle = document.createElement('button');
+          const toggle = document.createElement('button');
           toggle.type = 'button';
           toggle.className = 'btn ' + style + ' dropdown-toggle';
           toggle.setAttribute('data-toggle', 'dropdown');
           toggle.setAttribute('aria-haspopup', 'true');
           toggle.setAttribute('aria-expanded', 'false');
 
-          var labelSpan = document.createElement('span');
+          const labelSpan = document.createElement('span');
           labelSpan.className = 'combobox-label';
-          var caret = document.createElement('span');
+          const caret = document.createElement('span');
           caret.className = 'caret';
           toggle.appendChild(labelSpan);
           toggle.appendChild(caret);
 
-          var menu = document.createElement('div');
+          const menu = document.createElement('div');
           menu.className = 'dropdown-menu combobox-menu';
 
           function syncFromSelect() {
             labelSpan.textContent = comboboxLabel(select);
-            optionItems.forEach(function (item) {
+            optionItems.forEach((item) => {
               item.li.classList.toggle('selected', item.option.selected);
             });
           }
 
-          var groupItems = [];
+          function applyChange() {
+            syncFromSelect();
+            select.dispatchEvent(new Event('change', {bubbles: true}));
+          }
+
+          const groupItems = [];
 
           if (liveSearch) {
-            var searchInput = document.createElement('input');
+            const searchInput = document.createElement('input');
             searchInput.type = 'text';
             searchInput.className = 'combobox-search';
             searchInput.placeholder = 'Search...';
-            searchInput.addEventListener('input', function () {
-              var q = searchInput.value.trim().toLowerCase();
-              optionItems.forEach(function (item) {
-                item.li.hidden = item.option.textContent.toLowerCase().indexOf(q) === -1;
+            searchInput.addEventListener('input', () => {
+              const q = searchInput.value.trim().toLowerCase();
+              optionItems.forEach((item) => {
+                item.li.hidden = !item.option.textContent.toLowerCase().includes(q);
               });
-              groupItems.forEach(function (group) {
-                group.label.hidden = group.items.every(function (item) { return item.li.hidden; });
+              groupItems.forEach((group) => {
+                group.label.hidden = group.items.every((item) => item.li.hidden);
               });
             });
             menu.appendChild(searchInput);
           }
 
           if (actionsBox) {
-            var actions = document.createElement('div');
+            const actions = document.createElement('div');
             actions.className = 'combobox-actions';
-            var selectAllBtn = document.createElement('button');
+            const selectAllBtn = document.createElement('button');
             selectAllBtn.type = 'button';
             selectAllBtn.textContent = 'Select All';
-            var deselectAllBtn = document.createElement('button');
+            const deselectAllBtn = document.createElement('button');
             deselectAllBtn.type = 'button';
             deselectAllBtn.textContent = 'Deselect All';
             actions.appendChild(selectAllBtn);
             actions.appendChild(deselectAllBtn);
             menu.appendChild(actions);
 
-            selectAllBtn.addEventListener('click', function () {
-              Array.prototype.forEach.call(select.options, function (o) { o.selected = true; });
-              syncFromSelect();
-              select.dispatchEvent(new Event('change', {bubbles: true}));
+            selectAllBtn.addEventListener('click', () => {
+              for (const o of select.options) { o.selected = true; }
+              applyChange();
             });
-            deselectAllBtn.addEventListener('click', function () {
-              Array.prototype.forEach.call(select.options, function (o) { o.selected = false; });
-              syncFromSelect();
-              select.dispatchEvent(new Event('change', {bubbles: true}));
+            deselectAllBtn.addEventListener('click', () => {
+              for (const o of select.options) { o.selected = false; }
+              applyChange();
             });
           }
 
-          var list = document.createElement('ul');
+          const list = document.createElement('ul');
           list.className = 'combobox-options';
           menu.appendChild(list);
 
           function renderOption(opt) {
-            var li = document.createElement('li');
+            const li = document.createElement('li');
             li.className = 'combobox-option';
             if (select.multiple) {
-              var check = document.createElement('span');
+              const check = document.createElement('span');
               check.className = 'combobox-option-check';
               li.appendChild(check);
             }
@@ -284,34 +287,32 @@
             list.appendChild(li);
             optionItems.push({li: li, option: opt});
 
-            li.addEventListener('click', function () {
+            li.addEventListener('click', () => {
               if (select.multiple) {
-                var willSelect = !opt.selected;
+                const willSelect = !opt.selected;
                 if (willSelect && maxOptions > 0) {
-                  var selectedNow = Array.prototype.filter.call(select.options, function (o) { return o.selected; });
+                  const selectedNow = Array.from(select.options).filter((o) => o.selected);
                   if (selectedNow.length >= maxOptions) { selectedNow[0].selected = false; }
                 }
                 opt.selected = willSelect;
-                syncFromSelect();
-                select.dispatchEvent(new Event('change', {bubbles: true}));
+                applyChange();
               } else {
-                Array.prototype.forEach.call(select.options, function (o) { o.selected = (o === opt); });
-                syncFromSelect();
-                select.dispatchEvent(new Event('change', {bubbles: true}));
+                for (const o of select.options) { o.selected = (o === opt); }
+                applyChange();
                 menu.classList.remove('show');
                 toggle.setAttribute('aria-expanded', 'false');
               }
             });
           }
 
-          Array.prototype.forEach.call(select.children, function (child) {
+          Array.from(select.children).forEach((child) => {
             if (child.tagName === 'OPTGROUP') {
-              var groupLabel = document.createElement('li');
+              const groupLabel = document.createElement('li');
               groupLabel.className = 'combobox-optgroup-label';
               groupLabel.textContent = child.label;
               list.appendChild(groupLabel);
-              var beforeCount = optionItems.length;
-              Array.prototype.forEach.call(child.children, renderOption);
+              const beforeCount = optionItems.length;
+              Array.from(child.children).forEach(renderOption);
               groupItems.push({label: groupLabel, items: optionItems.slice(beforeCount)});
             } else if (child.tagName === 'OPTION') {
               renderOption(child);
@@ -325,18 +326,18 @@
         }
 
         function initComboboxes(scope) {
-          var root = scope || document;
+          const root = scope || document;
           root.querySelectorAll('.selectpicker').forEach(buildCombobox);
         }
 
         // Init/re-init widgets on a chunk of content, so they still work
         // after an AJAX content swap (see ajaxSwap below).
         function initPageWidgets(scope) {
-          var root = scope || document;
+          const root = scope || document;
           initComboboxes(root);
-          var stableOnly = root.querySelector('#stable-only');
+          const stableOnly = root.querySelector('#stable-only');
           if (stableOnly) {
-            stableOnly.addEventListener('change', function (event) {
+            stableOnly.addEventListener('change', (event) => {
               submitFilterFormAjax(event.target.form);
             });
           }
@@ -350,11 +351,11 @@
         // target URL and swap in just the relevant content card.
         function ajaxSwap(targetUrl, contentSelector) {
           fetch(targetUrl)
-            .then(function (res) { return res.text(); })
-            .then(function (html) {
-              var doc = new DOMParser().parseFromString(html, 'text/html');
-              var newContent = doc.querySelector(contentSelector);
-              var oldContent = document.querySelector(contentSelector);
+            .then((res) => res.text())
+            .then((html) => {
+              const doc = new DOMParser().parseFromString(html, 'text/html');
+              const newContent = doc.querySelector(contentSelector);
+              const oldContent = document.querySelector(contentSelector);
               if (newContent && oldContent) {
                 oldContent.replaceWith(newContent);
                 history.pushState({}, '', targetUrl);
@@ -364,21 +365,21 @@
                 window.location = targetUrl;
               }
             })
-            .catch(function () {
+            .catch(() => {
               window.location = targetUrl;
             });
         }
 
         function submitFilterFormAjax(form, contentSelector) {
-          var params = new URLSearchParams(new FormData(form));
-          var targetUrl = window.location.pathname + '?' + params.toString();
+          const params = new URLSearchParams(new FormData(form));
+          const targetUrl = window.location.pathname + '?' + params.toString();
           ajaxSwap(targetUrl, contentSelector || '.content-project.box');
         }
 
         // Project tabs (Project / Artifacts / Versions / Badges / Settings)
         // and the search results' "Sorting" tabs.
-        document.addEventListener('click', function (event) {
-          var tabLink = event.target.closest('.project-nav-bar a');
+        document.addEventListener('click', (event) => {
+          const tabLink = event.target.closest('.project-nav-bar a');
           if (tabLink && tabLink.href) {
             event.preventDefault();
             ajaxSwap(tabLink.href, '#container-project');
@@ -388,8 +389,8 @@
         // Topic tags on result cards: plain elements (not <a>) since each
         // card is itself one big <a> - a nested <a> would be invalid HTML,
         // and browsers "fix" that by force-closing the outer link early.
-        document.addEventListener('click', function (event) {
-          var tag = event.target.closest('.item-filter-tag[data-topic-href]');
+        document.addEventListener('click', (event) => {
+          const tag = event.target.closest('.item-filter-tag[data-topic-href]');
           if (tag) {
             event.preventDefault();
             event.stopPropagation();
@@ -399,30 +400,30 @@
 
         // The "Sorting" control is a button-group form (each button is a
         // submit button carrying name="sort"), not plain links.
-        document.addEventListener('submit', function (event) {
-          var form = event.target;
+        document.addEventListener('submit', (event) => {
+          const form = event.target;
           if (form.closest && form.closest('.order-by')) {
             event.preventDefault();
-            var params = new URLSearchParams(new FormData(form, event.submitter));
-            var targetUrl = window.location.pathname + '?' + params.toString();
+            const params = new URLSearchParams(new FormData(form, event.submitter));
+            const targetUrl = window.location.pathname + '?' + params.toString();
             ajaxSwap(targetUrl, '#container-search');
           }
         });
 
-        window.addEventListener('popstate', function () {
+        window.addEventListener('popstate', () => {
           window.location.reload();
         });
 
         // Dropdown toggle (the navbar user menu): vanilla replacement for
         // Bootstrap's data-toggle="dropdown".
-        document.addEventListener('click', function (event) {
-          var toggle = event.target.closest('[data-toggle="dropdown"]');
-          var openMenu = document.querySelector('.dropdown-menu.show');
+        document.addEventListener('click', (event) => {
+          const toggle = event.target.closest('[data-toggle="dropdown"]');
+          const openMenu = document.querySelector('.dropdown-menu.show');
           if (toggle) {
             event.preventDefault();
-            var menu = toggle.nextElementSibling;
+            const menu = toggle.nextElementSibling;
             if (!menu || !menu.classList.contains('dropdown-menu')) { return; }
-            var isOpen = menu.classList.contains('show');
+            const isOpen = menu.classList.contains('show');
             if (openMenu && openMenu !== menu) { openMenu.classList.remove('show'); }
             menu.classList.toggle('show', !isOpen);
             toggle.setAttribute('aria-expanded', String(!isOpen));
@@ -431,7 +432,7 @@
               if (menu.getBoundingClientRect().right > window.innerWidth) {
                 menu.classList.add('dropdown-menu-right');
               }
-              var search = menu.querySelector('.combobox-search');
+              const search = menu.querySelector('.combobox-search');
               if (search) { search.value = ''; search.dispatchEvent(new Event('input')); search.focus(); }
             }
           } else if (openMenu && !event.target.closest('.dropdown-menu')) {
@@ -441,24 +442,24 @@
 
         // Tab switching (e.g. the sbt/Mill/Scala CLI/... install instructions):
         // vanilla replacement for Bootstrap's data-toggle="tab".
-        document.addEventListener('click', function (event) {
-          var tabLink = event.target.closest('[data-toggle="tab"]');
+        document.addEventListener('click', (event) => {
+          const tabLink = event.target.closest('[data-toggle="tab"]');
           if (!tabLink) { return; }
           event.preventDefault();
-          var tabList = tabLink.closest('.nav-tabs');
-          var tabContent = tabList && tabList.nextElementSibling;
-          var pane = tabContent && tabContent.querySelector(tabLink.getAttribute('href'));
+          const tabList = tabLink.closest('.nav-tabs');
+          const tabContent = tabList && tabList.nextElementSibling;
+          const pane = tabContent && tabContent.querySelector(tabLink.getAttribute('href'));
           if (tabList) {
-            tabList.querySelectorAll('li').forEach(function (li) { li.classList.remove('active'); });
+            tabList.querySelectorAll('li').forEach((li) => { li.classList.remove('active'); });
             tabLink.closest('li').classList.add('active');
           }
           if (tabContent && pane) {
-            tabContent.querySelectorAll('.tab-pane').forEach(function (p) { p.classList.remove('active'); });
+            tabContent.querySelectorAll('.tab-pane').forEach((p) => { p.classList.remove('active'); });
             pane.classList.add('active');
           }
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', () => {
           initPageWidgets(document);
         });
 
@@ -468,8 +469,8 @@
         // display so that, whatever their heights turn out to be, we can
         // drop the ones that don't help balance the columns instead of
         // stretching a card to force them to line up.
-        var MASONRY_DISPLAY_COUNT = 12;
-        var masonryRows = [];
+        const MASONRY_DISPLAY_COUNT = 12;
+        const masonryRows = [];
 
         function columnCountFor(width) {
           if (width <= 480) { return 1; }
@@ -478,26 +479,26 @@
         }
 
         function layoutMasonryRow(entry) {
-          var row = entry.row;
-          var items = entry.items;
-          row.querySelectorAll('.masonry-col').forEach(function (col) { col.remove(); });
-          items.forEach(function (item) { item.remove(); });
+          const row = entry.row;
+          const items = entry.items;
+          row.querySelectorAll('.masonry-col').forEach((col) => { col.remove(); });
+          items.forEach((item) => { item.remove(); });
 
-          var columnCount = columnCountFor(row.getBoundingClientRect().width || window.innerWidth);
+          const columnCount = columnCountFor(row.getBoundingClientRect().width || window.innerWidth);
           if (columnCount <= 1) {
             row.classList.remove('masonry-row');
-            items.slice(0, MASONRY_DISPLAY_COUNT).forEach(function (item) { row.appendChild(item); });
+            items.slice(0, MASONRY_DISPLAY_COUNT).forEach((item) => { row.appendChild(item); });
             return;
           }
 
-          var gapPx = 20;
-          var rowWidth = row.getBoundingClientRect().width;
-          var colWidth = (rowWidth - gapPx * (columnCount - 1)) / columnCount;
+          const gapPx = 20;
+          const rowWidth = row.getBoundingClientRect().width;
+          const colWidth = (rowWidth - gapPx * (columnCount - 1)) / columnCount;
 
-          var cols = [];
-          var heights = [];
-          for (var i = 0; i < columnCount; i++) {
-            var col = document.createElement('div');
+          const cols = [];
+          const heights = [];
+          for (let i = 0; i < columnCount; i++) {
+            const col = document.createElement('div');
             col.className = 'masonry-col';
             // Set explicit pixel widths instead of relying on flex-grow: a
             // flex-basis distribution alongside `gap` was leaving unexplained
@@ -511,10 +512,10 @@
           }
           row.classList.add('masonry-row');
 
-          var placed = 0;
-          for (var idx = 0; idx < items.length && placed < MASONRY_DISPLAY_COUNT; idx++) {
-            var shortest = 0;
-            for (var c = 1; c < columnCount; c++) {
+          let placed = 0;
+          for (let idx = 0; idx < items.length && placed < MASONRY_DISPLAY_COUNT; idx++) {
+            let shortest = 0;
+            for (let c = 1; c < columnCount; c++) {
               if (heights[c] < heights[shortest]) { shortest = c; }
             }
             cols[shortest].appendChild(items[idx]);
@@ -534,12 +535,12 @@
           masonryRows.forEach(layoutMasonryRow);
         }
 
-        document.querySelectorAll('.recent-projects .row').forEach(function (row) {
-          masonryRows.push({ row: row, items: Array.prototype.slice.call(row.children) });
+        document.querySelectorAll('.recent-projects .row').forEach((row) => {
+          masonryRows.push({ row: row, items: Array.from(row.children) });
         });
         window.addEventListener('load', layoutAllMasonryRows);
-        var masonryResizeTimer;
-        window.addEventListener('resize', function () {
+        let masonryResizeTimer;
+        window.addEventListener('resize', () => {
           clearTimeout(masonryResizeTimer);
           masonryResizeTimer = setTimeout(layoutAllMasonryRows, 150);
         });
