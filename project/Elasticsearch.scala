@@ -1,5 +1,7 @@
 import sbt._
 
+import com.github.dockerjava.api.model.Bind
+import com.github.dockerjava.api.model.Volume
 import org.testcontainers.dockerclient.DockerClientProviderStrategy
 import org.testcontainers.utility.DockerImageName
 
@@ -8,7 +10,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.io.IOException
 import org.testcontainers.elasticsearch.ElasticsearchContainer
-import org.testcontainers.containers.BindMode
 import scala.collection.mutable
 import scala.collection.concurrent.TrieMap
 import java.nio.file.Path
@@ -58,22 +59,19 @@ object Elasticsearch extends AutoPlugin {
   )
 
   private def startContainer(dataFolder: File, logger: Logger): (String, Int) = {
-    if (!dataFolder.exists) IO.createDirectory(dataFolder)
-    IO.setPermissions(dataFolder, "rwxrwxrwx")
-
     CurrentThread.setContextClassLoader[DockerClientProviderStrategy]
     val image = DockerImageName
       .parse("docker.elastic.co/elasticsearch/elasticsearch")
-      .withTag("7.17.27")
+      .withTag("8.19.15")
+    val volumeName = s"scaladex-elasticsearch-data-${Math.abs(dataFolder.toString.hashCode)}"
     val container = new ElasticsearchContainer(image)
     container
       .withEnv("discovery.type", "single-node")
       .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
-      .withFileSystemBind(
-        dataFolder.toString,
-        "/usr/share/elasticsearch/data",
-        BindMode.READ_WRITE
-      )
+      .withEnv("xpack.security.enabled", "false")
+      .withCreateContainerCmdModifier { cmd =>
+        cmd.getHostConfig.withBinds(new Bind(volumeName, new Volume("/usr/share/elasticsearch/data")))
+      }
     // container.withLogConsumer(frame => logger.info(frame.getUtf8StringWithoutLineEnding))
     val port =
       try {
