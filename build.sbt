@@ -186,6 +186,7 @@ lazy val server = project
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     Compile / resourceGenerators += (Assets / WebKeys.assets).map(Seq(_)),
+    Compile / unmanagedResources := (Compile / unmanagedResources).dependsOn(Assets / WebKeys.assets).value,
     Compile / watchSources += Watched.WatchSource((Assets / sourceDirectory).value),
     fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
