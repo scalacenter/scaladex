@@ -1,0 +1,219 @@
+// Buttons, button groups, labels and badges -- a vanilla replacement for the
+// Bootstrap 3 components of the same name, keeping this app's existing colors.
+
+$btn-border-radius: 4px;
+
+.btn {
+    display: inline-block;
+    margin-bottom: 0;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    background-image: none;
+    border: 1px solid transparent;
+    user-select: none;
+    padding: ($padding-base-vertical + 1) ($padding-base-horizontal + 8);
+    font-size: $font-size-base;
+    line-height: $line-height-base;
+    border-radius: $btn-border-radius;
+    transition: background-color $base-duration $base-timing, border-color $base-duration $base-timing, color $base-duration $base-timing;
+
+    &:hover,
+    &:focus,
+    &.focus {
+        text-decoration: none;
+    }
+
+    &:active,
+    &.active {
+        outline: 0;
+        background-image: none;
+        box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    }
+
+    &.disabled,
+    &[disabled] {
+        cursor: not-allowed;
+        opacity: 0.65;
+        box-shadow: none;
+    }
+}
+
+a.btn.disabled {
+    pointer-events: none;
+}
+
+@mixin btn-variant($color, $background, $border) {
+    color: $color;
+    background-color: $background;
+    border-color: $border;
+
+    &:hover,
+    &:focus,
+    &.focus {
+        color: $color;
+        background-color: darken($background, 10%);
+        border-color: darken($border, 12%);
+    }
+
+    &:active,
+    &.active {
+        color: $color;
+        background-color: darken($background, 17%);
+        border-color: darken($border, 25%);
+    }
+
+    &.disabled,
+    &[disabled] {
+        &:hover,
+        &:focus,
+        &.focus {
+            background-color: $background;
+            border-color: $border;
+        }
+    }
+}
+
+.btn-default {
+    @include btn-variant($btn-default-color, $btn-default-bg, $btn-default-border);
+
+    &:hover,
+    &:focus {
+        background-color: darken($gray-lighter, 8%);
+        border-color: darken($gray-lighter, 8%);
+        color: $gray-darker;
+    }
+}
+.btn-primary {
+    @include btn-variant(#fff, $brand-primary, darken($brand-primary, 5%));
+}
+.btn-success {
+    @include btn-variant(#fff, $brand-success, darken($brand-success, 5%));
+}
+.btn-danger {
+    @include btn-variant(#fff, $brand-danger, darken($brand-danger, 5%));
+}
+
+.btn-link {
+    font-weight: 400;
+    color: $brand-primary;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+    border-color: transparent;
+
+    &:hover,
+    &:focus {
+        color: darken($brand-primary, 15%);
+        text-decoration: underline;
+        background-color: transparent;
+    }
+}
+
+.btn-xs {
+    padding: $padding-xs-vertical $padding-xs-horizontal;
+    font-size: $font-size-small;
+    line-height: $line-height-small;
+    border-radius: $border-radius-small;
+    margin-left: $padding-xs-horizontal;
+
+    &:first-child {
+        margin-left: 0;
+    }
+}
+
+// Button group -- collapses adjacent buttons' shared border into one line.
+.btn-group {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+
+    > .btn {
+        position: relative;
+        float: left;
+
+        &:hover,
+        &:focus,
+        &:active,
+        &.active {
+            z-index: 2;
+        }
+    }
+
+    .btn + .btn {
+        margin-left: -1px;
+    }
+
+    > .btn:not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+    > .btn:first-child:not(:last-child) {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+    > .btn:last-child:not(:first-child) {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+}
+
+// Labels -- small pill-shaped tags (topics, dependency scopes).
+.label {
+    display: inline;
+    padding: 0.2em 0.6em 0.3em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25em;
+
+    &:empty {
+        display: none;
+    }
+}
+
+a.label:hover,
+a.label:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.label-default {
+    background-color: $gray-light;
+}
+.label-warning {
+    background-color: $brand-warning;
+}
+
+// Badges -- small rounded-pill count/inline indicators.
+.badge {
+    display: inline-block;
+    min-width: 10px;
+    padding: 3px 7px;
+    font-size: $font-size-small;
+    font-weight: bold;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    background-color: $gray-light;
+    border-radius: 10px;
+
+    &:empty {
+        display: none;
+    }
+}
+
+a.badge:hover,
+a.badge:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}

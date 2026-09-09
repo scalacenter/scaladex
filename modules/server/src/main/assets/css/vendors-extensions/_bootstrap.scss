@@ -46,38 +46,6 @@ body {
     left: 0;
 }
 
-// Buttons
-//------------------------------------------------------------------------------
-.btn {
-    border: 1px solid transparent;
-    font-weight: 600;
-    transition: background-color $base-duration $base-timing, border-color $base-duration $base-timing, color $base-duration $base-timing, opacity $base-duration $base-timing, box-shadow $base-duration $base-timing;
-    @include button-size(($padding-base-vertical + 1), ($padding-base-horizontal + 8), $font-size-base, $line-height-base, $btn-border-radius-base);
-    &:active,
-    &.active {
-        outline: 0;
-        background-image: none;
-        @include box-shadow(none);
-    }
-
-    &.btn-xs {
-        @include button-size($padding-xs-vertical, $padding-xs-horizontal, $font-size-small, $line-height-small, $btn-border-radius-small);
-        margin-left: $padding-xs-horizontal;
-        &:first-child {
-            margin-left: 0;
-        }
-    }
-}
-
-.btn-default {
-    &:hover,
-    &:focus {
-        background-color: darken($gray-lighter, 8%);
-        border-color: darken($gray-lighter, 8%);
-        color: $gray-darker;
-    }
-}
-
 // Code
 //------------------------------------------------------------------------------
 code {
