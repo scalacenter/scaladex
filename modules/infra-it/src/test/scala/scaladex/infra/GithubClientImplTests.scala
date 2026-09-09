@@ -4,23 +4,26 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.GithubResponse.*
+import scaladex.core.model.Project
+import scaladex.core.model.UserState
+import scaladex.core.test.Values.*
+import scaladex.core.util.Secret
+import scaladex.infra.config.GithubConfig
+
 import org.apache.pekko.actor.ActorSystem
 import org.scalactic.source.Position
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.GithubResponse
-import scaladex.core.model.GithubResponse.*
-import scaladex.core.model.Project
-import scaladex.core.test.Values.*
-import scaladex.infra.config.GithubConfig
 
 class GithubClientImplTests extends AsyncFunSpec with Matchers:
   given ActorSystem = ActorSystem("github-client-tests")
   val config: GithubConfig = GithubConfig.load()
-  val isCI = System.getenv("CI") != null
-  val token = config.token.getOrElse(throw new Exception(s"Missing GITHUB_TOKEN"))
+  val isCI: Boolean = System.getenv("CI") != null
+  val token: Secret = config.token.getOrElse(throw new Exception(s"Missing GITHUB_TOKEN"))
   val client = new GithubClientImpl(token, config.httpClient)
-  val userStateOpt =
+  val userStateOpt: Option[UserState] =
     if isCI then None
     else
       Await.result(client.getUserState(), 30.seconds) match

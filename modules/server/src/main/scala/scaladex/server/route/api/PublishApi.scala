@@ -79,6 +79,7 @@ class PublishApi(githubAuth: GithubAuth, publishProcess: PublishProcess)(using E
                     case PublishResult.Success => (StatusCodes.Created, "pom published successfully")
                     case PublishResult.Forbidden(login, repo) =>
                       (StatusCodes.Forbidden, s"$login cannot publish to $repo")
+                    case PublishResult.Failed(reason) => (StatusCodes.InternalServerError, s"publish failed: $reason")
                   }
                 )
               }

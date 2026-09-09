@@ -1,25 +1,28 @@
 package scaladex
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
+import scaladex.core.model.*
+import scaladex.core.model.search.*
+import scaladex.core.service.ProjectService
+import scaladex.data.init.Init
+import scaladex.infra.ElasticsearchEngine
+import scaladex.infra.FilesystemStorage
+import scaladex.infra.SqlDatabase
+import scaladex.infra.sql.DoobieUtils
+import scaladex.server.config.ServerConfig
+import scaladex.server.service.ArtifactService
+import scaladex.server.service.DependencyUpdater
+import scaladex.server.service.SearchSynchronizer
+
+import cats.effect.ContextShift
+import cats.effect.IO
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.testkit.TestKit
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuiteLike
-import scaladex.data.init.Init
-import scaladex.server.config.ServerConfig
-import cats.effect.IO
-import cats.effect.ContextShift
-
-import scala.concurrent.ExecutionContext
-import scaladex.core.model.search.*
-import scaladex.infra.{ElasticsearchEngine, FilesystemStorage, SqlDatabase}
-import scaladex.infra.sql.DoobieUtils
-import scaladex.server.service.SearchSynchronizer
-import scaladex.server.service.DependencyUpdater
-import scaladex.core.service.ProjectService
-import scaladex.server.service.ArtifactService
-import scaladex.core.model.*
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll:
 

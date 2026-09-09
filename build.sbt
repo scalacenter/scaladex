@@ -21,7 +21,7 @@ inThisBuild(
 
 lazy val loggingSettings = Seq(
   libraryDependencies ++= Seq(
-    "ch.qos.logback" % "logback-classic" % "1.5.38",
+    "ch.qos.logback" % "logback-classic" % "1.6.3",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
   ),
   // Drop and replace commons-logging with slf4j
@@ -62,7 +62,6 @@ lazy val template = project
 
 lazy val infra = project
   .in(file("modules/infra"))
-  .configs(IntegrationTest)
   .settings(
     scalacOptionsSettings,
     loggingSettings,
@@ -83,7 +82,7 @@ lazy val infra = project
       "io.circe" %% "circe-core" % V.circe,
       "io.circe" %% "circe-generic" % V.circe,
       "io.circe" %% "circe-parser" % V.circe,
-      "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
     Elasticsearch.settings(defaultPort = 9200),
     Postgres.settings(Compile, defaultPort = 5432, database = "scaladex"),
@@ -118,12 +117,19 @@ lazy val infra = project
     Test / fork := true,
     // testing the database requests need to delete and create the tables,
     // which can fail if many tests are running in parallel
-    Test / parallelExecution := false,
-    Defaults.itSettings,
-    IntegrationTest / fork := true,
-    IntegrationTest / javaOptions ++= (Test / javaOptions).value
+    Test / parallelExecution := false
   )
-  .dependsOn(core.jvm % "compile->compile;test->test;it->test")
+  .dependsOn(core.jvm % "compile->compile;test->test")
+
+lazy val infraIt = project
+  .in(file("modules/infra-it"))
+  .settings(
+    scalacOptionsSettings,
+    libraryDependencies += "org.scalatest" %% "scalatest" % V.scalatest % Test,
+    Test / fork := true,
+    Test / javaOptions ++= (infra / Test / javaOptions).value
+  )
+  .dependsOn(infra, core.jvm % "compile->compile;test->test")
 
 lazy val webclient = project
   .in(file("modules/webclient"))
@@ -133,7 +139,7 @@ lazy val webclient = project
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.13.1",
-      "org.endpoints4s" %%% "fetch-client" % "4.0.1",
+      "org.endpoints4s" %%% "fetch-client" % "4.1.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test
     )
   )
@@ -142,7 +148,6 @@ lazy val webclient = project
 
 lazy val server = project
   .in(file("modules/server"))
-  .configs(IntegrationTest)
   .settings(
     scalacOptionsSettings,
     javaOptions ++= Seq(
@@ -157,8 +162,8 @@ lazy val server = project
     ),
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
-      "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
-      "org.apache.pekko" %% "pekko-testkit" % V.pekko % "test,it",
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.apache.pekko" %% "pekko-testkit" % V.pekko % Test,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
@@ -168,15 +173,15 @@ lazy val server = project
       "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
       "com.github.blemale" %% "scaffeine" % V.scaffeine,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "org.endpoints4s" %% "pekko-http-server" % "2.0.1",
+      "org.endpoints4s" %% "pekko-http-server" % "2.1.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
-      "org.webjars" % "chartjs" % "3.9.1",
+      "org.webjars" % "chartjs" % "4.5.1",
       "org.webjars.npm" % "date-fns" % "4.4.0",
       "org.webjars.npm" % "chartjs-adapter-date-fns" % "3.0.0",
-      "org.webjars" % "font-awesome" % "6.7.2",
-      "org.webjars" % "jquery" % "3.7.1",
+      "org.webjars" % "font-awesome" % "7.3.0",
+      "org.webjars" % "jquery" % "4.0.0",
       "org.webjars.bower" % "select2" % "4.0.13",
       "org.webjars" % "swagger-ui" % "5.20.8"
     ),
@@ -186,12 +191,23 @@ lazy val server = project
     fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
     reStart / javaOptions ++= (infra / Compile / run / javaOptions).value,
-    Test / javaOptions ++= (infra / javaOptions).value,
-    Defaults.itSettings,
-    IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value
+    Test / javaOptions ++= (infra / javaOptions).value
   )
   .dependsOn(template, data, infra, core.jvm % "compile->compile;test->test")
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
+
+lazy val serverIt = project
+  .in(file("modules/server-it"))
+  .settings(
+    scalacOptionsSettings,
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest" % V.scalatest % Test,
+      "org.apache.pekko" %% "pekko-testkit" % V.pekko % Test
+    ),
+    Test / fork := true,
+    Test / javaOptions ++= (infra / Compile / run / javaOptions).value
+  )
+  .dependsOn(server)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform)
   .in(file("modules/core"))
@@ -200,7 +216,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "fastparse" % "3.1.1",
       "io.github.cquiroz" %%% "scala-java-time" % "2.7.0",
-      "org.endpoints4s" %%% "algebra" % "1.12.1",
+      "org.endpoints4s" %%% "algebra" % "1.13.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "org.jsoup" % "jsoup" % "1.23.1",
       "io.circe" %%% "circe-core" % V.circe,
@@ -251,7 +267,7 @@ lazy val loadtest = project
 
 lazy val V = new {
   val doobie = "0.13.4"
-  val pekko = "1.1.5"
+  val pekko = "1.7.0"
   val pekkoHttp = "1.4.0"
   val elastic4s = "8.17.0"
   val nscalaTime = "3.0.0"

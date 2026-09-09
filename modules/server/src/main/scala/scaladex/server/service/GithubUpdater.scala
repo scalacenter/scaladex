@@ -12,6 +12,7 @@ import scaladex.core.model.Project
 import scaladex.core.service.GithubClient
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions.*
+import scaladex.infra.Resilience.tolerateHttpClientErrors
 
 import com.typesafe.scalalogging.LazyLogging
 
@@ -26,13 +27,21 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(using Execution
           .map(_._1)
 
       logger.info(s"Updating github info of ${projectToUpdate.size} projects")
-      projectToUpdate.mapSync(update).map { statuses =>
-        val totalOk = statuses.count(_.isOk)
-        val totalNotFound = statuses.count(_.isNotFound)
-        val totalFailed = statuses.count(_.isFailed)
-        val totalMoved = statuses.count(_.isMoved)
-        s"Updated ${projectToUpdate.size} projects: $totalOk OK, $totalNotFound Not Found, $totalFailed Failed, $totalMoved Moved"
-      }
+      projectToUpdate
+        .mapSync { ref =>
+          update(ref).recover(
+            tolerateHttpClientErrors(
+              GithubStatus.Failed(Instant.now(), errorCode = -1, errorMessage = "unexpected error")
+            )
+          )
+        }
+        .map { statuses =>
+          val totalOk = statuses.count(_.isOk)
+          val totalNotFound = statuses.count(_.isNotFound)
+          val totalFailed = statuses.count(_.isFailed)
+          val totalMoved = statuses.count(_.isMoved)
+          s"Updated ${projectToUpdate.size} projects: $totalOk OK, $totalNotFound Not Found, $totalFailed Failed, $totalMoved Moved"
+        }
     }
 
   def update(ref: Project.Reference): Future[GithubStatus] =
