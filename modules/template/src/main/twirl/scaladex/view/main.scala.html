@@ -175,7 +175,6 @@
         // after an AJAX content swap (see ajaxSwap below).
         function initPageWidgets(scope) {
           var $scope = $(scope || document);
-          $scope.find('[data-toggle="tooltip"]').tooltip({container: 'body'});
           $scope.find('.selectpicker').selectpicker();
           $scope.find('#stable-only').bootstrapSwitch({
             handleWidth: 30,
@@ -298,9 +297,7 @@
           }
         });
 
-        // Tooltips
         $(function () {
-          $('[data-toggle="tooltip"]').tooltip({container: 'body'});
           $(".js-keywords-multiple").select2({tags: true});
           $(".js-stackoverflowtags-multiple").select2({tags: true});
           initPageWidgets(document);

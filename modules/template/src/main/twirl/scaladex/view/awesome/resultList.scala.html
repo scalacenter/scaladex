@@ -92,21 +92,21 @@
             @for(github <- project.githubInfo) {
               @for(stars <- github.stars) {
                 <span>
-                  <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Stars"><span>@stars</span><i class="fa-solid fa-star"></i></span>
+                  <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" aria-label="Stars"><span>@stars</span><i class="fa-solid fa-star"></i></span>
                 </span>
               }
               @for(forks <- github.forks) {
                 <span>
-                  <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Forks"><span>@forks</span><i class="fa-solid fa-code-branch"></i></span>
+                  <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" aria-label="Forks"><span>@forks</span><i class="fa-solid fa-code-branch"></i></span>
                 </span>
               }
               @for(commitsPerYear <- github.commitsPerYear){
                 <span>
-                  <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Commits in the past year"><span>@commitsPerYear</span><i class="fa-solid fa-code-merge"></i></span>
+                  <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" aria-label="Commits in the past year"><span>@commitsPerYear</span><i class="fa-solid fa-code-merge"></i></span>
                 </span>
               }
               <span>
-                <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Contributors"><span>@github.contributorCount</span><i class="fa-solid fa-users"></i></span>
+                <span class="stats-icon" data-toggle="tooltip" data-placement="bottom" aria-label="Contributors"><span>@github.contributorCount</span><i class="fa-solid fa-users"></i></span>
               </span>
             }
             </div>

@@ -64,6 +64,6 @@
 }
 @scopeSpan(scope: ArtifactDependency.Scope) = {
   @if(scope.value != "compile") {
-    <span class="label label-default" data-toggle="tooltip" data-placement="top" title="@scopeDescription(scope)">@scope</span>
+    <span class="label label-default" data-toggle="tooltip" data-placement="top" aria-label="@scopeDescription(scope)">@scope</span>
   }
 }
