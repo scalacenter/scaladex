@@ -323,6 +323,13 @@
               if (heights[c] < heights[shortest]) { shortest = c; }
             }
             cols[shortest].appendChild(items[idx]);
+            // Items still carry their original grid column classes (col-md-4
+            // col-sm-6 etc), whose percentage width/max-width would otherwise
+            // apply against this already-narrow masonry-col instead of the
+            // original full-width row, shrinking them a second time.
+            items[idx].style.width = '100%';
+            items[idx].style.maxWidth = '100%';
+            items[idx].style.flex = '0 0 100%';
             heights[shortest] += items[idx].getBoundingClientRect().height + 20;
             placed++;
           }
