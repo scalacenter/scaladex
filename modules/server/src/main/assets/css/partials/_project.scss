@@ -5,9 +5,16 @@
   padding: 0 0 40px 0;
 
   .content-project {
-    border-top-left-radius: 0;
     margin-bottom: 10px;
     margin-top: -40px;
+  }
+
+  // The content box's top-left corner only needs to stay square while the
+  // Project tab (the first, leftmost one) is active, so the box lines up
+  // flush with it; for every other active tab, that tab sits further right,
+  // so the box should just have its normal rounded corner instead.
+  .head-project.project-tab-active ~ .container .content-project {
+    border-top-left-radius: 0;
 
     // On the single-artifact page, .content-project is a bare wrapper around
     // separate boxes rather than the box itself - the first one needs the

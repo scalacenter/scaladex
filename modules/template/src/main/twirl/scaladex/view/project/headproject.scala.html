@@ -11,7 +11,7 @@
 
 @canEdit = @{user.exists(_.canEdit(project.reference, env))}
 @isActive(tab: ProjectTab) = @{if(tab == activeTab) "active" else ""}
-<div class="head-project">
+<div class="head-project @if(activeTab == ProjectTab.Main) { project-tab-active }">
   <div class="container">
     <div class="info-project">
       <div>
