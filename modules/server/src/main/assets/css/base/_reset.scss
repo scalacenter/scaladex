@@ -7,8 +7,18 @@
     box-sizing: border-box;
 }
 
+// A percentage-based grid accumulates sub-pixel rounding across nested
+// rows/columns, which can push content a pixel or two past the
+// viewport edge and force an unwanted horizontal scrollbar; nothing on
+// this site is meant to scroll horizontally, so guard against it here
+// instead of chasing the exact source through every nested grid.
+html {
+    overflow-x: hidden;
+}
+
 body {
     margin: 0;
+    overflow-x: hidden;
     font-family: $font-family-base;
     font-size: $font-size-base;
     line-height: $line-height-base;
