@@ -64,3 +64,12 @@
     cursor: pointer;
     user-select: none;
 }
+
+// A row of filter controls (a .switch-filter next to a .combobox, say) -
+// a fixed gap and shared vertical alignment instead of leaving them as
+// separate inline-level boxes spaced by incidental HTML whitespace.
+.filters-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
