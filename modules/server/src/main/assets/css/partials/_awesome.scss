@@ -252,8 +252,17 @@
       padding-bottom: 80px;
   }
   .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-top: 20px;
     margin-bottom: 20px;
+
+    .order-by {
+      margin-top: 0;
+    }
   }
   .sidebar {
     padding: 20px;
