@@ -92,6 +92,7 @@ class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default
           .map(page => lastModified.map(page -> _))
       case _ =>
         logger.warn(s"Cannot get $uri: ${response.status}")
+        response.discardEntityBytes()
         Future.successful(None)
 
   private def listDirectories(uri: String, response: HttpResponse) =
