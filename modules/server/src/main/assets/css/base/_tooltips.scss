@@ -1,12 +1,14 @@
 // Tooltips -- a CSS-only replacement for Bootstrap's jQuery-based
-// .tooltip() plugin. The tooltip text comes from aria-label (not title,
-// to avoid the native browser tooltip showing up alongside this one).
+// .tooltip() plugin. The tooltip text comes from data-tooltip (not
+// title, to avoid the native browser tooltip showing up alongside this
+// one, and not aria-label, which would override the element's own
+// accessible name instead of just adding a visual hint).
 
 [data-toggle="tooltip"] {
     position: relative;
 
     &::after {
-        content: attr(aria-label);
+        content: attr(data-tooltip);
         position: absolute;
         z-index: 1070;
         width: max-content;

@@ -89,7 +89,7 @@
       @for(contributor <- contributors.take(contributorsLimit)) {
         <li>
           <a href="@contributor.url.target" target="_blank" rel="noreferrer">
-            <img data-toggle="tooltip" data-placement="bottom" width="32" aria-label="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="@contributor.login">
+            <img data-toggle="tooltip" data-placement="bottom" width="32" data-tooltip="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="@contributor.login">
           </a>
         </li>
       }
@@ -132,6 +132,6 @@
 }
 @scopeSpan(scope: ArtifactDependency.Scope) = {
   @if(scope.value != "compile") {
-    <span class="label label-default" data-toggle="tooltip" data-placement="top" aria-label="@scopeDescription(scope)">@scope</span>
+    <span class="label label-default" data-toggle="tooltip" data-placement="top" data-tooltip="@scopeDescription(scope)">@scope</span>
   }
 }
