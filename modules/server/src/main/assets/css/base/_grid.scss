@@ -1,8 +1,5 @@
 $grid-columns: 12;
 $grid-gutter-width: 30px;
-$grid-screen-sm-min: 768px;
-$grid-screen-md-min: 992px;
-$grid-screen-lg-min: 1200px;
 
 .container {
     margin-left: auto;
@@ -10,13 +7,13 @@ $grid-screen-lg-min: 1200px;
     padding-left: $grid-gutter-width / 2;
     padding-right: $grid-gutter-width / 2;
 
-    @media (min-width: $grid-screen-sm-min) {
+    @media (min-width: $screen-sm-min) {
         max-width: 750px;
     }
-    @media (min-width: $grid-screen-md-min) {
+    @media (min-width: $screen-md-min) {
         max-width: 970px;
     }
-    @media (min-width: $grid-screen-lg-min) {
+    @media (min-width: $screen-lg-min) {
         max-width: 1170px;
     }
 }
@@ -45,21 +42,21 @@ $grid-screen-lg-min: 1200px;
         @include grid-col($i);
     }
 }
-@media (min-width: $grid-screen-sm-min) {
+@media (min-width: $screen-sm-min) {
     @for $i from 1 through $grid-columns {
         .col-sm-#{$i} {
             @include grid-col($i);
         }
     }
 }
-@media (min-width: $grid-screen-md-min) {
+@media (min-width: $screen-md-min) {
     @for $i from 1 through $grid-columns {
         .col-md-#{$i} {
             @include grid-col($i);
         }
     }
 }
-@media (min-width: $grid-screen-lg-min) {
+@media (min-width: $screen-lg-min) {
     @for $i from 1 through $grid-columns {
         .col-lg-#{$i} {
             @include grid-col($i);

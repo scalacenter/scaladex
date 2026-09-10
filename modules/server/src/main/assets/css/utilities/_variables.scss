@@ -47,7 +47,6 @@ $font-family-monospace: Menlo, Monaco, Consolas, "Courier New", monospace;
 $font-size-base: 16px;
 $line-height-base: 1.528571429;
 $line-height-computed: floor($font-size-base * $line-height-base);
-$line-height-large: 1.3333333;
 $line-height-small: 1.5;
 
 $font-size-large: ceil($font-size-base * 1.25);
@@ -57,10 +56,6 @@ $padding-base-vertical: 6px;
 $padding-base-horizontal: 12px;
 $padding-xs-vertical: 1px;
 $padding-xs-horizontal: 5px;
-$padding-small-vertical: 5px;
-$padding-small-horizontal: 10px;
-$padding-large-vertical: 10px;
-$padding-large-horizontal: 16px;
 
 $font-size-h1: floor(($font-size-base * 2.1)); // 33
 $font-size-h2: floor(($font-size-base * 1.8)); // 28
@@ -80,7 +75,6 @@ $headings-small-color: $gray-light;
 //------------------------------------------------------------------------------
 
 $border-radius-base: 6px;
-$border-radius-large: 6px;
 $border-radius-small: 3px;
 
 // Tooltips
@@ -103,8 +97,7 @@ $btn-default-color: $gray-dark;
 $btn-default-bg: #fff;
 $btn-default-border: rgb(214, 221, 221);
 $btn-primary-color: #fff;
-$btn-primary-bg: $brand-primary;
-$btn-primary-border: darken($btn-primary-bg, 5%);
+$btn-primary-border: darken($brand-primary, 5%);
 
 // Navs
 //------------------------------------------------------------------------------
@@ -142,11 +135,7 @@ $bp-medium: 768px;
 $bp-large: 992px;
 $bp-xlarge: 1130px;
 
-$screen-xs-min: 480px;
 $screen-sm-min: 768px;
 $screen-md-min: 992px;
 $screen-lg-min: 1200px;
-$screen-xs-max: $screen-sm-min - 1;
-$screen-sm-max: $screen-md-min - 1;
-$screen-md-max: $screen-lg-min - 1;
 $bp-xxlarge: 1400px;

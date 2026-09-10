@@ -7,11 +7,7 @@
 @import
     'lib/font-awesome/scss/fontawesome.scss';
 
-// 3. Vendors Extensions
-@import
-    'vendors-extensions/bootstrap';
-
-// 4. Base
+// 3. Base
 @import
     'base/reset',
     'base/base',
@@ -27,7 +23,7 @@
     'base/tables',
     'base/progress';
 
-// 5. Partials
+// 4. Partials
 @import
     'partials/header',
     'partials/main',

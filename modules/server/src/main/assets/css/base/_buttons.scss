@@ -18,7 +18,7 @@ $btn-border-radius: 4px;
     font-size: $font-size-base;
     line-height: $line-height-base;
     border-radius: $btn-border-radius;
-    transition: background-color $base-duration $base-timing, border-color $base-duration $base-timing, color $base-duration $base-timing;
+    transition: background-color $base-duration $base-timing, border-color $base-duration $base-timing, color $base-duration $base-timing, opacity $base-duration $base-timing;
 
     &:hover,
     &:focus,
@@ -45,39 +45,8 @@ a.btn.disabled {
     pointer-events: none;
 }
 
-@mixin btn-variant($color, $background, $border) {
-    color: $color;
-    background-color: $background;
-    border-color: $border;
-
-    &:hover,
-    &:focus,
-    &.focus {
-        color: $color;
-        background-color: darken($background, 10%);
-        border-color: darken($border, 12%);
-    }
-
-    &:active,
-    &.active {
-        color: $color;
-        background-color: darken($background, 17%);
-        border-color: darken($border, 25%);
-    }
-
-    &.disabled,
-    &[disabled] {
-        &:hover,
-        &:focus,
-        &.focus {
-            background-color: $background;
-            border-color: $border;
-        }
-    }
-}
-
 .btn-default {
-    @include btn-variant($btn-default-color, $btn-default-bg, $btn-default-border);
+    @include button-variant($btn-default-color, $btn-default-bg, $btn-default-border);
 
     &:hover,
     &:focus {
@@ -87,7 +56,7 @@ a.btn.disabled {
     }
 }
 .btn-primary {
-    @include btn-variant(#fff, $brand-primary, darken($brand-primary, 5%));
+    @include button-variant(#fff, $brand-primary, darken($brand-primary, 5%));
 }
 // bootstrap-sass has no built-in "secondary" button variant, so a combobox
 // styled data-style="btn-secondary" would otherwise get no background/
@@ -106,10 +75,10 @@ a.btn.disabled {
     }
 }
 .btn-success {
-    @include btn-variant(#fff, $brand-success, darken($brand-success, 5%));
+    @include button-variant(#fff, $brand-success, darken($brand-success, 5%));
 }
 .btn-danger {
-    @include btn-variant(#fff, $brand-danger, darken($brand-danger, 5%));
+    @include button-variant(#fff, $brand-danger, darken($brand-danger, 5%));
 }
 
 .btn-link {
