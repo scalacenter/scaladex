@@ -99,7 +99,15 @@
   }
 
   .filter {
-    display: inline-block;
+    display: block;
+
+    .combobox {
+      width: 100%;
+
+      .dropdown-toggle {
+        width: 100%;
+      }
+    }
   }
 
   nav {
