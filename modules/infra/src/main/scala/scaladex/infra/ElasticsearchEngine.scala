@@ -27,6 +27,7 @@ import scaladex.infra.config.ElasticsearchConfig
 import scaladex.infra.elasticsearch.ElasticsearchMapping.*
 import scaladex.infra.elasticsearch.RawProjectDocument
 
+import cats.instances.future.*
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl.*
 import com.sksamuel.elastic4s.ElasticProperties
@@ -56,7 +57,7 @@ import org.elasticsearch.client.RestClientBuilder
 /** @param esClient
   *   TCP client of the elasticsearch server
   */
-class ElasticsearchEngine(esClient: ElasticClient, index: String)(using ExecutionContext)
+class ElasticsearchEngine(esClient: ElasticClient[Future], index: String)(using ExecutionContext)
     extends SearchEngine
     with LazyLogging
     with Closeable:
