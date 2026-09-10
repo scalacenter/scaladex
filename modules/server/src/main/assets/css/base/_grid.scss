@@ -63,3 +63,34 @@ $grid-gutter-width: 30px;
         }
     }
 }
+
+@mixin grid-col-offset($size) {
+    margin-left: percentage($size / $grid-columns);
+}
+
+@for $i from 1 through ($grid-columns - 1) {
+    .col-xs-offset-#{$i} {
+        @include grid-col-offset($i);
+    }
+}
+@media (min-width: $screen-sm-min) {
+    @for $i from 1 through ($grid-columns - 1) {
+        .col-sm-offset-#{$i} {
+            @include grid-col-offset($i);
+        }
+    }
+}
+@media (min-width: $screen-md-min) {
+    @for $i from 1 through ($grid-columns - 1) {
+        .col-md-offset-#{$i} {
+            @include grid-col-offset($i);
+        }
+    }
+}
+@media (min-width: $screen-lg-min) {
+    @for $i from 1 through ($grid-columns - 1) {
+        .col-lg-offset-#{$i} {
+            @include grid-col-offset($i);
+        }
+    }
+}
