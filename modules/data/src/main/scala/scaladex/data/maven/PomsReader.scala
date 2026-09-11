@@ -79,7 +79,12 @@ class PomsReader(resolver: PomResolver) extends LazyLogging:
       .setModelResolver(modelResolver)
       .setSystemProperties(jdk)
       .setPomFile(path.toFile)
+      .setTwoPhaseBuilding(true)
 
-    builder.build(request).getEffectiveModel
+    val partial = builder.build(request)
+    // Drop deploy-time metadata Scaladex ignores but Maven may reject (e.g. distributionManagement.status).
+    partial.getEffectiveModel.setDistributionManagement(null)
+
+    builder.build(request, partial).getEffectiveModel
   }.map(pom => PomConvert(pom))
 end PomsReader
