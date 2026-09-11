@@ -64,7 +64,7 @@ class MavenCentralService(
       missingPomFiles <- missingVersions.mapSync(ref =>
         mavenCentralClient
           .getPomFile(ref)
-          .map(_.map(ref -> _))
+          .map(res => Option(ref -> res))
           .recover(tolerateHttpClientErrors(None))
       )
       publishResult <- missingPomFiles.flatten.mapSync {
@@ -189,7 +189,7 @@ class MavenCentralService(
 
   private def republishArtifact(projectRef: Project.Reference, ref: Artifact.Reference): Future[PublishResult] =
     mavenCentralClient.getPomFile(ref).flatMap {
-      case Some((pomFile, creationDate)) => publishProcess.republishPom(projectRef, ref, pomFile, creationDate)
-      case _ => Future.successful(PublishResult.InvalidPom)
+      case (pomFile, creationDate) =>
+        publishProcess.republishPom(projectRef, ref, pomFile, creationDate)
     }
 end MavenCentralService
