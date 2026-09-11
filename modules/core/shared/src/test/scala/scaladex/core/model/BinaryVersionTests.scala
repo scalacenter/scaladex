@@ -54,4 +54,19 @@ class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with
       expected.value shouldBe input
     }
   }
+  it("should handle compiler plugin versions (TODO)") {
+    // This test will be implemented when compiler plugin support is added
+    // Example test cases:
+    // val cases = Table(
+    //   ("input", "target"),
+    //   ("_2.13.10", BinaryVersion(CompilerPlugin, Scala(Version(2, 13, 10)))),
+    //   ("_3.3.1", BinaryVersion(CompilerPlugin, Scala(Version(3, 3, 1))))
+    // )
+    // 
+    // forAll(cases) { (input, expected) =>
+    //   BinaryVersion.parse(input) should contain(expected)
+    //   expected.value shouldBe input
+    // }
+    succeed
+  }
 end BinaryVersionTests
