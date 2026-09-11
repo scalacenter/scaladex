@@ -181,7 +181,7 @@ lazy val server = project
       "org.webjars.npm" % "date-fns" % "4.4.0",
       "org.webjars.npm" % "chartjs-adapter-date-fns" % "3.0.0",
       "org.webjars" % "font-awesome" % "7.3.0",
-      "org.webjars" % "jquery" % "4.0.0",
+      "org.webjars" % "jquery" % "3.7.1",
       "org.webjars.bower" % "select2" % "4.0.13",
       "org.webjars" % "swagger-ui" % "5.20.8"
     ),
