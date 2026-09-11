@@ -101,7 +101,7 @@
       <h4>Documentation</h4>
       <ul>
         @for(doc <- documentationLinks){
-          <li><a href="@doc.link" rel="nofollow">@doc.label</a></li>
+          <li><a href="@docHref(artifact, doc)" rel="nofollow">@doc.label</a></li>
         }
       </ul>
     </div>

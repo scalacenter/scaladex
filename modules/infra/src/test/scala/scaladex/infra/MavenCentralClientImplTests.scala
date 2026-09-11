@@ -61,6 +61,18 @@ class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
     yield res.get._1.startsWith("<?xml") shouldBe true
   }
 
+  it(s"retrieve javadoc jar for a jvm artifact") {
+    for res <- client.getJavadocJar(Artifact.Reference.from("org.typelevel", "cats-core_2.13", "2.9.0"))
+    yield
+      res shouldBe defined
+      res.get.length should be > 1000
+  }
+
+  it(s"return None for a javadoc jar that doesn't exist") {
+    for res <- client.getJavadocJar(Artifact.Reference.from("ch.epfl.scala", "does-not-exist_2.13", "0.0.0"))
+    yield res shouldBe None
+  }
+
   it(s"parse date time") {
     client.parseDate("Wed, 23 Sep 2020 11:40:44 GMT") shouldBe Instant.ofEpochSecond(1600861244L)
   }

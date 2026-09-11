@@ -6,6 +6,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
 
+import scaladex.core.service.MavenCentralClient
 import scaladex.core.service.ProjectService
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
@@ -24,6 +25,7 @@ import scaladex.server.service.ArtifactService
 import scaladex.server.service.MavenCentralService
 import scaladex.server.service.ProjectSettingsService
 import scaladex.server.service.PublishProcess
+import scaladex.server.service.ScaladocService
 import scaladex.view.html.notfound
 
 import cats.effect.ContextShift
@@ -93,7 +95,8 @@ object Server extends LazyLogging:
                 searchEngine,
                 webDatabase,
                 adminService,
-                publishProcess
+                publishProcess,
+                mavenCentralClient
               )
               _ <- IO(
                 Http()
@@ -143,7 +146,8 @@ object Server extends LazyLogging:
       searchEngine: ElasticsearchEngine,
       webDatabase: SqlDatabase,
       adminService: AdminService,
-      publishProcess: PublishProcess
+      publishProcess: PublishProcess,
+      mavenCentralClient: MavenCentralClient
   )(
       using system: ActorSystem
   ): Route =
@@ -158,7 +162,13 @@ object Server extends LazyLogging:
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, adminService)
     val projectPages = new ProjectPages(config.env, projectService, settingsService, webDatabase)
-    val artifactPages = new ArtifactPages(config.env, webDatabase)
+    val scaladocService = ScaladocService(
+      config.filesystem.scaladoc,
+      mavenCentralClient,
+      config.scaladoc.maxCacheBytes,
+      config.scaladoc.maxUnpackedBytes
+    )
+    val artifactPages = new ArtifactPages(config.env, webDatabase, scaladocService)
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)
     val apiEndpoints =

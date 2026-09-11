@@ -1,0 +1,62 @@
+@import scaladex.core.model.Artifact
+@import scaladex.core.model.Project
+
+@(project: Project, artifact: Artifact)
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>@artifact.name @artifact.version.value scaladoc</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { display: flex; flex-direction: column; font-family: "Lato", sans-serif; }
+    .scaladoc-bar {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 1rem;
+      background: rgb(0, 43, 55);
+      color: rgb(229, 234, 234);
+      font-size: 0.9rem;
+    }
+    .scaladoc-bar a {
+      color: rgb(229, 234, 234);
+      text-decoration: none;
+    }
+    .scaladoc-bar a:hover { text-decoration: underline; }
+    .scaladoc-bar .back-to-scaladex {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: rgb(242, 101, 39);
+      font-weight: 600;
+      flex: none;
+    }
+    .scaladoc-bar .back-to-scaladex img {
+      height: 1.1rem;
+      width: auto;
+    }
+    .scaladoc-bar .coordinates {
+      color: rgb(137, 146, 149);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+    .scaladoc-frame { flex: 1; border: none; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="scaladoc-bar">
+    <a class="back-to-scaladex" href="/@artifact.projectRef" title="Back to @artifact.projectRef on Scaladex">
+      <img src="/assets/img/scaladex-brand.svg" alt="">
+      &larr; Back to @artifact.projectRef
+    </a>
+    <span class="coordinates">@artifact.name @artifact.version.value &middot; @artifact.groupId</span>
+  </div>
+  <iframe class="scaladoc-frame" src="/artifacts/@artifact.groupId/@artifact.artifactId/@artifact.version/scaladoc-content/" title="@artifact.name scaladoc"></iframe>
+</body>
+</html>
