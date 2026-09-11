@@ -47,6 +47,14 @@ class InMemoryDatabase extends SchedulerDatabase:
 
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] = ???
 
+  override def computeScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] = ???
+  override def replaceScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int] = ???
+  override def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] = ???
+
+  override def computeScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] = ???
+  override def replaceScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int] = ???
+  override def getScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] = ???
+
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
     allProjects.update(ref, allProjects(ref).copy(settings = settings))
     Future.unit

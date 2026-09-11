@@ -8,6 +8,8 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.Scala3MigrationInsight
+import scaladex.core.model.ScalaVersionInsight
 import scaladex.core.model.Version
 
 trait SchedulerDatabase extends WebDatabase:
@@ -23,6 +25,16 @@ trait SchedulerDatabase extends WebDatabase:
   def computeProjectDependencies(reference: Project.Reference, version: Version): Future[Seq[ProjectDependency]]
   def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int]
   def deleteProjectDependencies(ref: Project.Reference): Future[Int]
+
+  // scala version insights
+  def computeScalaVersionInsights(): Future[Seq[ScalaVersionInsight]]
+  // Deletes the previous snapshot and inserts the new one in a single transaction, so a concurrent
+  // page request never observes an empty table between the two.
+  def replaceScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int]
+
+  // scala 3 migration insights
+  def computeScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]]
+  def replaceScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int]
 
   // artifacts and its dependencies
   def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] // for init process

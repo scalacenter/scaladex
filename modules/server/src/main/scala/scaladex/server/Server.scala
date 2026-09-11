@@ -160,6 +160,7 @@ object Server extends LazyLogging:
     val projectPages = new ProjectPages(config.env, projectService, settingsService, webDatabase)
     val artifactPages = new ArtifactPages(config.env, webDatabase)
     val awesomePages = new AwesomePages(config.env, searchEngine)
+    val insightsPages = new InsightsPages(config.env, webDatabase)
     val publishApi = new PublishApi(githubAuth, publishProcess)
     val apiEndpoints =
       new ApiEndpointsImpl(config.env, projectService, artifactService, settingsService, searchEngine, githubAuth)
@@ -185,6 +186,7 @@ object Server extends LazyLogging:
           frontPage.route(user),
           adminPages.route(user),
           awesomePages.route(user),
+          insightsPages.route(user),
           artifactPages.route(user),
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             projectPages.route(user) ~ searchPages.route(user)

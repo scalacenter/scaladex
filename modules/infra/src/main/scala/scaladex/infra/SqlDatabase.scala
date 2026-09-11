@@ -306,6 +306,39 @@ class SqlDatabase(
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.deleteBySource.run(ref))
 
+  override def computeScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
+    for
+      binaryCompat <- run(ScalaVersionInsightsTable.computeBinaryCompatCounts.to[Seq])
+      minor <- run(ScalaVersionInsightsTable.computeMinorVersionCounts.to[Seq])
+    yield binaryCompat ++ minor
+
+  // Delete + insert as one transaction, so a concurrent page request never sees an empty table
+  // between the two statements.
+  override def replaceScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int] =
+    val transaction =
+      for
+        _ <- ScalaVersionInsightsTable.deleteAll.run(())
+        inserted <- ScalaVersionInsightsTable.insert.updateMany(insights)
+      yield inserted
+    run(transaction)
+
+  override def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
+    run(ScalaVersionInsightsTable.selectAll.to[Seq])
+
+  override def computeScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
+    run(Scala3MigrationTable.computeProjectCounts.to[Seq])
+
+  override def replaceScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int] =
+    val transaction =
+      for
+        _ <- Scala3MigrationTable.deleteAll.run(())
+        inserted <- Scala3MigrationTable.insert.updateMany(insights)
+      yield inserted
+    run(transaction)
+
+  override def getScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
+    run(Scala3MigrationTable.selectAll.to[Seq])
+
   override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))
 

@@ -78,6 +78,7 @@
                 <div class="pull-right">
                   <a class="btn btn-default" href="/api/doc/">API Doc</a>
                   <a class="btn btn-default awesome" href="/awesome">Awesome Scala</a>
+                  <a class="btn btn-default" href="/insights">Insights</a>
                   @user.map{ u =>
                     <button class="btn btn-default dropdown-toggle you"
                     type="button" id="userLogging"
@@ -187,7 +188,10 @@
           });
           $scope.find('.edit-project input[type="checkbox"]').bootstrapSwitch();
           if (window.emojify) { emojify.run(); }
-          if (window.ScaladexClient) { ScaladexClient.createSparkline(); }
+          // Scala.js's NoModule output declares this top-level export with `let`. Unlike `var`, a top-level
+          // `let` does not become a `window` property, so `window.ScaladexClient` is always undefined here.
+          if (typeof ScaladexClient !== 'undefined') { ScaladexClient.createSparkline(); }
+          if (typeof ScaladexClient !== 'undefined') { ScaladexClient.createInsightsChart(); }
         }
 
         // Several links/forms (the artifacts/versions filters, the project

@@ -1,0 +1,133 @@
+@import scaladex.core.model.InsightsGranularity
+@import scaladex.core.model.Scala
+@import scaladex.core.model.Scala3MigrationInsight
+@import scaladex.core.model.ScalaVersionInsight
+@import scaladex.core.model.UserState
+@import scaladex.core.model.Version
+
+@(
+    env: scaladex.core.model.Env,
+    user: Option[UserState],
+    binaryCompat: Seq[ScalaVersionInsight],
+    migration: Seq[Scala3MigrationInsight],
+    minor2x: Seq[ScalaVersionInsight],
+    minor3x: Seq[ScalaVersionInsight]
+)
+
+@share(count: Long, total: Long) = @{ if (total > 0) f"${count * 100.0 / total}%.1f%%" else "-" }
+
+@* In the "Minor" breakdown, a bare "3" means we know it's Scala 3 but don't have full_scala_version
+   to bucket it by minor. Labeling it "3.x" there would read as a parent category, not a fallback. *@
+@versionLabel(insight: ScalaVersionInsight) = @{
+  if (insight.granularity == InsightsGranularity.Minor && insight.language == Scala(Version(3)))
+    "Unknown minor"
+  else insight.language.label
+}
+
+@eolVersions = @{ Set("2.10", "2.11", "2.12") }
+@activeColor = @{ "rgb(242, 101, 39)" }
+@eolColor = @{ "rgb(137, 146, 149)" }
+@versionColor(insight: ScalaVersionInsight) = @{
+  if (eolVersions.contains(insight.language.label)) eolColor else activeColor
+}
+
+@chartAndTable(id: String, labels: Seq[String], counts: Seq[Long], colors: Seq[String], columnHeader: String) = {
+  @defining(counts.sum) { total =>
+    <div class="box insights-chart-box">
+      <canvas class="insights-chart" id="@id"
+        data-labels="@labels.mkString(",")"
+        data-counts="@counts.mkString(",")"
+        data-colors="@colors.mkString(";")"></canvas>
+    </div>
+    <table class="table insights-table">
+      <thead>
+        <tr>
+          <th>@columnHeader</th>
+          <th>Projects</th>
+          <th>Share</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for((label, count) <- labels.zip(counts)) {
+          <tr>
+            <td>@label</td>
+            <td>@count</td>
+            <td>@share(count, total)</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}
+
+@chartPanel(id: String, title: String, insights: Seq[ScalaVersionInsight]) = {
+  <div class="insights-panel">
+    <h3>@title</h3>
+    @if(insights.isEmpty) {
+      <p>No data yet. The insights job hasn't run.</p>
+    } else {
+      @chartAndTable(id, insights.map(versionLabel), insights.map(_.projectCount), insights.map(versionColor), "Scala version")
+    }
+  </div>
+}
+
+@migrationLabel(insight: Scala3MigrationInsight) = @{
+  if (insight.migrated) "Migrated to Scala 3" else "Scala 2.x only"
+}
+@migrationColor(insight: Scala3MigrationInsight) = @{ if (insight.migrated) activeColor else eolColor }
+
+@migrationPanel = {
+  <div class="insights-panel">
+    <h3>Scala 3 migration</h3>
+    @if(migration.isEmpty) {
+      <p>No data yet. The insights job hasn't run.</p>
+    } else {
+      @defining(migration.sortBy(_.migrated)) { sorted =>
+        @chartAndTable(
+          "insights-chart-migration",
+          sorted.map(migrationLabel),
+          sorted.map(_.projectCount),
+          sorted.map(migrationColor),
+          "Status"
+        )
+      }
+    }
+  </div>
+}
+
+@main(env, title = "Insights - Scaladex", user, showSearch = false) {
+  <main id="container-insights">
+    <div class="insights-header">
+      <div class="container">
+        <h1>Insights</h1>
+        <p class="lead">
+          How many projects in Scaladex currently publish at least one artifact for each Scala version.
+          Each project is counted once per artifact's latest release, so a project whose modules update
+          on different schedules can show up under more than one version.
+        </p>
+      </div>
+    </div>
+    <div class="container insights-content">
+      <h2>By binary compatibility</h2>
+      <p class="section-note">
+        The Scala target a project can actually be relied on to cross-build for. Every 3.x release
+        counts as one binary-compatible version. Grayed-out versions are no longer supported. "Migrated
+        to Scala 3" means at least one module has started, not that every module has finished.
+      </p>
+      <div class="insights-detail-row">
+        @chartPanel("insights-chart-binary", "All projects", binaryCompat)
+        @migrationPanel
+      </div>
+
+      <h2>Detailed breakdown</h2>
+      <p class="section-note">
+        The exact minor version of each currently-published artifact. Scala 3.x is split out here,
+        since it's a single binary version above but adoption of individual minors still varies.
+      </p>
+      <div class="insights-detail-row">
+        @chartPanel("insights-chart-2x", "Scala 2.x", minor2x)
+        @chartPanel("insights-chart-3x", "Scala 3.x, by minor", minor3x)
+      </div>
+    </div>
+  </main>
+}

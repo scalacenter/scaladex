@@ -54,6 +54,11 @@ object Job:
     "Update latest version of artifacts",
     24.hours
   )
+  val scalaVersionInsights: Job = Job(
+    "scala-version-insights",
+    "Compute, per Scala binary version, how many projects have a latest artifact built for it.",
+    24.hours
+  )
 
   case class Status(state: State, results: Seq[Result], progress: Option[Progress]):
     def isStarted: Boolean = state.isInstanceOf[Started]

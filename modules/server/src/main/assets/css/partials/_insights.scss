@@ -1,0 +1,87 @@
+// -----------------------------------------------------------------------------
+// This file contains all styles related to the 'insights' page.
+// -----------------------------------------------------------------------------
+
+#container-insights {
+  padding-bottom: 80px;
+  color: $gray-lighter;
+
+  .insights-header {
+    padding: 30px 0 40px 0;
+    // Same treatment as the project page header: keep the image at its native size
+    // (no stretching/zooming to "cover" the box) and fade its own bottom edge into a
+    // flat extension of the image's own edge color, instead of a hard cutoff.
+    background-color: rgb(13, 52, 60);
+    background-image:
+      linear-gradient(to bottom, rgba($gray-darker, 0) 0, rgba($gray-darker, 0) 220px, $gray-darker 271px),
+      url('/assets/img/head-project-background.png');
+    background-repeat: no-repeat, no-repeat;
+    background-position: center top, center top;
+  }
+
+  h1 {
+    margin-top: 0;
+    color: $brand-primary;
+  }
+
+  h2 {
+    margin-top: 50px;
+    color: $brand-primary;
+    font-size: 22px;
+  }
+
+  .lead {
+    color: $gray-lighter;
+    max-width: 640px;
+    margin-bottom: 0;
+  }
+
+  .insights-content {
+    padding-top: 30px;
+  }
+
+  .section-note {
+    color: $gray-lighter;
+    // No max-width, unlike .lead: this sits right above a chart that spans the
+    // full container, and wrapping to a narrow column there reads as misaligned.
+    font-size: 14px;
+    margin-top: -6px;
+  }
+
+  .insights-detail-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+
+    .insights-panel {
+      flex: 1 1 380px;
+    }
+  }
+
+  .insights-panel {
+    h3 {
+      margin-bottom: 12px;
+      font-size: 16px;
+      color: $gray-lighter;
+    }
+  }
+
+  .insights-chart-box {
+    // Chart.js sizes itself off the canvas's parent - it needs an explicit
+    // position so the resize logic can measure it correctly, or the canvas
+    // silently renders at 0x0.
+    position: relative;
+    padding: 20px;
+    margin-bottom: 20px;
+    height: 260px;
+  }
+
+  .insights-table {
+    max-width: 480px;
+
+    td:not(:first-child),
+    th:not(:first-child) {
+      text-align: right;
+    }
+  }
+}
