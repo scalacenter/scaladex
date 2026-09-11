@@ -188,7 +188,8 @@ class MavenCentralService(
       (successes, failures)
 
   private def republishArtifact(projectRef: Project.Reference, ref: Artifact.Reference): Future[PublishResult] =
-    mavenCentralClient.getPomFile(ref).flatMap { case (pomFile, creationDate) =>
-      publishProcess.republishPom(projectRef, ref, pomFile, creationDate)
+    mavenCentralClient.getPomFile(ref).flatMap {
+      case (pomFile, creationDate) =>
+        publishProcess.republishPom(projectRef, ref, pomFile, creationDate)
     }
 end MavenCentralService
