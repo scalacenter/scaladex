@@ -82,7 +82,6 @@ class PomsReader(resolver: PomResolver) extends LazyLogging:
       .setTwoPhaseBuilding(true)
 
     val partial = builder.build(request)
-    // Drop deploy-time metadata Scaladex ignores but Maven may reject (e.g. distributionManagement.status).
     partial.getEffectiveModel.setDistributionManagement(null)
 
     builder.build(request, partial).getEffectiveModel
