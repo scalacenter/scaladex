@@ -49,6 +49,11 @@ object Job:
     "Find missing non-standard artifacts from Maven Central",
     2.hours
   )
+  val newGroupIds: Job = Job(
+    "new-group-ids",
+    "Discover artifacts from new group IDs submitted via new-groups.json (for Central Portal users)",
+    6.hours
+  )
   val latestArtifacts: Job = Job(
     "latest-artifacts",
     "Update latest version of artifacts",
