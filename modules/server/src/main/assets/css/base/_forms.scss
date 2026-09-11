@@ -1,0 +1,151 @@
+// Forms, panels and input groups -- a vanilla replacement for the
+// Bootstrap 3 components of the same name.
+
+.form-control {
+    display: block;
+    width: 100%;
+    height: $input-height-base;
+    padding: $padding-base-vertical $padding-base-horizontal;
+    font-size: $font-size-base;
+    line-height: $line-height-base;
+    color: $gray;
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid $input-border;
+    border-radius: $border-radius-base;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+    &::placeholder {
+        color: $gray-light;
+        opacity: 1;
+    }
+
+    &:focus {
+        outline: 0;
+        border-color: $input-border-focus;
+        box-shadow: 0 0 0 3px rgba($input-border-focus, 0.15);
+    }
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+// Feedback icon overlay (the search bar's magnifying glass, on the left).
+.has-feedback {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 15px;
+
+    @media screen and (min-width: $screen-md-min) {
+        margin-bottom: 0;
+    }
+
+    .form-control {
+        padding-right: 0;
+        padding-left: $input-height-base;
+    }
+}
+
+.form-control-feedback {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    display: block;
+    width: $input-height-base;
+    height: $input-height-base;
+    line-height: $input-height-base;
+    text-align: center;
+    pointer-events: none;
+}
+
+// Panels -- bordered/shadowed content boxes.
+.panel {
+    margin-bottom: $line-height-computed;
+    background-color: #fff;
+    border: 1px solid transparent;
+    border-radius: $border-radius-base;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+
+.panel-body {
+    padding: 15px;
+    &::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+}
+
+// Input groups -- a text/label addon glued to one side of a text input.
+.input-group {
+    position: relative;
+    display: table;
+    border-collapse: separate;
+
+    &[class*="col-"] {
+        float: none;
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    .form-control {
+        position: relative;
+        z-index: 2;
+        float: left;
+        width: 100%;
+        margin-bottom: 0;
+
+        &:focus {
+            z-index: 3;
+        }
+    }
+}
+
+.input-group-addon,
+.input-group-btn,
+.input-group .form-control {
+    display: table-cell;
+
+    &:not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+}
+
+.input-group-addon,
+.input-group-btn {
+    width: 1%;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.input-group-addon {
+    padding: $padding-base-vertical $padding-base-horizontal;
+    font-size: $font-size-base;
+    font-weight: 400;
+    line-height: 1;
+    color: $gray;
+    text-align: center;
+    background-color: $gray-lighter;
+    border: 1px solid $input-border;
+    border-radius: $border-radius-base;
+}
+
+.input-group .form-control:first-child,
+.input-group-addon:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.input-group-addon:first-child {
+    border-right: 0;
+}
+.input-group .form-control:last-child,
+.input-group-addon:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+.input-group-addon:last-child {
+    border-left: 0;
+}

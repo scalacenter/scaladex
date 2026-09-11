@@ -5,9 +5,16 @@
   padding: 0 0 40px 0;
 
   .content-project {
-    border-top-left-radius: 0;
     margin-bottom: 10px;
     margin-top: -40px;
+  }
+
+  // The content box's top-left corner only needs to stay square while the
+  // Project tab (the first, leftmost one) is active, so the box lines up
+  // flush with it; for every other active tab, that tab sits further right,
+  // so the box should just have its normal rounded corner instead.
+  .head-project.project-tab-active ~ .container .content-project {
+    border-top-left-radius: 0;
 
     // On the single-artifact page, .content-project is a bare wrapper around
     // separate boxes rather than the box itself - the first one needs the
@@ -15,6 +22,21 @@
     > .box:first-child {
       border-top-left-radius: 0;
     }
+  }
+
+  // Shared by .project-nav-bar (Project/Artifacts/...) and .install
+  // (sbt/Mill/...): both sit on the same dark translucent .nav-tabs
+  // background, so both need light text instead of the site's default
+  // .nav-tabs color, which is tuned for a white background.
+  .project-nav-bar .nav-tabs > li > a,
+  .install .nav-tabs > li > a {
+    color: $gray-lighter;
+  }
+
+  .project-nav-bar .nav-tabs > li.active > a,
+  .install .nav-tabs > li.active > a {
+    color: $brand-primary;
+    cursor: pointer;
   }
 
   @media screen and (min-width: $screen-md-min) {
@@ -186,14 +208,16 @@
       }
 
       .form-control,
-      .selectpicker + .dropdown-toggle,
-      .bootstrap-select {
+      .combobox {
         max-width: 480px;
       }
 
-      .selectpicker + .dropdown-toggle,
-      .bootstrap-select {
-        width: 100% !important;
+      .combobox {
+        width: 100%;
+
+        .dropdown-toggle {
+          width: 100%;
+        }
       }
     }
 
@@ -213,7 +237,7 @@
         }
       }
 
-      input[type="checkbox"] {
+      .switch {
         flex-shrink: 0;
         margin-top: 2px;
       }
@@ -244,17 +268,6 @@
   }
 
   .install {
-    // Same treatment as .project-nav-bar's tabs: only recolor the text,
-    // everything else (background, spacing) is the site's global .nav-tabs style.
-    .nav-tabs > li > a {
-      color: $gray;
-    }
-
-    .nav-tabs > li.active > a {
-      color: $brand-primary;
-      cursor: pointer;
-    }
-
     .box.tab-content {
       border-top-left-radius: 0;
     }
@@ -284,14 +297,6 @@
     color: #fff;
     .head-last-version {
       color: $gray-lighter;
-    }
-    .bootstrap-select > {
-      .dropdown-toggle {
-        width: auto;
-        min-width: 140px;
-        padding-right: 25px;
-        z-index: 1;
-      }
     }
     .info-project {
       margin-bottom: 40px;
@@ -353,15 +358,6 @@
       margin-bottom: 20px;
       margin-top: 0px;
       font-size: 18px;
-  
-      .nav-tabs > li > a {
-        color: $gray-lighter;
-      }
-  
-      .nav-tabs > li.active > a {
-        color: $brand-primary;
-        cursor: pointer;
-      }
     }
   }
 
@@ -478,21 +474,8 @@
       margin-top: 0;
       margin-bottom: 24px;
       color: $brand-secondary;
-      .bootstrap-select {
+      .combobox {
         margin-left: 7px;
-        width: 150px;
-      }
-      .btn {
-        padding: 10px 10px 6px 10px;
-      }
-      .btn-default {
-        color: $gray-light;
-      }
-      .filter-option {
-        padding-right: 4px;
-      }
-      .caret {
-        top: 55%;
       }
     }
 

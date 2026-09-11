@@ -48,7 +48,7 @@
                   </div>
                   <div class="col-md-8">
                     <div class="artifact-info">
-                      <a data-toggle="tooltip" data-placement="top" title="@formatInstant(artifacts.head.releaseDate)">
+                      <a data-toggle="tooltip" data-placement="top" data-tooltip="@formatInstant(artifacts.head.releaseDate)">
                         @TimeUtils.toFiniteDuration(artifacts.head.releaseDate, Instant.now()).prettyPrint
                         ago<i class="fa-solid fa-calendar-days"></i>
                       </a>

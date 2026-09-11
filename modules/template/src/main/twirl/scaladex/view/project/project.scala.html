@@ -45,13 +45,13 @@
     <div class="row">
       <div >
         <ul class="row">
-          <a href="https://github.com/@ref/watchers"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-eye"></i> @Formats.plural(github.watchers.getOrElse(0).toLong, "watcher")</li></a>
-          <a href="https://github.com/@ref/graphs/contributors"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-users"></i> @Formats.plural(github.contributors.size.toLong, "contributor")</li></a>
-          <a href="https://github.com/@ref/stargazers"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-star"></i> @Formats.plural(github.stars.getOrElse(0).toLong, "star")</li></a>
-          <a href="https://github.com/@ref/network"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-code-branch"></i> @Formats.plural(github.forks.getOrElse(0).toLong, "fork")</li></a>
-          <a href="https://github.com/@ref/commits"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-clock-rotate-left"></i> @Formats.plural(github.commits.getOrElse(0).toLong, "commit")</li></a>
-          <a href="https://github.com/@ref/issues"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-circle-exclamation"></i> @Formats.plural(github.issues.getOrElse(0).toLong, "open issue")</li></a>
-          <a href="/@ref/dependents"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-sitemap"></i> @Formats.plural(dependentsCount, "dependent")</li></a>
+          <li class="col-md-6 col-sm-6"><a href="https://github.com/@ref/watchers"><i class="fa-solid fa-eye"></i> @Formats.plural(github.watchers.getOrElse(0).toLong, "watcher")</a></li>
+          <li class="col-md-6 col-sm-6"><a href="https://github.com/@ref/graphs/contributors"><i class="fa-solid fa-users"></i> @Formats.plural(github.contributors.size.toLong, "contributor")</a></li>
+          <li class="col-md-6 col-sm-6"><a href="https://github.com/@ref/stargazers"><i class="fa-solid fa-star"></i> @Formats.plural(github.stars.getOrElse(0).toLong, "star")</a></li>
+          <li class="col-md-6 col-sm-6"><a href="https://github.com/@ref/network"><i class="fa-solid fa-code-branch"></i> @Formats.plural(github.forks.getOrElse(0).toLong, "fork")</a></li>
+          <li class="col-md-6 col-sm-6"><a href="https://github.com/@ref/commits"><i class="fa-solid fa-clock-rotate-left"></i> @Formats.plural(github.commits.getOrElse(0).toLong, "commit")</a></li>
+          <li class="col-md-6 col-sm-6"><a href="https://github.com/@ref/issues"><i class="fa-solid fa-circle-exclamation"></i> @Formats.plural(github.issues.getOrElse(0).toLong, "open issue")</a></li>
+          <li class="col-md-6 col-sm-6"><a href="/@ref/dependents"><i class="fa-solid fa-sitemap"></i> @Formats.plural(dependentsCount, "dependent")</a></li>
         </ul>
       </div>
     </div>
@@ -89,7 +89,7 @@
       @for(contributor <- contributors.take(contributorsLimit)) {
         <li>
           <a href="@contributor.url.target" target="_blank" rel="noreferrer">
-            <img data-toggle="tooltip" data-placement="bottom" width="32" title="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="">
+            <img data-toggle="tooltip" data-placement="bottom" width="32" data-tooltip="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="@contributor.login">
           </a>
         </li>
       }
@@ -132,6 +132,6 @@
 }
 @scopeSpan(scope: ArtifactDependency.Scope) = {
   @if(scope.value != "compile") {
-    <span class="label label-default" data-toggle="tooltip" data-placement="top" title="@scopeDescription(scope)">@scope</span>
+    <span class="label label-default" data-toggle="tooltip" data-placement="top" data-tooltip="@scopeDescription(scope)">@scope</span>
   }
 }

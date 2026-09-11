@@ -211,13 +211,6 @@ main {
           rgba($gray-darker, 0.7),
           $btn-primary-border);
     }
-    .bootstrap-select {
-      width: 100%;
-    }
-    .dropdown-menu {
-      border: none;
-    }
-
     @media screen and (min-width: $screen-md-min) {
       float: right;
       margin-top: 0;

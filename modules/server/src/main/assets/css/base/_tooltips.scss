@@ -1,0 +1,48 @@
+// Tooltips -- a CSS-only replacement for Bootstrap's jQuery-based
+// .tooltip() plugin. The tooltip text comes from data-tooltip (not
+// title, to avoid the native browser tooltip showing up alongside this
+// one, and not aria-label, which would override the element's own
+// accessible name instead of just adding a visual hint).
+
+[data-toggle="tooltip"] {
+    position: relative;
+
+    &::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        z-index: 1070;
+        width: max-content;
+        max-width: 200px;
+        padding: 3px 8px;
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.4;
+        color: #fff;
+        text-align: center;
+        white-space: normal;
+        background-color: $gray-darker;
+        border-radius: $border-radius-base;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s;
+    }
+
+    &:hover::after,
+    &:focus::after {
+        opacity: 0.9;
+    }
+
+    &[data-placement="bottom"]::after {
+        top: 100%;
+        left: 50%;
+        margin-top: 5px;
+        transform: translateX(-50%);
+    }
+
+    &:not([data-placement="bottom"])::after {
+        bottom: 100%;
+        left: 50%;
+        margin-bottom: 5px;
+        transform: translateX(-50%);
+    }
+}

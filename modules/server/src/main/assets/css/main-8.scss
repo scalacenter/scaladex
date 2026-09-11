@@ -5,21 +5,25 @@
 
 // 2. Vendors
 @import
-    'lib/bootstrap-sass/stylesheets/_bootstrap.scss',
-    'lib/font-awesome/scss/fontawesome.scss',
-    'lib/select2/src/scss/core.scss';
+    'lib/font-awesome/scss/fontawesome.scss';
 
-// 3. Vendors Extensions
+// 3. Base
 @import
-    'vendors-extensions/bootstrap',
-    'vendors-extensions/bootstrap-select',
-    'vendors-extensions/bootstrap-switch';
+    'base/reset',
+    'base/base',
+    'base/typography',
+    'base/grid',
+    'base/buttons',
+    'base/forms',
+    'base/navigation',
+    'base/tooltips',
+    'base/toggles',
+    'base/combobox',
+    'base/pagination',
+    'base/tables',
+    'base/progress';
 
-// 4. Base
-@import
-    'base/base';
-
-// 5. Partials
+// 4. Partials
 @import
     'partials/header',
     'partials/main',
