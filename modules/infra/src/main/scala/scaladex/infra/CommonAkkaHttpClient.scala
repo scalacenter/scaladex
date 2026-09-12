@@ -74,24 +74,22 @@ abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.
     }
   end tryEnqueue
 
-  private val retryableStatusCodes: Set[StatusCode] = Set(
+  private val retryableClientErrors: Set[StatusCode] = Set(
     StatusCodes.RequestTimeout,
-    StatusCodes.TooManyRequests,
-    StatusCodes.InternalServerError,
-    StatusCodes.BadGateway,
-    StatusCodes.ServiceUnavailable,
-    StatusCodes.GatewayTimeout
+    StatusCodes.TooManyRequests
   )
 
   private val breaker: Option[CircuitBreaker] =
     config.circuitBreaker.map(cb => CircuitBreaker(system.scheduler, cb.maxFailures, cb.callTimeout, cb.resetTimeout))
 
   protected def isRetryable(response: HttpResponse): Boolean =
-    retryableStatusCodes(response.status)
+    response.status match
+      case _: StatusCodes.ServerError => true
+      case status => retryableClientErrors(status)
 
   protected def isBreakerFailure(result: Try[HttpResponse]): Boolean =
     result match
-      case Success(response) => response.status.isFailure
+      case Success(response) => isRetryable(response)
       case Failure(_) => true
 
   private def retryLoop(request: HttpRequest, attempt: Int)(using ExecutionContextExecutor): Future[HttpResponse] =
