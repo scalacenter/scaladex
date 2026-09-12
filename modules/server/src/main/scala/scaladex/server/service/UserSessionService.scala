@@ -39,6 +39,7 @@ class UserSessionService(database: SchedulerDatabase)(using system: ActorSystem)
       _ <- response match
         case GithubResponse.Ok(state) => database.updateUser(userId, state)
         case GithubResponse.MovedPermanently(state) => database.updateUser(userId, state)
+        case GithubResponse.NotFound(_) => Future.successful(())
         case GithubResponse.Failed(code, errorMessage) =>
           if code == StatusCodes.Unauthorized.intValue then
             logger.info(s"Token for user with id: '$userId' is likely expired, with error: $errorMessage")

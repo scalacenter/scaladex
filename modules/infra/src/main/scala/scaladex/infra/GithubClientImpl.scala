@@ -32,6 +32,7 @@ import org.apache.pekko.http.scaladsl.model.HttpMethods
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.ResponseEntity
+import org.apache.pekko.http.scaladsl.model.StatusCode
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.model.headers.Authorization
@@ -76,6 +77,7 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
   override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]] =
     getRepository(ref).flatMap {
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
+      case GithubResponse.NotFound(code) => Future.successful(GithubResponse.NotFound(code))
       case GithubResponse.Ok(repo) =>
         getRepoInfo(repo).map(info => GithubResponse.Ok(repo.ref -> info))
       case GithubResponse.MovedPermanently(repo) =>
@@ -103,8 +105,8 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
       contributors = contributors.map(_.toGithubContributor),
       commits = Some(contributors.foldLeft(0)(_ + _.contributions)),
       topics = repo.topics.toSet,
-      contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url.apply),
-      codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url.apply),
+      contributingGuide = communityProfile.contributingFile.map(Url.apply),
+      codeOfConduct = communityProfile.codeOfConductFile.map(Url.apply),
       openIssues = openIssues.map(_.toGithubIssue).toList,
       scalaPercentage = Option(scalaPercentage),
       license = repo.licenseName.flatMap(License.get),
@@ -116,21 +118,16 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
 
-    getRaw(request)
-      .flatMap {
-        case (_, entity) =>
-          entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(Option.apply)
-      }
-      .fallbackTo(Future.successful(None))
+    getOrDefault(request, None) { (_, entity) =>
+      entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(Option.apply)
+    }
   end getReadme
 
-  def getCommunityProfile(ref: Project.Reference): Future[Option[GithubModel.CommunityProfile]] =
+  def getCommunityProfile(ref: Project.Reference): Future[GithubModel.CommunityProfile] =
     val request = HttpRequest(uri = s"${repoUrl(ref)}/community/profile")
       .addCredentials(credentials)
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
     get[GithubModel.CommunityProfile](request)
-      .map(Some.apply)
-      .fallbackTo(Future.successful(None))
 
   def getContributors(ref: Project.Reference): Future[List[GithubModel.Contributor]] =
     def request(page: Int) =
@@ -141,21 +138,18 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
     def getContributionPage(page: Int): Future[List[GithubModel.Contributor]] =
       get[List[GithubModel.Contributor]](request(page))
 
-    getRaw(request(page = 1))
-      .flatMap {
-        case (headers, entity) =>
-          val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
-          val contributors = Unmarshal(entity).to[List[GithubModel.Contributor]]
-          lastPage match
-            case Some(lastPage) if lastPage > 1 =>
-              for
-                page1 <- contributors
-                nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
-              yield page1 ++ nextPages
+    getOrDefault(request(page = 1), List.empty) { (headers, entity) =>
+      val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
+      val contributors = Unmarshal(entity).to[List[GithubModel.Contributor]]
+      lastPage match
+        case Some(lastPage) if lastPage > 1 =>
+          for
+            page1 <- contributors
+            nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
+          yield page1 ++ nextPages
 
-            case _ => contributors
-      }
-      .fallbackTo(Future.successful(List.empty))
+        case _ => contributors
+    }
   end getContributors
 
   def getRepository(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] =
@@ -165,8 +159,10 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
         Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.Ok(_))
       case GithubResponse.MovedPermanently((_, entity)) =>
         Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.MovedPermanently(_))
+      case GithubResponse.NotFound(code) => Future.successful(GithubResponse.NotFound(code))
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
     }
+  end getRepository
 
   def getOpenIssues(ref: Project.Reference): Future[Seq[GithubModel.OpenIssue]] =
     def request(page: Int) =
@@ -177,21 +173,18 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
     def getOpenIssuePage(page: Int): Future[Seq[GithubModel.OpenIssue]] =
       get[Seq[Option[GithubModel.OpenIssue]]](request(page)).map(_.flatten)
 
-    getRaw(request(page = 1))
-      .flatMap {
-        case (headers, entity) =>
-          val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
-          val issues = Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
-          lastPage match
-            case Some(lastPage) if lastPage > 1 =>
-              for
-                page1 <- issues
-                nextPages <- (2 to lastPage).mapSync(getOpenIssuePage).map(_.flatten)
-              yield page1.flatten ++ nextPages
+    getOrDefault(request(page = 1), Seq.empty) { (headers, entity) =>
+      val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
+      val issues = Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
+      lastPage match
+        case Some(lastPage) if lastPage > 1 =>
+          for
+            page1 <- issues
+            nextPages <- (2 to lastPage).mapSync(getOpenIssuePage).map(_.flatten)
+          yield page1.flatten ++ nextPages
 
-            case _ => issues.map(_.flatten)
-      }
-      .fallbackTo(Future.successful(Seq.empty))
+        case _ => issues.map(_.flatten)
+    }
   end getOpenIssues
 
   def getPercentageOfLanguage(ref: Project.Reference, language: String): Future[Int] =
@@ -207,7 +200,7 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
   def getCommitActivity(ref: Project.Reference): Future[Seq[GithubCommitActivity]] =
     val request =
       HttpRequest(uri = s"${repoUrl(ref)}/stats/commit_activity").addHeader(acceptJson).addCredentials(credentials)
-    get[Seq[GithubCommitActivity]](request).fallbackTo(Future.successful(Seq.empty))
+    getOrDefault(request, Seq.empty) { (_, entity) => Unmarshal(entity).to[Seq[GithubCommitActivity]] }
 
   def getUserOrganizations(user: String): Future[Seq[Project.Organization]] =
     getAllRecursively(getUserOrganizationsPage(user))
@@ -324,6 +317,7 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
     getUserInfo().flatMap {
       case GithubResponse.Ok(info) => getUserState(info).map(GithubResponse.Ok.apply)
       case GithubResponse.MovedPermanently(info) => getUserState(info).map(GithubResponse.MovedPermanently.apply)
+      case notFound: GithubResponse.NotFound => Future.successful(notFound)
       case failed: GithubResponse.Failed => Future.successful(failed)
     }
 
@@ -350,6 +344,7 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
         Unmarshal(entity).to[GithubModel.UserInfo].map(res => GithubResponse.Ok(res.toCoreUserInfo(token)))
       case GithubResponse.MovedPermanently((_, entity)) =>
         Unmarshal(entity).to[GithubModel.UserInfo].map(res => GithubResponse.Ok(res.toCoreUserInfo(token)))
+      case GithubResponse.NotFound(code) => Future.successful(GithubResponse.NotFound(code))
       case GithubResponse.Failed(code, errorMessage) =>
         Future.successful(GithubResponse.Failed(code, errorMessage))
     }
@@ -375,12 +370,28 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
   )(using io.circe.Decoder[A]): Future[A] =
     getRaw(request).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
 
+  /** Ok/Moved → parse; NotFound (no data) → default; Failed (real error) → fail the Future. */
+  private def getOrDefault[A](request: HttpRequest, default: => A)(
+      parse: (Seq[HttpHeader], ResponseEntity) => Future[A]
+  ): Future[A] =
+    process(request).flatMap {
+      case GithubResponse.Ok((headers, entity)) => parse(headers, entity)
+      case GithubResponse.MovedPermanently((headers, entity)) => parse(headers, entity)
+      case GithubResponse.NotFound(_) => Future.successful(default)
+      case GithubResponse.Failed(code, reason) => Future.failed(new Exception(s"$code: $reason"))
+    }
+
   private def getRaw(request: HttpRequest): Future[(Seq[HttpHeader], ResponseEntity)] =
     process(request).map {
       case GithubResponse.Ok((headers, entity)) => (headers, entity)
       case GithubResponse.MovedPermanently((headers, entity)) => (headers, entity)
+      case GithubResponse.NotFound(code) => throw new Exception(s"$code: not found")
       case GithubResponse.Failed(code, reason) => throw new Exception(s"$code: $reason")
     }
+
+  /** Status codes that mean "understood, but there is no data" rather than an error. */
+  private val emptyDataStatusCodes: Set[StatusCode] =
+    Set(StatusCodes.NoContent, StatusCodes.Accepted, StatusCodes.NotFound, StatusCodes.Gone)
 
   private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] =
     assert(request.headers.contains(Authorization(credentials)))
@@ -394,6 +405,9 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
           case GithubResponse.Ok(res) => GithubResponse.MovedPermanently(res)
           case other => other
         }
+      case HttpResponse(status, _, entity, _) if emptyDataStatusCodes(status) =>
+        entity.discardBytes()
+        Future.successful(GithubResponse.NotFound(status.intValue))
       case _ @HttpResponse(code, _, entity, _) =>
         if entity.contentType.mediaType.isApplication
         then // we need to parse as json when the mediaType is application/json

@@ -17,4 +17,5 @@ end GithubResponse
 object GithubResponse:
   case class Ok[+T](res: T) extends GithubResponse[T]
   case class MovedPermanently[+T](res: T) extends GithubResponse[T]
+  case class NotFound(code: Int) extends GithubResponse[Nothing]
   case class Failed(code: Int, errorMessage: String) extends GithubResponse[Nothing]
