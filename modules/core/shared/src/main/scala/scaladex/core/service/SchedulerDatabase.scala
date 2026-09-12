@@ -6,6 +6,8 @@ import scala.concurrent.Future
 
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.DiscoveredGroupId
+import scaladex.core.model.IndexCursor
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.Version
@@ -36,4 +38,33 @@ trait SchedulerDatabase extends WebDatabase:
   def getArtifactRefs(groupId: Artifact.GroupId): Future[Seq[Artifact.Reference]]
   def getArtifactRefs(groupId: Artifact.GroupId, limit: Int, offset: Int): Future[Seq[Artifact.Reference]]
   def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit]
+
+  // maven central namespace discovery
+  def insertDiscoveredGroupIds(discovered: Seq[DiscoveredGroupId]): Future[Int]
+  def getAllDiscoveredGroupIds(): Future[Seq[DiscoveredGroupId]]
+  def getDiscoveredGroupIds(status: DiscoveredGroupId.Status): Future[Seq[DiscoveredGroupId]]
+
+  /** Pending, not yet synced, oldest first — the sync queue. */
+  def getPendingDiscoveredGroupIdsToSync(limit: Int): Future[Seq[DiscoveredGroupId]]
+
+  /** Pending (synced or not), newest first, bounded — the admin review queue. */
+  def getPendingDiscoveredGroupIdsToReview(limit: Int): Future[Seq[DiscoveredGroupId]]
+  def updateDiscoveredGroupIdSync(
+      groupId: Artifact.GroupId,
+      lastSyncedAt: Instant,
+      syncSummary: String,
+      projectRefs: Seq[Project.Reference]
+  ): Future[Unit]
+
+  /** Record a failed sync attempt without setting last_synced_at, so it is retried. */
+  def updateDiscoveredGroupIdError(groupId: Artifact.GroupId, syncSummary: String): Future[Unit]
+  def updateDiscoveredGroupIdStatus(
+      groupId: Artifact.GroupId,
+      status: DiscoveredGroupId.Status,
+      reviewedBy: String,
+      reviewedAt: Instant
+  ): Future[Unit]
+  def getMavenIndexCursor(): Future[Option[IndexCursor]]
+  def setMavenIndexCursor(cursor: IndexCursor): Future[Unit]
+  def getProjectRefsByGroupId(groupId: Artifact.GroupId): Future[Seq[Project.Reference]]
 end SchedulerDatabase

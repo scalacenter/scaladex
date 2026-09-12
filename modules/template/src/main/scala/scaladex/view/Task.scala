@@ -29,6 +29,11 @@ object Task:
     "Re-download pom files of known artifacts to extract new fields"
   )
 
+  val rewindDiscoveryCursor: Task = Task(
+    "rewind-discovery-cursor",
+    "Rewind the Maven Central index cursor so the next discovery run re-scans the last N chunks."
+  )
+
   case class Status(name: String, user: String, start: Instant, input: Seq[(String, String)], state: State):
     def fromNow: FiniteDuration = TimeUtils.toFiniteDuration(start, Instant.now())
 

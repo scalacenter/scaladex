@@ -1,8 +1,12 @@
 package scaladex.server.service
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 import scaladex.core.model.Artifact
+import scaladex.core.model.DiscoveredGroupId
 import scaladex.core.model.Env
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
@@ -10,6 +14,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.Project.Settings
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
+import scaladex.core.service.MavenCentralIndexClient
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
@@ -25,10 +30,14 @@ class AdminService(
     database: SchedulerDatabase,
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
-    mavenCentralService: MavenCentralService
+    mavenCentralService: MavenCentralService,
+    mavenCentralIndexClient: MavenCentralIndexClient
 )(using system: ActorSystem)
     extends LazyLogging:
   private given ExecutionContext = system.dispatcher
+
+  private val discoveryService =
+    new DiscoveryService(database, mavenCentralIndexClient, mavenCentralService.syncOne(_, None))
 
   val projectService = new ProjectService(database, searchEngine)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
@@ -53,7 +62,8 @@ class AdminService(
         if !env.isLocal then
           Seq(
             new JobScheduler(Job.missingMavenArtifacts, mavenCentralService.findMissing),
-            new JobScheduler(Job.nonStandardArtifacts, mavenCentralService.findNonStandard)
+            new JobScheduler(Job.nonStandardArtifacts, mavenCentralService.findNonStandard),
+            new JobScheduler(Job.discoverMavenNamespaces, discoveryService.discover)
           )
         else Seq.empty
       )
@@ -73,6 +83,34 @@ class AdminService(
 
   def allJobStatuses: Seq[(Job, Job.Status)] =
     jobs.values.map(s => s.job -> s.status).toSeq
+
+  private val discoveredReviewLimit = 100
+
+  /** The review queue: group IDs found by discovery that no admin has yet accepted or rejected, newest first, joined to
+    * the projects they produced. Bounded, and degrades to an empty list rather than failing the whole admin page.
+    */
+  def discoveredProjectsToReview(): Future[Seq[DiscoveredGroupId.View]] =
+    database
+      .getPendingDiscoveredGroupIdsToReview(discoveredReviewLimit)
+      .flatMap: pending =>
+        pending.mapSync: discovered =>
+          discovered.projectRefs
+            .mapSync(database.getProject)
+            .map(projects => DiscoveredGroupId.View(discovered, projects.flatten))
+      .recover:
+        case NonFatal(e) =>
+          logger.warn(s"Could not load discovered projects for review: ${e.getMessage}")
+          Nil
+
+  def reviewDiscoveredGroupId(groupId: Artifact.GroupId, decision: String, user: UserState): Future[Unit] =
+    decision match
+      case "reviewed" =>
+        database.updateDiscoveredGroupIdStatus(groupId, DiscoveredGroupId.Status.Reviewed, user.info.login, Instant.now)
+      case "reject" | "rejected" =>
+        database.updateDiscoveredGroupIdStatus(groupId, DiscoveredGroupId.Status.Rejected, user.info.login, Instant.now)
+      case other =>
+        logger.warn(s"Ignoring unknown discovered-group review decision '$other' for ${groupId.value}")
+        Future.unit
 
   def findMissingArtifacts(
       groupId: Artifact.GroupId,
@@ -139,6 +177,13 @@ class AdminService(
   def republishArtifacts(user: UserState): Unit =
     val task = TaskRunner.run(Task.republishArtifacts, user.info.login, input = Seq.empty) { () =>
       mavenCentralService.republishArtifacts()
+    }
+    tasks = tasks :+ task
+
+  def rewindDiscoveryCursor(chunksBack: Int, user: UserState): Unit =
+    val input = Seq("Chunks back" -> chunksBack.toString)
+    val task = TaskRunner.run(Task.rewindDiscoveryCursor, user.info.login, input) { () =>
+      discoveryService.rewindCursor(chunksBack)
     }
     tasks = tasks :+ task
 
