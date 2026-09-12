@@ -98,6 +98,8 @@ class AdminService(
         githubClient.getProjectInfo(reference).flatMap {
           case GithubResponse.Failed(code, errorMessage) =>
             throw new Exception(s"Failed to add project due to GitHub error $code : $errorMessage")
+          case GithubResponse.NotFound(code) =>
+            throw new Exception(s"Failed to add project. Repository not found on GitHub (HTTP $code)")
           case GithubResponse.MovedPermanently(res) =>
             throw new Exception(s"Failed to add project. Project moved to ${res._1.repository}")
           case GithubResponse.Ok((_, info)) =>
