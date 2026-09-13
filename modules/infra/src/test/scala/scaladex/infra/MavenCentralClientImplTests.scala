@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 
 class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
   given ActorSystem = ActorSystem("maven-central-client-tests")
-  val client = new MavenCentralClientImpl(MavenCentralConfig.load().httpClient)
+  val client: MavenCentralClientImpl = MavenCentralClientImpl(MavenCentralConfig.load().httpClient)
   val groupId: GroupId = GroupId("ch.epfl.scala")
   val artifactId: ArtifactId = ArtifactId("sbt-scalafix_2.12_1.0")
   val version: Version = Version("0.9.23")
