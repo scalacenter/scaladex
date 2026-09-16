@@ -14,6 +14,7 @@ import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions.*
+import scaladex.core.util.Secret
 import scaladex.view.Job
 import scaladex.view.Task
 
@@ -24,7 +25,9 @@ class AdminService(
     env: Env,
     database: SchedulerDatabase,
     searchEngine: SearchEngine,
-    githubClientOpt: Option[GithubClient],
+    githubTokenOpt: Option[Secret],
+    githubScheduledClient: GithubClient,
+    githubInteractiveClient: GithubClient,
     mavenCentralService: MavenCentralService
 )(using system: ActorSystem)
     extends LazyLogging:
@@ -33,9 +36,11 @@ class AdminService(
   val projectService = new ProjectService(database, searchEngine)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
   val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
-  val userSessionService = new UserSessionService(database)
+  val userSessionService = new UserSessionService(database, githubScheduledClient)
   val artifactService = new ArtifactService(database)
-  val githubUpdaterOpt: Option[GithubUpdater] = githubClientOpt.map(client => new GithubUpdater(database, client))
+  // Admin-triggered updates run on the interactive lane so they are not queued behind the scheduled batch.
+  val githubUpdaterOpt: Option[GithubUpdater] =
+    githubTokenOpt.map(token => new GithubUpdater(database, githubInteractiveClient, token))
 
   private val jobs: Map[String, JobScheduler] =
     val seq = Seq(
@@ -46,8 +51,9 @@ class AdminService(
       new JobScheduler(Job.userSessions, userSessionService.updateAll),
       new JobScheduler(Job.latestArtifacts, artifactService.updateAllLatestVersions)
     ) ++
-      githubClientOpt.map { client =>
-        val githubUpdater = new GithubUpdater(database, client)
+      githubTokenOpt.map { token =>
+        // The github-info job runs on the scheduled lane.
+        val githubUpdater = new GithubUpdater(database, githubScheduledClient, token)
         new JobScheduler(Job.githubInfo, githubUpdater.updateAll)
       } ++ (
         if !env.isLocal then
@@ -94,8 +100,8 @@ class AdminService(
     val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
     val task = TaskRunner.run(Task.addEmptyProject, user.info.login, input) { () =>
-      githubClientOpt.fold(throw new Exception("No configured Github token")) { githubClient =>
-        githubClient.getProjectInfo(reference).flatMap {
+      githubTokenOpt.fold(throw new Exception("No configured Github token")) { token =>
+        githubInteractiveClient.getProjectInfo(reference, token).flatMap {
           case GithubResponse.Failed(code, errorMessage) =>
             throw new Exception(s"Failed to add project due to GitHub error $code : $errorMessage")
           case GithubResponse.NotFound(code) =>

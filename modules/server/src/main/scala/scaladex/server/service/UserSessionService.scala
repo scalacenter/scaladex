@@ -7,22 +7,28 @@ import scala.concurrent.Future
 
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserState
+import scaladex.core.service.GithubClient
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
-import scaladex.infra.GithubClientImpl
+import scaladex.infra.Resilience.tolerateHttpClientErrorsWith
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 
-class UserSessionService(database: SchedulerDatabase)(using system: ActorSystem) extends LazyLogging:
+class UserSessionService(database: SchedulerDatabase, github: GithubClient)(using system: ActorSystem)
+    extends LazyLogging:
   private given ExecutionContext = system.dispatcher
 
   def updateAll(): Future[String] =
     for
       sessions <- database.getAllUsers()
-      responses <- sessions.mapSync { case (userId, userInfo) => updateUserSession(userId, userInfo.token) }
+      responses <- sessions.mapSync {
+        case (userId, userInfo) =>
+          updateUserSession(userId, userInfo.token)
+            .recover(tolerateHttpClientErrorsWith(t => GithubResponse.Failed(-1, t.getMessage)))
+      }
     yield
       val totalOk = responses.count(_.isOk)
       val totalMoved = responses.count(_.isMoved)
@@ -33,9 +39,8 @@ class UserSessionService(database: SchedulerDatabase)(using system: ActorSystem)
       s"Updated ${sessions.size} sessions: $totalOk OK, $totalMoved moved, $totalUnauthorized unauthorized, $otherFailed failures"
 
   private def updateUserSession(userId: UUID, token: Secret): Future[GithubResponse[UserState]] =
-    val client = new GithubClientImpl(token)
     for
-      response <- client.getUserState()
+      response <- github.getUserState(token)
       _ <- response match
         case GithubResponse.Ok(state) => database.updateUser(userId, state)
         case GithubResponse.MovedPermanently(state) => database.updateUser(userId, state)
