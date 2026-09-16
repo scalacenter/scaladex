@@ -65,9 +65,13 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(using Execution
         logger.info(s"$repo moved to $destination")
         database.moveProject(repo, info, status).map(_ => status)
 
+      case GithubResponse.NotFound(_) =>
+        val status = GithubStatus.NotFound(now)
+        logger.info(s"$repo not found on GitHub")
+        database.updateGithubStatus(repo, status).map(_ => status)
+
       case GithubResponse.Failed(code, reason) =>
-        val status =
-          if code == 404 then GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
+        val status = GithubStatus.Failed(now, code, reason)
         logger.info(s"Failed to download github info for $repo because of $status")
         database.updateGithubStatus(repo, status).map(_ => status)
     end match
