@@ -26,6 +26,7 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers:
     else
       Await.result(client.getUserState(token), 30.seconds) match
         case Failed(code, errorMessage) => throw new Exception(s"$code $errorMessage")
+        case NotFound(code) => throw new Exception(s"not found: $code")
         case MovedPermanently(userState) => Some(userState)
         case Ok(userState) => Some(userState)
 
@@ -50,10 +51,9 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers:
   it("getCommunity") {
     for communityProfile <- client.getCommunityProfile(Cats.reference, token)
     yield
-      communityProfile shouldBe defined
-      communityProfile.flatMap(_.licenceFile) shouldBe defined
-      communityProfile.flatMap(_.codeOfConductFile) shouldBe defined
-      communityProfile.flatMap(_.contributingFile) shouldBe defined
+      communityProfile.licenceFile shouldBe defined
+      communityProfile.codeOfConductFile shouldBe defined
+      communityProfile.contributingFile shouldBe defined
   }
   it("getContributors") {
     for contributors <- client.getContributors(Cats.reference, token)

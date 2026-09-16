@@ -59,9 +59,12 @@
     margin-bottom: 30px;
   }
 
+  .dependencies {
+    overflow: hidden;
+  }
+
   .dependencies,
   .dependents {
-    overflow: hidden;
     .row {
       > div {
         overflow-wrap: anywhere;

@@ -56,10 +56,13 @@ private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri
     github.getUserInfo(token).map {
       case GithubResponse.Ok(res) => res
       case GithubResponse.MovedPermanently(res) => res
+      case GithubResponse.NotFound(code) =>
+        throw new Exception(s"Failed to get user: not found ($code)")
       case GithubResponse.Failed(errorCode, errorMessage) =>
         val message = s"Failed to get user state: $errorCode, $errorMessage"
         throw new Exception(message)
     }
+  end getUser
 
   def getUserState(token: Secret): Future[Option[UserState]] =
     github.getUserState(token).map {
@@ -69,6 +72,8 @@ private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri
       case GithubResponse.Failed(StatusCodes.Unauthorized.intValue, errorMessage) =>
         logger.warn(s"Rejected invalid GitHub token: $errorMessage")
         None
+      case GithubResponse.NotFound(code) =>
+        throw Exception(s"Failed to get user state from GitHub: not found ($code)")
       case GithubResponse.Failed(errorCode, errorMessage) =>
         throw Exception(s"Failed to get user state from GitHub: $errorCode, $errorMessage")
     }
