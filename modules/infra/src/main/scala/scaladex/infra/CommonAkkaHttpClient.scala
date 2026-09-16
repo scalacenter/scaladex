@@ -18,7 +18,6 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
-import org.apache.pekko.http.scaladsl.model.StatusCode
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.pattern.after
@@ -74,24 +73,18 @@ abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.
     }
   end tryEnqueue
 
-  private val retryableStatusCodes: Set[StatusCode] = Set(
-    StatusCodes.RequestTimeout,
-    StatusCodes.TooManyRequests,
-    StatusCodes.InternalServerError,
-    StatusCodes.BadGateway,
-    StatusCodes.ServiceUnavailable,
-    StatusCodes.GatewayTimeout
-  )
-
   private val breaker: Option[CircuitBreaker] =
     config.circuitBreaker.map(cb => CircuitBreaker(system.scheduler, cb.maxFailures, cb.callTimeout, cb.resetTimeout))
 
   protected def isRetryable(response: HttpResponse): Boolean =
-    retryableStatusCodes(response.status)
+    response.status match
+      case _: StatusCodes.ServerError => true
+      case StatusCodes.TooManyRequests | StatusCodes.RequestTimeout => true
+      case _ => false
 
   protected def isBreakerFailure(result: Try[HttpResponse]): Boolean =
     result match
-      case Success(response) => response.status.isFailure
+      case Success(response) => isRetryable(response)
       case Failure(_) => true
 
   private def retryLoop(request: HttpRequest, attempt: Int)(using ExecutionContextExecutor): Future[HttpResponse] =
