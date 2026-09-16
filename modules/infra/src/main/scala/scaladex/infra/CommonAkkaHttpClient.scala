@@ -18,7 +18,6 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
-import org.apache.pekko.http.scaladsl.model.StatusCode
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.pattern.after
@@ -74,18 +73,14 @@ abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.
     }
   end tryEnqueue
 
-  private val retryableClientErrors: Set[StatusCode] = Set(
-    StatusCodes.RequestTimeout,
-    StatusCodes.TooManyRequests
-  )
-
   private val breaker: Option[CircuitBreaker] =
     config.circuitBreaker.map(cb => CircuitBreaker(system.scheduler, cb.maxFailures, cb.callTimeout, cb.resetTimeout))
 
   protected def isRetryable(response: HttpResponse): Boolean =
     response.status match
       case _: StatusCodes.ServerError => true
-      case status => retryableClientErrors(status)
+      case StatusCodes.TooManyRequests | StatusCodes.RequestTimeout => true
+      case _ => false
 
   protected def isBreakerFailure(result: Try[HttpResponse]): Boolean =
     result match
