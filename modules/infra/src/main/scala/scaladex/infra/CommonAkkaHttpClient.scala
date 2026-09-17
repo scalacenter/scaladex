@@ -13,7 +13,6 @@ import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.config.HttpClientConfig
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.HttpRequest
@@ -25,7 +24,6 @@ import org.apache.pekko.pattern.after
 import org.apache.pekko.stream.OverflowStrategy
 import org.apache.pekko.stream.QueueOfferResult
 import org.apache.pekko.stream.ThrottleMode
-import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.scaladsl.Keep
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
@@ -38,26 +36,19 @@ class CommonAkkaHttpClient(
 )(using system: ActorSystem)
     extends LazyLogging:
 
-  private def initPoolClientFlow: Flow[
-    (HttpRequest, Promise[HttpResponse]),
-    (Try[HttpResponse], Promise[HttpResponse]),
-    NotUsed
-  ] =
-    Http().superPool[Promise[HttpResponse]](settings = poolSettings)
-
   private val maxConcurrentOffers = 256
 
   private val queue: SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])] =
     val requests =
       Source
         .queue[(HttpRequest, Promise[HttpResponse])](10000, OverflowStrategy.dropNew: @nowarn, maxConcurrentOffers)
-        .via(initPoolClientFlow)
     config.throttle
       .fold(requests) { t =>
         t.maxBurst match
           case Some(burst) => requests.throttle(t.requests, t.per, burst, ThrottleMode.Shaping)
           case None => requests.throttle(t.requests, t.per)
       }
+      .via(Http().superPool[Promise[HttpResponse]](settings = poolSettings))
       .toMat(Sink.foreach {
         case (Success(resp), p) => p.success(resp)
         case (Failure(e), p) => p.failure(e)
