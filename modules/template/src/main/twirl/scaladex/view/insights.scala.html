@@ -64,7 +64,7 @@
   <div class="insights-panel">
     <h3>@title</h3>
     @if(insights.isEmpty) {
-      <p>No data yet. The insights job hasn't run.</p>
+      <p>No data available yet.</p>
     } else {
       @chartAndTable(id, insights.map(versionLabel), insights.map(_.projectCount), insights.map(versionColor), "Scala version")
     }
@@ -80,7 +80,7 @@
   <div class="insights-panel">
     <h3>Scala 3 migration</h3>
     @if(migration.isEmpty) {
-      <p>No data yet. The insights job hasn't run.</p>
+      <p>No data available yet.</p>
     } else {
       @defining(migration.sortBy(_.migrated)) { sorted =>
         @chartAndTable(

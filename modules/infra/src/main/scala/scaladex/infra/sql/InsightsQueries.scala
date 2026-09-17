@@ -3,6 +3,7 @@ package scaladex.infra.sql
 import scaladex.core.model.InsightsGranularity
 import scaladex.core.model.Language
 import scaladex.core.model.Scala
+import scaladex.core.model.Scala3MigrationInsight
 import scaladex.core.model.ScalaVersionInsight
 import scaladex.core.model.Version
 import scaladex.infra.sql.DoobieMappings.given
@@ -10,10 +11,11 @@ import scaladex.infra.sql.DoobieUtils.*
 
 import doobie.*
 
-object ScalaVersionInsightsTable:
-  val table: String = "scala_version_insights"
+// Aggregate stats over the artifacts table, not backed by their own table: they're computed on
+// demand and cached rather than persisted (see SqlDatabase.scalaVersionInsightsCache).
+object InsightsQueries:
 
-  val fields: Seq[String] = Seq("kind", "language_version", "project_count")
+  private val excludeJava = Seq(ArtifactTable.isLatestVersion, "language_version != 'java'")
 
   // Scala 3.x is a single binary version (language_version is always "3"), unlike 2.x where every
   // minor is its own binary version. For the "Minor" granularity we bucket 3.x by the minor of
@@ -25,8 +27,6 @@ object ScalaVersionInsightsTable:
       |  ELSE language_version
       |END""".stripMargin
 
-  private val excludeJava = Seq(ArtifactTable.isLatestVersion, "language_version != 'java'")
-
   // Counted from artifacts.is_latest_version, so it reflects the current state of the ecosystem,
   // not every version ever published. Java artifacts are excluded; this is a Scala-version breakdown.
   val computeBinaryCompatCounts: Query0[ScalaVersionInsight] =
@@ -35,7 +35,7 @@ object ScalaVersionInsightsTable:
       Seq("language_version", "COUNT(DISTINCT (organization, repository))"),
       where = excludeJava,
       groupBy = Seq("language_version")
-    ).map { case (language, count) => ScalaVersionInsight(InsightsGranularity.BinaryCompat, language, count) }
+    ).map { (language, count) => ScalaVersionInsight(InsightsGranularity.BinaryCompat, language, count) }
 
   val computeMinorVersionCounts: Query0[ScalaVersionInsight] =
     selectRequest[(String, Long)](
@@ -43,18 +43,20 @@ object ScalaVersionInsightsTable:
       Seq(s"$minorVersionBucket AS version_bucket", "COUNT(DISTINCT (organization, repository))"),
       where = excludeJava,
       groupBy = Seq(minorVersionBucket)
-    ).map {
-      case (bucket, count) =>
-        ScalaVersionInsight(InsightsGranularity.Minor, Language.parse(bucket).getOrElse(Scala(Version(3))), count)
+    ).map { (bucket, count) =>
+      ScalaVersionInsight(InsightsGranularity.Minor, Language.parse(bucket).getOrElse(Scala(Version(3))), count)
     }
 
-  val selectAll: Query0[ScalaVersionInsight] =
-    selectRequest[(InsightsGranularity, Language, Long)](table, fields).map(ScalaVersionInsight.apply)
-
-  // The job always deletes everything and reinserts a fresh snapshot, so a plain insert is enough.
-  val insert: Update[ScalaVersionInsight] =
-    insertRequest[(InsightsGranularity, Language, Long)](table, fields)
-      .contramap(i => (i.granularity, i.language, i.projectCount))
-
-  val deleteAll: Update[Unit] = Update[Unit](s"DELETE FROM $table")
-end ScalaVersionInsightsTable
+  // A project counts as migrated if any of its latest artifacts targets Scala 3. It may still also
+  // publish Scala 2.x artifacts for other modules; this tracks "has it started", not "is it done".
+  val computeScala3MigrationCounts: Query0[Scala3MigrationInsight] =
+    Query0[(Boolean, Long)](
+      s"""|WITH project_scala3 AS (
+          |  SELECT organization, repository, bool_or(language_version = '3') AS migrated
+          |  FROM ${ArtifactTable.table}
+          |  WHERE ${ArtifactTable.isLatestVersion} AND language_version != 'java'
+          |  GROUP BY organization, repository
+          |)
+          |SELECT migrated, COUNT(*) FROM project_scala3 GROUP BY migrated""".stripMargin
+    ).map(Scala3MigrationInsight.apply)
+end InsightsQueries

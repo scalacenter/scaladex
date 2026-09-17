@@ -38,7 +38,6 @@ class AdminService(
   val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
   val userSessionService = new UserSessionService(database, githubScheduledClient)
   val artifactService = new ArtifactService(database)
-  val insightsService = new InsightsService(database)
   // Admin-triggered updates run on the interactive lane so they are not queued behind the scheduled batch.
   val githubUpdaterOpt: Option[GithubUpdater] =
     githubTokenOpt.map(token => new GithubUpdater(database, githubInteractiveClient, token))
@@ -50,8 +49,7 @@ class AdminService(
       new JobScheduler(Job.projectCreationDates, updateProjectCreationDate),
       new JobScheduler(Job.moveArtifacts, artifactService.moveAll),
       new JobScheduler(Job.userSessions, userSessionService.updateAll),
-      new JobScheduler(Job.latestArtifacts, artifactService.updateAllLatestVersions),
-      new JobScheduler(Job.scalaVersionInsights, insightsService.updateAll)
+      new JobScheduler(Job.latestArtifacts, artifactService.updateAllLatestVersions)
     ) ++
       githubTokenOpt.map { token =>
         // The github-info job runs on the scheduled lane.

@@ -78,6 +78,20 @@ class SqlDatabase(
   private val countArtifactsCache: AsyncLoadingCache[Unit, Long] =
     Scaffeine().refreshAfterWrite(5.minutes).buildAsyncFuture[Unit, Long](_ => run(ArtifactTable.count.unique))
 
+  private type Insights = (scalaVersions: Seq[ScalaVersionInsight], scala3Migration: Seq[Scala3MigrationInsight])
+
+  // Insights are expensive full-table aggregate scans that don't change quickly (the old scheduled
+  // job only ran once a day), so they're computed on demand and cached, refreshing in the background
+  // rather than on every page view. Both scans share one cache entry since they're always read together.
+  private val insightsCache: AsyncLoadingCache[Unit, Insights] =
+    Scaffeine().refreshAfterWrite(24.hours).buildAsyncFuture[Unit, Insights] { _ =>
+      for
+        binaryCompat <- run(InsightsQueries.computeBinaryCompatCounts.to[Seq])
+        minor <- run(InsightsQueries.computeMinorVersionCounts.to[Seq])
+        migration <- run(InsightsQueries.computeScala3MigrationCounts.to[Seq])
+      yield (scalaVersions = binaryCompat ++ minor, scala3Migration = migration)
+    }
+
   private val directDependenciesCache: AsyncLoadingCache[Artifact.Reference, Seq[ArtifactDependency.Direct]] =
     buildCache(ref => run(ArtifactDependencyTable.selectDirectDependency.to[Seq](ref)))
 
@@ -306,38 +320,11 @@ class SqlDatabase(
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.deleteBySource.run(ref))
 
-  override def computeScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
-    for
-      binaryCompat <- run(ScalaVersionInsightsTable.computeBinaryCompatCounts.to[Seq])
-      minor <- run(ScalaVersionInsightsTable.computeMinorVersionCounts.to[Seq])
-    yield binaryCompat ++ minor
-
-  // Delete + insert as one transaction, so a concurrent page request never sees an empty table
-  // between the two statements.
-  override def replaceScalaVersionInsights(insights: Seq[ScalaVersionInsight]): Future[Int] =
-    val transaction =
-      for
-        _ <- ScalaVersionInsightsTable.deleteAll.run(())
-        inserted <- ScalaVersionInsightsTable.insert.updateMany(insights)
-      yield inserted
-    run(transaction)
-
   override def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
-    run(ScalaVersionInsightsTable.selectAll.to[Seq])
-
-  override def computeScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
-    run(Scala3MigrationTable.computeProjectCounts.to[Seq])
-
-  override def replaceScala3MigrationInsights(insights: Seq[Scala3MigrationInsight]): Future[Int] =
-    val transaction =
-      for
-        _ <- Scala3MigrationTable.deleteAll.run(())
-        inserted <- Scala3MigrationTable.insert.updateMany(insights)
-      yield inserted
-    run(transaction)
+    insightsCache.get(()).map(_.scalaVersions)
 
   override def getScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
-    run(Scala3MigrationTable.selectAll.to[Seq])
+    insightsCache.get(()).map(_.scala3Migration)
 
   override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))
