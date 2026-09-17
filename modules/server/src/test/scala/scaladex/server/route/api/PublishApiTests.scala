@@ -5,6 +5,7 @@ import scaladex.core.model.Env
 import scaladex.core.test.MockGithubAuth
 import scaladex.core.test.Values.*
 import scaladex.infra.CoursierResolver
+import scaladex.infra.GithubClientImpl
 import scaladex.server.route.ControllerBaseSuite
 import scaladex.server.service.PublishProcess
 
@@ -17,7 +18,8 @@ import org.scalatest.BeforeAndAfterEach
 
 class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach:
   val pomResolver = new CoursierResolver
-  val publishProcess: PublishProcess = PublishProcess(dataPaths, localStorage, database, Env.Dev)
+  val githubClient: GithubClientImpl = GithubClientImpl(config.github.interactiveHttpClient)
+  val publishProcess: PublishProcess = PublishProcess(dataPaths, localStorage, database, githubClient, Env.Dev)
   val publishApi = new PublishApi(githubAuth, publishProcess)
 
   val sonatype: BasicHttpCredentials = BasicHttpCredentials("token", MockGithubAuth.Sonatype.token)

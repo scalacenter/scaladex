@@ -32,7 +32,7 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(using Ex
       }
       .keys
       .toSeq
-      .sorted(Ordering[Version].reverse)
+      .sorted(using Ordering[Version].reverse)
 
   def getLatestProjectVersion(ref: Project.Reference): Future[Seq[Artifact.Reference]] =
     getHeader(ref).flatMap {

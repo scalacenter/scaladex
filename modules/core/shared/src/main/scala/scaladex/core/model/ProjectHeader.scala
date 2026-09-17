@@ -29,7 +29,7 @@ object ProjectHeader:
       filteredArtifacts
         .filter(_.version == version)
         .maxByOption(a => (a.binaryVersion, a.name, a.releaseDate))(
-          Ordering.Tuple3(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse, Ordering[Instant])
+          using Ordering.Tuple3(using Ordering[BinaryVersion], Ordering[Artifact.Name].reverse, Ordering[Instant])
         )
         .map(_.name)
 
@@ -83,7 +83,7 @@ final case class ProjectHeader private (
 
   def allArtifactNames: Seq[Artifact.Name] = artifacts.map(_.name).distinct.sorted
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
-    artifacts.filter(_.name == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
+    artifacts.filter(_.name == artifactName).map(_.platform).distinct.sorted(using Platform.ordering.reverse)
   def artifacts(artifactName: Artifact.Name, platform: Platform): Seq[Artifact] =
     artifacts.filter(a => a.name == artifactName && a.platform == platform)
 

@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 
 class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
   given ActorSystem = ActorSystem("maven-central-client-tests")
-  val client = new MavenCentralClientImpl(MavenCentralConfig.load().httpClient)
+  val client: MavenCentralClientImpl = MavenCentralClientImpl(MavenCentralConfig.load().httpClient)
   val groupId: GroupId = GroupId("ch.epfl.scala")
   val artifactId: ArtifactId = ArtifactId("sbt-scalafix_2.12_1.0")
   val version: Version = Version("0.9.23")
@@ -43,22 +43,22 @@ class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
 
   it(s"retrieve pomfile for maven reference of sbt plugin") {
     for res <- client.getPomFile(Artifact.Reference.from("org.jetbrains.scala", "sbt-idea-plugin_2.12_1.0", "5.0.6"))
-    yield res.get._1.startsWith("<?xml") shouldBe true
+    yield res._1.startsWith("<?xml") shouldBe true
   }
 
   it(s"retrieve pomfile for maven reference of jvm") {
     for res <- client.getPomFile(Artifact.Reference.from("ch.epfl.scala", "scalafix-core_2.13", "0.9.23"))
-    yield res.get._1.startsWith("<?xml") shouldBe true
+    yield res._1.startsWith("<?xml") shouldBe true
   }
 
   it(s"retrieve pomfile for maven reference of ScalaJs") {
     for res <- client.getPomFile(Artifact.Reference.from("ch.epfl.scala", "bloop-config_sjs1_2.13", "1.4.11"))
-    yield res.get._1.startsWith("<?xml") shouldBe true
+    yield res._1.startsWith("<?xml") shouldBe true
   }
 
   it(s"retrieve pomfile for maven reference of Scala Native") {
     for res <- client.getPomFile(Artifact.Reference.from("ch.epfl.scala", "bloop-native-bridge-0-4_2.12", "1.3.4"))
-    yield res.get._1.startsWith("<?xml") shouldBe true
+    yield res._1.startsWith("<?xml") shouldBe true
   }
 
   it(s"parse date time") {

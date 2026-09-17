@@ -261,7 +261,7 @@ object Artifact:
     }
 
     def apply(artifactId: String): ArtifactId =
-      tryParse(artifactId, x => FullParser(x)).getOrElse(ArtifactId(Name(artifactId), BinaryVersion(Jvm, Java)))
+      tryParse(artifactId, FullParser).getOrElse(ArtifactId(Name(artifactId), BinaryVersion(Jvm, Java)))
   end ArtifactId
 
   case class Reference(groupId: GroupId, artifactId: ArtifactId, version: Version):

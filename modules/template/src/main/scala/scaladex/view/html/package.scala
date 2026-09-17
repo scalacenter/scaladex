@@ -90,6 +90,9 @@ package object html:
   def dependentsUri(ref: Project.Reference)(page: Int): Uri =
     Uri(s"/$ref/dependents").appendQuery("page" -> page.toString)
 
+  def badgesUri(ref: Project.Reference, artifactName: Artifact.Name): Uri =
+    Uri(s"/$ref/badges").appendQuery("artifact" -> artifactName.value)
+
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) =
     val min = 1

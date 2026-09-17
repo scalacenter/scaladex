@@ -79,7 +79,11 @@ class PomsReader(resolver: PomResolver) extends LazyLogging:
       .setModelResolver(modelResolver)
       .setSystemProperties(jdk)
       .setPomFile(path.toFile)
+      .setTwoPhaseBuilding(true)
 
-    builder.build(request).getEffectiveModel
+    val partial = builder.build(request)
+    partial.getEffectiveModel.setDistributionManagement(null)
+
+    builder.build(request, partial).getEffectiveModel
   }.map(pom => PomConvert(pom))
 end PomsReader

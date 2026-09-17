@@ -15,7 +15,8 @@ import com.typesafe.scalalogging.LazyLogging
 private case class ArtifactMeta(artifactId: Artifact.ArtifactId, isNonStandard: Boolean)
 
 class ArtifactConverter(paths: DataPaths) extends LazyLogging:
-  private val nonStandardLibs = NonStandardLib.load(paths)
+  private val nonStandardLookupByCoordinate: Map[(String, String), BinaryVersionLookup] =
+    NonStandardLib.load(paths).map(lib => (lib.groupId, lib.artifactId) -> lib.lookup).toMap
 
   def convert(
       pom: ArtifactModel,
@@ -61,10 +62,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging:
     *   The artifact name (without suffix), the binary version, whether this project is a standard Scala library or not
     */
   private def extractMeta(pom: ArtifactModel): Option[ArtifactMeta] =
-    val nonStandardLookup =
-      nonStandardLibs
-        .find(lib => lib.groupId == pom.groupId && lib.artifactId == pom.artifactId)
-        .map(_.lookup)
+    val nonStandardLookup = nonStandardLookupByCoordinate.get((pom.groupId, pom.artifactId))
 
     val artifactMetaOption = nonStandardLookup match
       case None =>

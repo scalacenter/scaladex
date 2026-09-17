@@ -6,9 +6,6 @@ import java.time.format.DateTimeFormatter
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.util.Try
-import scala.util.control.NonFatal
 
 import scaladex.core.model.Artifact
 import scaladex.core.model.SbtPlugin
@@ -19,31 +16,18 @@ import scaladex.infra.config.HttpClientConfig
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
-import org.apache.pekko.stream.scaladsl.Flow
 
-class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
-    extends CommonAkkaHttpClient(config)
-    with MavenCentralClient
+class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: ActorSystem)
+    extends MavenCentralClient
     with LazyLogging:
   private given ExecutionContextExecutor = system.dispatcher
   private val baseUri = "https://repo1.maven.org/maven2"
-  override def initPoolClientFlow: Flow[
-    (HttpRequest, Promise[HttpResponse]),
-    (Try[HttpResponse], Promise[HttpResponse]),
-    Http.HostConnectionPool
-  ] =
-    Http()
-      .cachedHostConnectionPoolHttps[Promise[HttpResponse]](
-        "repo1.maven.org",
-        settings = ConnectionPoolSettings("max-open-requests = 32")
-      )
 
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/"
@@ -51,7 +35,7 @@ class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default
       HttpRequest(uri = uri)
 
     for
-      response <- queueRequestWithRetry(request)
+      response <- httpClient.queueRequestWithRetry(request)
       directories <- listDirectories(uri, response)
     yield directories.map(Artifact.ArtifactId.apply)
   end getAllArtifactIds
@@ -59,56 +43,50 @@ class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/"
     val request = HttpRequest(uri = uri)
-    val future = for
-      response <- queueRequestWithRetry(request)
+    for
+      response <- httpClient.queueRequestWithRetry(request)
       directories <- listDirectories(uri, response)
     yield directories.map(Version.apply)
-    future.recoverWith {
-      case NonFatal(exception) =>
-        logger.warn(s"failed to retrieve versions from $uri because ${exception.getMessage}")
-        Future.successful(Nil)
-    }
   end getAllVersions
 
-  override def getPomFile(ref: Artifact.Reference): Future[Option[(String, Instant)]] =
+  override def getPomFile(ref: Artifact.Reference): Future[(String, Instant)] =
     val pomUri = getPomUri(ref)
-    val future = for
-      response <- queueRequestWithRetry(HttpRequest(uri = pomUri))
+    for
+      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = pomUri))
       res <- getPomFileWithLastModifiedTime(response, pomUri)
     yield res
-    future.recoverWith {
-      case NonFatal(exception) =>
-        logger.warn(s"Could not get pom file of $ref because of $exception")
-        Future.successful(None)
-    }
   end getPomFile
 
-  private def getPomFileWithLastModifiedTime(response: HttpResponse, uri: String): Future[Option[(String, Instant)]] =
+  private def getPomFileWithLastModifiedTime(response: HttpResponse, uri: String): Future[(String, Instant)] =
     response match
       case _ @HttpResponse(StatusCodes.OK, headers: Seq[model.HttpHeader], entity, _) =>
-        val lastModified = headers.find(_.is("last-modified")).map(header => parseDate(header.value))
-        Unmarshaller
-          .stringUnmarshaller(entity)
-          .map(page => lastModified.map(page -> _))
+        headers.find(_.is("last-modified")).map(header => parseDate(header.value)) match
+          case Some(lastModified) =>
+            Unmarshaller.stringUnmarshaller(entity).map(page => page -> lastModified)
+          case None =>
+            entity.discardBytes()
+            Future.failed(new Exception(s"Missing last-modified header for $uri"))
       case _ =>
-        logger.warn(s"Cannot get $uri: ${response.status}")
-        Future.successful(None)
+        response.discardEntityBytes()
+        Future.failed(new Exception(s"Cannot get $uri: ${response.status}"))
 
-  private def listDirectories(uri: String, response: HttpResponse) =
-    if response.status != StatusCodes.OK
-    then
-      logger.warn(s"Cannot list $uri: ${response.status}")
-      response.discardEntityBytes()
-      Future.successful(Seq.empty)
-    else
-      Unmarshaller
-        .stringUnmarshaller(response.entity)
-        .map(page =>
-          val directories = JsoupUtils.listDirectories(uri, page)
-          if directories.isEmpty then
-            logger.warn(s"No directories parsed from $uri (HTTP ${response.status}): ${preview(page)}")
-          directories
-        )
+  private def listDirectories(uri: String, response: HttpResponse): Future[Seq[String]] =
+    response.status match
+      case StatusCodes.OK =>
+        Unmarshaller
+          .stringUnmarshaller(response.entity)
+          .map(page =>
+            val directories = JsoupUtils.listDirectories(uri, page)
+            if directories.isEmpty then
+              logger.warn(s"No directories parsed from $uri (HTTP ${response.status}): ${preview(page)}")
+            directories
+          )
+      case StatusCodes.NotFound =>
+        response.discardEntityBytes()
+        Future.successful(Seq.empty)
+      case status =>
+        response.discardEntityBytes()
+        Future.failed(new Exception(s"Cannot list $uri: $status"))
   end listDirectories
 
   private def preview(page: String): String =
@@ -127,4 +105,11 @@ class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default
     artifactId.binaryVersion.platform match
       case SbtPlugin(Version.Minor(0, 13)) => s"${artifactId.name.value}-${version.value}.pom"
       case _ => s"${artifactId.value}-${version.value}.pom"
+end MavenCentralClientImpl
+
+object MavenCentralClientImpl:
+  private val poolSettings: ConnectionPoolSettings = ConnectionPoolSettings("").withMaxConnections(10)
+
+  def apply(config: HttpClientConfig = HttpClientConfig.default)(using ActorSystem): MavenCentralClientImpl =
+    new MavenCentralClientImpl(new CommonAkkaHttpClient(poolSettings, config))
 end MavenCentralClientImpl

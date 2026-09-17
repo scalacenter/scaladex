@@ -12,41 +12,52 @@ import scala.util.Try
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.config.HttpClientConfig
 
-import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
-import org.apache.pekko.http.scaladsl.model.StatusCode
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.pattern.after
 import org.apache.pekko.stream.OverflowStrategy
 import org.apache.pekko.stream.QueueOfferResult
+import org.apache.pekko.stream.ThrottleMode
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.stream.scaladsl.Keep
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.scaladsl.SourceQueueWithComplete
 
-abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
-    extends FailFastCirceSupport
-    with LazyLogging:
+class CommonAkkaHttpClient(
+    poolSettings: ConnectionPoolSettings,
+    config: HttpClientConfig = HttpClientConfig.default,
+    additionalRetry: HttpResponse => Boolean = _ => false
+)(using system: ActorSystem)
+    extends LazyLogging:
 
-  def initPoolClientFlow: Flow[
+  private def initPoolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
     (Try[HttpResponse], Promise[HttpResponse]),
-    Http.HostConnectionPool
-  ]
+    NotUsed
+  ] =
+    Http().superPool[Promise[HttpResponse]](settings = poolSettings)
+
+  private val maxConcurrentOffers = 256
 
   private val queue: SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])] =
     val requests =
       Source
-        .queue[(HttpRequest, Promise[HttpResponse])](10000, OverflowStrategy.dropNew: @nowarn)
+        .queue[(HttpRequest, Promise[HttpResponse])](10000, OverflowStrategy.dropNew: @nowarn, maxConcurrentOffers)
         .via(initPoolClientFlow)
     config.throttle
-      .fold(requests)(t => requests.throttle(t.requests, t.per))
+      .fold(requests) { t =>
+        t.maxBurst match
+          case Some(burst) => requests.throttle(t.requests, t.per, burst, ThrottleMode.Shaping)
+          case None => requests.throttle(t.requests, t.per)
+      }
       .toMat(Sink.foreach {
         case (Success(resp), p) => p.success(resp)
         case (Failure(e), p) => p.failure(e)
@@ -74,24 +85,18 @@ abstract class CommonAkkaHttpClient(config: HttpClientConfig = HttpClientConfig.
     }
   end tryEnqueue
 
-  private val retryableStatusCodes: Set[StatusCode] = Set(
-    StatusCodes.RequestTimeout,
-    StatusCodes.TooManyRequests,
-    StatusCodes.InternalServerError,
-    StatusCodes.BadGateway,
-    StatusCodes.ServiceUnavailable,
-    StatusCodes.GatewayTimeout
-  )
-
   private val breaker: Option[CircuitBreaker] =
     config.circuitBreaker.map(cb => CircuitBreaker(system.scheduler, cb.maxFailures, cb.callTimeout, cb.resetTimeout))
 
-  protected def isRetryable(response: HttpResponse): Boolean =
-    retryableStatusCodes(response.status)
+  private def isRetryable(response: HttpResponse): Boolean =
+    response.status match
+      case _: StatusCodes.ServerError => true
+      case StatusCodes.TooManyRequests | StatusCodes.RequestTimeout => true
+      case _ => additionalRetry(response)
 
-  protected def isBreakerFailure(result: Try[HttpResponse]): Boolean =
+  private def isBreakerFailure(result: Try[HttpResponse]): Boolean =
     result match
-      case Success(response) => response.status.isFailure
+      case Success(response) => isRetryable(response)
       case Failure(_) => true
 
   private def retryLoop(request: HttpRequest, attempt: Int)(using ExecutionContextExecutor): Future[HttpResponse] =
