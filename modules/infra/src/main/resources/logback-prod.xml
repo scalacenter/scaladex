@@ -29,6 +29,10 @@
       <appender-ref ref="HTTP_ACCESS"/>
   </logger>
 
+  <logger name="scaladex.infra.http-client" level="DEBUG" additivity="false">
+      <appender-ref ref="HTTP_ACCESS"/>
+  </logger>
+
   <logger name="akka" level="INFO" />
   <logger name="play.api.libs" level="WARN" />
   <logger name="com.sksamuel" level="INFO" />
