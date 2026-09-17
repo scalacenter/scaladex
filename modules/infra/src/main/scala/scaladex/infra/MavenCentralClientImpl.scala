@@ -41,12 +41,11 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   end getAllArtifactIds
 
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]] =
-    val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/"
-    val request = HttpRequest(uri = uri)
+    val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/maven-metadata.xml"
     for
-      response <- httpClient.queueRequestWithRetry(request)
-      directories <- listDirectories(uri, response)
-    yield directories.map(Version.apply)
+      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = uri))
+      versions <- parseMavenMetadata(uri, response)
+    yield versions
   end getAllVersions
 
   override def getPomFile(ref: Artifact.Reference): Future[(String, Instant)] =
@@ -88,6 +87,20 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
         response.discardEntityBytes()
         Future.failed(new Exception(s"Cannot list $uri: $status"))
   end listDirectories
+
+  private def parseMavenMetadata(uri: String, response: HttpResponse): Future[Seq[Version]] =
+    response.status match
+      case StatusCodes.OK =>
+        Unmarshaller
+          .stringUnmarshaller(response.entity)
+          .map(metadata => JsoupUtils.listVersions(metadata).map(Version.apply))
+      case StatusCodes.NotFound =>
+        response.discardEntityBytes()
+        Future.successful(Seq.empty)
+      case status =>
+        response.discardEntityBytes()
+        Future.failed(new Exception(s"Cannot get $uri: $status"))
+  end parseMavenMetadata
 
   private def preview(page: String): String =
     page.iterator.take(200).mkString.replaceAll("\\s+", " ")

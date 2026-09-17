@@ -3,6 +3,7 @@ package scaladex.core.util
 import scala.jdk.CollectionConverters.*
 
 import org.jsoup.Jsoup
+import org.jsoup.parser.Parser
 
 object JsoupUtils:
   def listDirectories(url: String, page: String): Seq[String] =
@@ -13,6 +14,15 @@ object JsoupUtils:
   def listFiles(url: String, page: String): Seq[String] =
     listElements(url, page)
       .filter(!_.endsWith("/"))
+
+  /** Extract the published versions from a Maven `maven-metadata.xml` document. */
+  def listVersions(metadata: String): Seq[String] =
+    Jsoup
+      .parse(metadata, "", Parser.xmlParser())
+      .select("versions > version")
+      .asScala
+      .toSeq
+      .map(_.text)
 
   private def listElements(url: String, page: String): Seq[String] =
     listWebPageLinks(page)
