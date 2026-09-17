@@ -36,3 +36,4 @@ class GithubModelTests extends AnyFunSpec with Matchers:
       )
     }
   }
+end GithubModelTests

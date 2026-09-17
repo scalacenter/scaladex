@@ -128,6 +128,7 @@ object GithubModel:
         codeOfConductFile.map(_.html_url),
         licenceFile.map(_.html_url)
       )
+    end apply
 
   case class OpenIssue(
       number: Int,
