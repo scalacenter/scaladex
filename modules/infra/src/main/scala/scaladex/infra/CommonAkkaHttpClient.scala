@@ -28,6 +28,7 @@ import org.apache.pekko.stream.scaladsl.Keep
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.scaladsl.SourceQueueWithComplete
+import org.slf4j.LoggerFactory
 
 class CommonAkkaHttpClient(
     poolSettings: ConnectionPoolSettings,
@@ -35,6 +36,8 @@ class CommonAkkaHttpClient(
     additionalRetry: HttpResponse => Boolean = _ => false
 )(using system: ActorSystem)
     extends LazyLogging:
+
+  private val accessLog = LoggerFactory.getLogger("scaladex.infra.http-client")
 
   private val maxConcurrentOffers = 256
 
@@ -65,7 +68,8 @@ class CommonAkkaHttpClient(
       request: HttpRequest
   )(using ExecutionContextExecutor): Future[HttpResponse] =
     val responsePromise = Promise[HttpResponse]()
-    queue.offer(request -> responsePromise).flatMap {
+    val startNanos = System.nanoTime()
+    val response = queue.offer(request -> responsePromise).flatMap {
       case QueueOfferResult.Enqueued => responsePromise.future
       case QueueOfferResult.Dropped => Future.failed(new RuntimeException("Queue overflowed. Try again later."))
       case QueueOfferResult.Failure(ex) => Future.failed(ex)
@@ -74,7 +78,17 @@ class CommonAkkaHttpClient(
           new RuntimeException("Queue was closed (pool shut down) while running the request. Try again later.")
         )
     }
+    if accessLog.isDebugEnabled then response.onComplete(logAccess(request, startNanos, _))
+    response
   end tryEnqueue
+
+  private def logAccess(request: HttpRequest, startNanos: Long, result: Try[HttpResponse]): Unit =
+    val durationMs = (System.nanoTime() - startNanos) / 1000000
+    val method = request.method.value
+    val uri = request.uri
+    result match
+      case Success(response) => accessLog.debug(s"$method $uri ${response.status.intValue} ${durationMs}ms")
+      case Failure(e) => accessLog.debug(s"$method $uri failed ${durationMs}ms (${e.getMessage})")
 
   private val breaker: Option[CircuitBreaker] =
     config.circuitBreaker.map(cb => CircuitBreaker(system.scheduler, cb.maxFailures, cb.callTimeout, cb.resetTimeout))
