@@ -24,12 +24,12 @@ class InsightsPages(env: Env, database: WebDatabase)(using ExecutionContext):
   // Insights are only shown to logged-in users; computing them is cheap thanks to caching,
   // but the data isn't meant to be public yet.
   def route(user: Option[UserState]): Route = path("insights") {
-      get {
-        user match
-          case Some(_) => complete(insightsPage(user))
-          case None => complete(StatusCodes.Forbidden, view.html.forbidden(env, user))
-      }
+    get {
+      user match
+        case Some(_) => complete(insightsPage(user))
+        case None => complete(StatusCodes.Forbidden, view.html.forbidden(env, user))
     }
+  }
 
   private def majorVersion(insight: ScalaVersionInsight): Int = insight.language match
     case Scala(v: Version.SemanticLike) => v.major
