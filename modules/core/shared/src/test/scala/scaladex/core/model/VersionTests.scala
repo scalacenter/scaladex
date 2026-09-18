@@ -45,7 +45,7 @@ class VersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyCh
   it("should allow us to prefer stable over pre-releases") {
     val versions = Seq(`7.0.0`, `7.1.0`, `7.2.0-PREVIEW.1`)
     versions.max shouldBe `7.2.0-PREVIEW.1`
-    versions.max(Version.PreferStable) shouldBe `7.1.0`
+    versions.max(using Version.PreferStable) shouldBe `7.1.0`
   }
 
   it("should encode and decode any version") {

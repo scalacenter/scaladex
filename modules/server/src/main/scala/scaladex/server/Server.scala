@@ -6,6 +6,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
 
+import scaladex.core.service.GithubClient
 import scaladex.core.service.MavenCentralClient
 import scaladex.core.service.ProjectService
 import scaladex.data.util.PidLock
@@ -71,22 +72,38 @@ object Server extends LazyLogging:
             val webDatabase = new SqlDatabase(webPool, config.caching, Some(config.database.maxConcurrentQueries))
             val schedulerDatabase = new SqlDatabase(schedulerPool, config.caching)
             val flyway = DoobieUtils.flyway(migrationDatasource, cleanDisabled = true)
-            val githubClient = config.github.token.map(new GithubClientImpl(_, config.github.httpClient))
+            val githubScheduledClient = GithubClientImpl(config.github.scheduledHttpClient)
+            val githubInteractiveClient = GithubClientImpl(config.github.interactiveHttpClient)
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
             // Web publishes (sbt/coursier) use the web pool; batch jobs use the scheduler pool
             // so Find Missing Artifacts cannot starve HTTP request connections.
-            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(using publishPool, system)
+            val publishProcess =
+              PublishProcess(paths, filesystem, webDatabase, githubInteractiveClient, config.env)(
+                using publishPool,
+                system
+              )
             val schedulerPublishProcess =
-              PublishProcess(paths, filesystem, schedulerDatabase, config.env)(using publishPool, system)
-            val mavenCentralClient = new MavenCentralClientImpl(config.mavenCentral.httpClient)
+              PublishProcess(paths, filesystem, schedulerDatabase, githubInteractiveClient, config.env)(
+                using publishPool,
+                system
+              )
+            val mavenCentralClient = MavenCentralClientImpl(config.mavenCentral.httpClient)
             val mavenCentralService =
               new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, schedulerPublishProcess)(
                 using system.dispatcher,
                 system
               )
             val adminService =
-              new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, mavenCentralService)
+              new AdminService(
+                config.env,
+                schedulerDatabase,
+                searchEngine,
+                config.github.token,
+                githubScheduledClient,
+                githubInteractiveClient,
+                mavenCentralService
+              )
 
             for
               _ <- init(flyway, adminService, searchEngine, config.elasticsearch.reset)
@@ -96,7 +113,8 @@ object Server extends LazyLogging:
                 webDatabase,
                 adminService,
                 publishProcess,
-                mavenCentralClient
+                mavenCentralClient,
+                githubInteractiveClient
               )
               _ <- IO(
                 Http()
@@ -147,13 +165,14 @@ object Server extends LazyLogging:
       webDatabase: SqlDatabase,
       adminService: AdminService,
       publishProcess: PublishProcess,
-      mavenCentralClient: MavenCentralClient
+      mavenCentralClient: MavenCentralClient,
+      githubClient: GithubClient
   )(
       using system: ActorSystem
   ): Route =
     given ExecutionContext = system.dispatcher
 
-    val githubAuth = GithubAuthImpl(config.oAuth2)
+    val githubAuth = GithubAuthImpl(config.oAuth2, githubClient)
 
     val projectService = new ProjectService(webDatabase, searchEngine)
     val artifactService = new ArtifactService(webDatabase)

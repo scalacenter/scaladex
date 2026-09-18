@@ -30,7 +30,8 @@ private object NoopMavenCentralClient extends MavenCentralClient:
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]] = Future.successful(Seq.empty)
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]] =
     Future.successful(Seq.empty)
-  def getPomFile(ref: Artifact.Reference): Future[Option[(String, Instant)]] = Future.successful(None)
+  def getPomFile(ref: Artifact.Reference): Future[(String, Instant)] =
+    Future.failed(new NotImplementedError())
   def getJavadocJar(ref: Artifact.Reference): Future[Option[Array[Byte]]] = Future.successful(None)
 
 trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRouteTest:

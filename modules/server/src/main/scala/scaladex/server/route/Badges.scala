@@ -139,13 +139,13 @@ object Badges:
     latestVersions.toSeq
       .groupMap { case (_, latestVersion) => latestVersion } { case (language, _) => language }
       .toSeq
-      .sortBy(_._1)(Version.ordering.reverse)
+      .sortBy(_._1)(using Version.ordering.reverse)
       .map {
         case (version, Seq(Java)) => s"$version"
         case (version, languages) =>
           // there is more than one language, we ignore Java
           val scalaVersions =
-            languages.collect { case Scala(v) => v }.toSeq.sorted(Version.ordering.reverse).mkString(", ")
+            languages.collect { case Scala(v) => v }.toSeq.sorted(using Version.ordering.reverse).mkString(", ")
           s"$version (Scala $scalaVersions)"
       }
       .mkString(", ")

@@ -12,7 +12,7 @@ final case class HttpClientConfig(
 )
 
 object HttpClientConfig:
-  final case class Throttle(requests: Int, per: FiniteDuration)
+  final case class Throttle(requests: Int, per: FiniteDuration, maxBurst: Option[Int])
   final case class Retry(maxRetries: Int, initialDelay: FiniteDuration, maxDelay: FiniteDuration)
   final case class CircuitBreaker(maxFailures: Int, callTimeout: FiniteDuration, resetTimeout: FiniteDuration)
 
@@ -27,7 +27,9 @@ object HttpClientConfig:
     def duration(key: String): FiniteDuration =
       FiniteDuration(config.getDuration(key).toNanos, NANOSECONDS)
     val throttle =
-      if config.hasPath("throttle") then Some(Throttle(config.getInt("throttle.requests"), duration("throttle.per")))
+      if config.hasPath("throttle") then
+        val maxBurst = if config.hasPath("throttle.max-burst") then Some(config.getInt("throttle.max-burst")) else None
+        Some(Throttle(config.getInt("throttle.requests"), duration("throttle.per"), maxBurst))
       else None
     val retry =
       if config.hasPath("retry") then

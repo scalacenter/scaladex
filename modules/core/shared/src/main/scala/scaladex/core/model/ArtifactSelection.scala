@@ -26,9 +26,9 @@ case class ArtifactSelection(
           artifact.binaryVersion
         )
       }(
-        Ordering
+        using Ordering
           .Tuple7(
-            Ordering[Boolean],
+            using Ordering[Boolean],
             Ordering[Boolean],
             Ordering[Boolean],
             Ordering[Artifact.Name].reverse,

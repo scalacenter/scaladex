@@ -69,7 +69,7 @@ object Postgres extends AutoPlugin {
 
     CurrentThread.setContextClassLoader[DockerClientProviderStrategy]
 
-    val dockerImage = DockerImageName.parse("postgres").withTag("13.3")
+    val dockerImage = DockerImageName.parse("postgres").withTag("16.15")
     val container = new PostgreSQLContainer(dockerImage)
 
     // change the wait strategy because of https://github.com/testcontainers/testcontainers-java/issues/455

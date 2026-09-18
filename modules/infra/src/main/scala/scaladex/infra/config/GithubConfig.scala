@@ -5,7 +5,11 @@ import scaladex.core.util.Secret
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
-case class GithubConfig(token: Option[Secret], httpClient: HttpClientConfig)
+case class GithubConfig(
+    token: Option[Secret],
+    scheduledHttpClient: HttpClientConfig,
+    interactiveHttpClient: HttpClientConfig
+)
 
 object GithubConfig:
   def load(): GithubConfig =
@@ -17,6 +21,7 @@ object GithubConfig:
       else None
     GithubConfig(
       tokenOpt.map(Secret.apply),
-      HttpClientConfig.from(config.getConfig("scaladex.github.http-client"))
+      HttpClientConfig.from(config.getConfig("scaladex.github.scheduled.http-client")),
+      HttpClientConfig.from(config.getConfig("scaladex.github.interactive.http-client"))
     )
 end GithubConfig

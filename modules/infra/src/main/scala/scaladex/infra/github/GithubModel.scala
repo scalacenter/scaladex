@@ -113,13 +113,22 @@ object GithubModel:
       licenceFile: Option[String]
   )
 
+  private case class CommunityFile(html_url: String)
+  private given Decoder[CommunityFile] = deriveDecoder
+
   given Decoder[CommunityProfile] = new Decoder[CommunityProfile]:
     final def apply(c: HCursor): Decoder.Result[CommunityProfile] =
+      val files = c.downField("files")
       for
-        contributingFile <- c.downField("files").downField("contributing").downField("html_url").as[Option[String]]
-        codeOfConductFile <- c.downField("files").downField("code_of_conduct").downField("html_url").as[Option[String]]
-        licenceFile <- c.downField("files").downField("license").downField("html_url").as[Option[String]]
-      yield CommunityProfile(contributingFile, codeOfConductFile, licenceFile)
+        contributingFile <- files.downField("contributing").as[Option[CommunityFile]]
+        codeOfConductFile <- files.downField("code_of_conduct").as[Option[CommunityFile]]
+        licenceFile <- files.downField("license").as[Option[CommunityFile]]
+      yield CommunityProfile(
+        contributingFile.map(_.html_url),
+        codeOfConductFile.map(_.html_url),
+        licenceFile.map(_.html_url)
+      )
+    end apply
 
   case class OpenIssue(
       number: Int,
@@ -162,7 +171,7 @@ object GithubModel:
   val userInfoCaseClassDecoder: Decoder[UserInfo] = deriveDecoder
 
   given Decoder[UserInfo] =
-    (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](userInfoCaseClassDecoder)
+    (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](using userInfoCaseClassDecoder)
 
   given Decoder[GithubCommitActivity] = new Decoder[GithubCommitActivity]:
     final def apply(c: HCursor): Decoder.Result[GithubCommitActivity] =
