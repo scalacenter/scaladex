@@ -8,6 +8,7 @@ import java.util.Locale
 import scaladex.core.model.Artifact
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.LabeledLink
 import scaladex.core.model.Project
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.SearchParams
@@ -38,6 +39,10 @@ package object html:
   def ensureUri(in: String): String =
     if in.startsWith("https://") || in.startsWith("http://") then in
     else "http://" + in
+
+  // The "Scaladoc" entry is routed through our own hosting page instead of linking straight out.
+  def docHref(artifact: Artifact, doc: LabeledLink): String =
+    if doc.label == "Scaladoc" then artifact.scaladocPath else doc.link
 
   def paginationUri(params: SearchParams, uri: Uri, you: Boolean)(page: Int): Uri =
     val newUri = uri

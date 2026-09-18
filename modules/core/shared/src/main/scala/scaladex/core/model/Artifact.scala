@@ -184,6 +184,10 @@ case class Artifact(
       case None => Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
       case _ => None
 
+  // Routed through our own scaladoc-hosting page (ArtifactPages), which serves a locally-unpacked
+  // copy when we have one, falling back to the project's actual external scaladoc link otherwise.
+  def scaladocPath: String = s"/artifacts/$groupId/$artifactId/$version/scaladoc"
+
   def scastieURL: Option[String] =
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 

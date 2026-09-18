@@ -2,6 +2,7 @@
 @import scaladex.view.Formats
 @import scaladex.view.ProjectTab
 @import scaladex.view.html.main
+@import scaladex.view.html._
 
 
 @(
@@ -28,6 +29,7 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
+            @documentationBox
             @communityBox
             @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependencyCount))
             @commitActivityBox
@@ -65,6 +67,21 @@
     <div class="box commit-activities">
       <h4>Commit Activity</h4>
       <div class="commit-activity-container"><canvas id="commit-activity" data-commit-activity-count=@{commitActivities.map(_.total).mkString(",")} data-commit-activity-starting-day=@{startingDay} /></div>
+    </div>
+  }
+}
+
+@defaultArtifact = @{ header.map(_.defaultArtifact) }
+@documentationLinks = @{ defaultArtifact.toSeq.flatMap(project.artifactDocumentation) }
+@documentationBox = {
+  @if(documentationLinks.nonEmpty) {
+    <div class="documentation box">
+      <h4>Documentation</h4>
+      <ul>
+        @for(doc <- documentationLinks){
+          <li><a href="@docHref(defaultArtifact.get, doc)" rel="nofollow">@doc.label</a></li>
+        }
+      </ul>
     </div>
   }
 }
