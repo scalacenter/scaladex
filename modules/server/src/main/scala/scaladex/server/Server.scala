@@ -9,11 +9,11 @@ import scala.util.control.NonFatal
 import scaladex.core.service.GithubClient
 import scaladex.core.service.ProjectService
 import scaladex.data.util.PidLock
+import scaladex.infra.CommonAkkaHttpClient
 import scaladex.infra.DataPaths
 import scaladex.infra.DatabaseOverloadedException
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
-import scaladex.infra.CommonAkkaHttpClient
 import scaladex.infra.GithubClientImpl
 import scaladex.infra.MavenCentralClientImpl
 import scaladex.infra.MavenCentralIndexClientImpl
@@ -92,7 +92,10 @@ object Server extends LazyLogging:
             // shared by both Maven Central clients so the configured throttle is an actual ceiling on combined
             // traffic to repo1.maven.org, not doubled by two independently-throttled clients
             val mavenCentralHttpClient =
-              new CommonAkkaHttpClient(ConnectionPoolSettings("").withMaxConnections(10), config.mavenCentral.httpClient)
+              new CommonAkkaHttpClient(
+                ConnectionPoolSettings("").withMaxConnections(10),
+                config.mavenCentral.httpClient
+              )
             val mavenCentralClient = new MavenCentralClientImpl(mavenCentralHttpClient)
             val mavenCentralIndexClient = new MavenCentralIndexClientImpl(mavenCentralHttpClient)
             val mavenCentralService =

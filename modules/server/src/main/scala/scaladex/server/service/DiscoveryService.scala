@@ -20,9 +20,9 @@ import com.typesafe.scalalogging.LazyLogging
   * `discovered_group_id` for the admin review queue. See `doc/dev/maven-central-discovery.md`.
   *
   * Neither the chunk scan nor the group sync below cap how much work one run does: both pull everything currently
-  * available. The pacing safeguard is `MavenCentralHttpQueue`'s shared, cross-client throttle, not a per-run
-  * batch size — so a large backlog (a fresh deploy backfilling from chunk 0, or a long outage) drains at the
-  * throttled request rate instead of trickling in over many scheduled runs.
+  * available. The pacing safeguard is the shared `CommonAkkaHttpClient` instance's cross-client throttle, not a per-run
+  * batch size — so a large backlog (a fresh deploy backfilling from chunk 0, or a long outage) drains at the throttled
+  * request rate instead of trickling in over many scheduled runs.
   */
 class DiscoveryService(
     database: SchedulerDatabase,
@@ -31,8 +31,8 @@ class DiscoveryService(
 )(using ExecutionContext)
     extends LazyLogging:
 
-  // defensive cap on one run's DB query / duration, not a throttle (MavenCentralHttpQueue paces the actual
-  // requests) -- comfortably above any realistic backlog
+  // defensive cap on one run's DB query / duration, not a throttle (the shared CommonAkkaHttpClient paces the
+  // actual requests) -- comfortably above any realistic backlog
   private val syncBatchSize = 1000
 
   def discover(): Future[String] = for
@@ -67,11 +67,11 @@ class DiscoveryService(
             s"Cursor set to chunk ${target.lastIncremental} (remote is ${remote.lastIncremental}); " +
               s"the next discovery run will re-scan the missed chunks"
 
-  /** If the remote chain was rebuilt, start from "now" (remote.lastIncremental - 1) rather than downloading the
-    * 3.2 GB full index. If we have no cursor yet, start from chunk 0 instead: the chain goes back to 2012-06-15,
-    * well before the OSSRH-to-Central-Portal migration that actually caused the discovery gap (new namespace
-    * registration moved to the Portal from 2024-02-01), but scanning the full chain is cheap enough (paced by
-    * `MavenCentralHttpQueue`, not by a per-run chunk cap) that there is no need to rely on that date estimate.
+  /** If the remote chain was rebuilt, start from "now" (remote.lastIncremental - 1) rather than downloading the 3.2 GB
+    * full index. If we have no cursor yet, start from chunk 0 instead: the chain goes back to 2012-06-15, well before
+    * the OSSRH-to-Central-Portal migration that actually caused the discovery gap (new namespace registration moved to
+    * the Portal from 2024-02-01), but scanning the full chain is cheap enough (paced by the shared
+    * `CommonAkkaHttpClient`, not by a per-run chunk cap) that there is no need to rely on that date estimate.
     */
   private def resolveFrom(localOpt: Option[IndexCursor], remote: IndexCursor): IndexCursor = localOpt match
     case Some(local) if local.chainId == remote.chainId => local

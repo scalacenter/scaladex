@@ -32,6 +32,7 @@ class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
       seenFrom += from
       seenMaxChunks += maxChunks
       Future.successful(Result(records.filter(keep), reached.getOrElse(to.lastIncremental)))
+  end StubIndexClient
 
   private def service(
       db: InMemoryDatabase,
