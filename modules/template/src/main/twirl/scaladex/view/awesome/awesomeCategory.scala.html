@@ -1,4 +1,5 @@
 @import scaladex.view.html._
+@import scaladex.view.Formats
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Platform
 @import scaladex.core.model.Env
@@ -42,10 +43,12 @@
         <div class="col-md-9 col-md-offset-3 topbar">
           <div class="col-md-3">
             <div class="result-count">
-              @if(projects.pagination.current == 1) {
-                @projects.pagination.totalSize results
-              } else {
-                Page @projects.pagination.current of @projects.pagination.totalSize results
+              @if(projects.pagination.totalSize > 0) {
+                @if(projects.pagination.current == 1) {
+                  @Formats.plural(projects.pagination.totalSize, "result")
+                } else {
+                  Page @projects.pagination.current of @Formats.plural(projects.pagination.totalSize, "result")
+                }
               }
             </div>
           </div>

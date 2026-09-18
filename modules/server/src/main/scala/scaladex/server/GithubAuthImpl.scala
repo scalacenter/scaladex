@@ -1,6 +1,5 @@
 package scaladex.server
 
-import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -10,7 +9,6 @@ import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
 import scaladex.core.service.GithubClient
 import scaladex.core.util.Secret
-import scaladex.infra.GithubClientImpl
 import scaladex.server.config.OAuth2Config
 
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
@@ -24,13 +22,12 @@ import org.apache.pekko.http.scaladsl.model.Uri.*
 import org.apache.pekko.http.scaladsl.model.headers.*
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 
-private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(using sys: ActorSystem)
-    extends GithubAuth
+private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String, github: GithubClient)(
+    using sys: ActorSystem
+) extends GithubAuth
     with FailFastCirceSupport
     with LazyLogging:
   private given ExecutionContext = sys.dispatcher
-
-  private val githubClients: TrieMap[Secret, GithubClient] = TrieMap()
 
   def getToken(code: String): Future[Secret] =
     Http()
@@ -56,26 +53,33 @@ private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri
       }
 
   def getUser(token: Secret): Future[UserInfo] =
-    val githubClient = githubClients.getOrElseUpdate(token, new GithubClientImpl(token))
-    githubClient.getUserInfo().map {
+    github.getUserInfo(token).map {
       case GithubResponse.Ok(res) => res
       case GithubResponse.MovedPermanently(res) => res
+      case GithubResponse.NotFound(code) =>
+        throw new Exception(s"Failed to get user: not found ($code)")
       case GithubResponse.Failed(errorCode, errorMessage) =>
         val message = s"Failed to get user state: $errorCode, $errorMessage"
         throw new Exception(message)
     }
+  end getUser
 
   def getUserState(token: Secret): Future[Option[UserState]] =
-    val githubClient = githubClients.getOrElseUpdate(token, new GithubClientImpl(token))
-    githubClient.getUserState().map {
+    github.getUserState(token).map {
       case GithubResponse.Ok(userState) => Some(userState)
       case GithubResponse.MovedPermanently(userState) => Some(userState)
-      case GithubResponse.Failed(errorCode, errorMessage) =>
-        logger.warn(s"Failed to get user state: $errorCode, $errorMessage")
+      // Any other failure (rate-limit, 5xx, network) is transient and must not be reported as "unauthenticated".
+      case GithubResponse.Failed(StatusCodes.Unauthorized.intValue, errorMessage) =>
+        logger.warn(s"Rejected invalid GitHub token: $errorMessage")
         None
+      case GithubResponse.NotFound(code) =>
+        throw Exception(s"Failed to get user state from GitHub: not found ($code)")
+      case GithubResponse.Failed(errorCode, errorMessage) =>
+        throw Exception(s"Failed to get user state from GitHub: $errorCode, $errorMessage")
     }
+  end getUserState
 end GithubAuthImpl
 
 object GithubAuthImpl:
-  def apply(config: OAuth2Config)(using ActorSystem): GithubAuth =
-    new GithubAuthImpl(config.clientId, config.clientSecret, config.redirectUri)
+  def apply(config: OAuth2Config, github: GithubClient)(using ActorSystem): GithubAuth =
+    new GithubAuthImpl(config.clientId, config.clientSecret, config.redirectUri, github)

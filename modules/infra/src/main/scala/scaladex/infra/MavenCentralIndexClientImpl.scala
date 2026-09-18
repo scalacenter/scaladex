@@ -26,7 +26,7 @@ import org.apache.pekko.util.ByteString
 /** Reads the Maven Central nexus index. The chunk binary format (`doc/dev/maven-central-discovery.md` §2.5.2) is
   * trivial enough to parse without `maven-indexer` / Lucene.
   */
-class MavenCentralIndexClientImpl(httpQueue: MavenCentralHttpQueue)(using system: ActorSystem)
+class MavenCentralIndexClientImpl(httpClient: CommonAkkaHttpClient)(using system: ActorSystem)
     extends MavenCentralIndexClient
     with LazyLogging:
   private given ExecutionContextExecutor = system.dispatcher
@@ -34,7 +34,7 @@ class MavenCentralIndexClientImpl(httpQueue: MavenCentralHttpQueue)(using system
   private val filePrefix = "nexus-maven-repository-index"
 
   def fetchRemoteCursor(): Future[IndexCursor] = for
-    response <- httpQueue.queueRequestWithRetry(HttpRequest(uri = s"$baseUri/$filePrefix.properties"))
+    response <- httpClient.queueRequestWithRetry(HttpRequest(uri = s"$baseUri/$filePrefix.properties"))
     body <- Unmarshaller.stringUnmarshaller(response.entity)
     props = body.linesIterator
       .filterNot(_.startsWith("#"))
@@ -71,7 +71,7 @@ class MavenCentralIndexClientImpl(httpQueue: MavenCentralHttpQueue)(using system
   private def fetchChunk(n: Int, keep: Record => Boolean): Future[Seq[Record]] =
     val uri = s"$baseUri/$filePrefix.$n.gz"
     for
-      response <- httpQueue.queueRequestWithRetry(HttpRequest(uri = uri))
+      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = uri))
       records <-
         if response.status != StatusCodes.OK then
           response.discardEntityBytes()

@@ -4,7 +4,7 @@
 
 @(env: Env, user: Option[UserState], params: SearchParams)
 @main(env, title = "Invalid Query", showSearch = true, params = params, user = user) {
-<main class="container">
+<main class="container error-page">
   <h1>Not a valid query</h1>
   <pre>@params.queryString</pre>
   <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank" rel="noreferrer">

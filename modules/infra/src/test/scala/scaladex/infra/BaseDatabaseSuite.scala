@@ -16,7 +16,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
 
 trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach:
-  self: Assertions with Suite =>
+  self: Assertions & Suite =>
 
   private val config: PostgreSQLConfig = PostgreSQLConfig
     .load()

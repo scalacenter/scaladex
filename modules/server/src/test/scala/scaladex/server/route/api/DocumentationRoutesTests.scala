@@ -14,4 +14,12 @@ class DocumentationRoutesTests extends ControllerBaseSuite with FailFastCirceSup
         responseAs[Json] shouldNot be(null)
       }
     }
+
+    it("should serve v1 OpenAPI documentation") {
+      Get("/api/v1/open-api.json") ~> DocumentationRoute.route ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[Json] shouldNot be(null)
+      }
+    }
   }
+end DocumentationRoutesTests

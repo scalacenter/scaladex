@@ -1,4 +1,5 @@
 @import scaladex.core.model.search.SearchParams
+@import scaladex.view.Formats
 
 @(params: SearchParams = SearchParams(), you: Boolean = false, totalProjects: Option[Long], totalArtifacts: Option[Long])
 
@@ -12,7 +13,7 @@
           @if(params.contributingSearch){
             placeholder="Search beginner-friendly projects and issues"
           } else {
-            placeholder="Search @for(projects <- totalProjects; artifacts <- totalArtifacts) {within @projects projects and @artifacts artifacts}"
+            placeholder="Search @for(projects <- totalProjects; artifacts <- totalArtifacts) {within @Formats.plural(projects, "project") and @Formats.plural(artifacts, "artifact")}"
           }
           >
         @if(you){

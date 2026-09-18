@@ -19,64 +19,65 @@
       <div class="row">
         <div class="col-md-12">
           <div class="edit-project box content-project">
-            <a class="btn btn-default pull-right" href="/@project.organization/@project.repository">Cancel</a>
-            <button type="submit" form="project-settings" class="btn btn-primary pull-right">Update</button>
-
             <h1>Project Settings</h1>
             <form action="/@project.organization/@project.repository/settings" method="POST" id="project-settings">
-              <div class="form-group">
-                <label for="category">Category</label>
-                <p>This is used to compute the <a href="/awesome">Awesome Scala</a> page.</p>
-                <select
-                  id="category"
-                  name="category"
-                  data-live-search="true"
-                  class="selectpicker"
-                  data-style="btn-primary">
-                @if(project.settings.category.isEmpty) {<option>Choose a category</option>}
-                @for(meta <- MetaCategory.all) {
-                  <optgroup label="@meta.title">
-                    @for(category <- meta.categories) {
-                      <option
-                        value="@category.label" 
-                        @if(project.settings.category.contains(category)){selected}>
-                          @category.title
-                      </option>
-                    }
-                  </optgroup>
-                }
-                </select>
-              </div>
+              <section class="settings-section">
+                <h2>General</h2>
+                <div class="form-group">
+                  <label for="category">Category</label>
+                  <p class="help">This is used to compute the <a href="/awesome">Awesome Scala</a> page.</p>
+                  <select
+                    id="category"
+                    name="category"
+                    data-live-search="true"
+                    class="selectpicker"
+                    data-style="btn-secondary">
+                  @if(project.settings.category.isEmpty) {<option>Choose a category</option>}
+                  @for(meta <- MetaCategory.all) {
+                    <optgroup label="@meta.title">
+                      @for(category <- meta.categories) {
+                        <option
+                          value="@category.label"
+                          @if(project.settings.category.contains(category)){selected}>
+                            @category.title
+                        </option>
+                      }
+                    </optgroup>
+                  }
+                  </select>
+                </div>
 
-              <div class="form-group">
-                <label for="chatroom">Chatroom</label>
-                <input name="chatroom" value="@project.settings.chatroom.getOrElse("")"
-                  class="form-control list-group-item"
-                  placeholder="https://gitter.im/@project.reference">
-              </div>
-              <div class="form-group">
-                <label for="contributorsWanted">Contributors Wanted</label>
-                <br/>
-                <input type="checkbox" name="contributorsWanted" id="contributorsWanted" @if(project.settings.contributorsWanted){ checked }> 
-              </div>
+                <div class="form-group">
+                  <label for="chatroom">Chatroom</label>
+                  <input name="chatroom" value="@project.settings.chatroom.getOrElse("")"
+                    class="form-control"
+                    placeholder="https://gitter.im/@project.reference">
+                </div>
 
-              <fieldset>
-                <legend>Artifact Settings</legend>
+                <div class="form-group form-group-toggle">
+                  <div class="form-group-toggle-text">
+                    <label for="contributorsWanted">Contributors Wanted</label>
+                    <p class="help">Shows a badge on the project page inviting contributors.</p>
+                  </div>
+                  <input type="checkbox" id="contributorsWanted" name="contributorsWanted" @if(project.settings.contributorsWanted){ checked }>
+                </div>
+              </section>
+
+              <section class="settings-section">
+                <h2>Artifacts</h2>
                 <div class="form-group">
                   <label for="defaultArtifact">Default Artifact</label>
-                  <p>
+                  <p class="help">
                     When a project has lots of artifacts you can hint the index on what artifact to choose in the drop down.
-                  See <a target="_blank" href="https://github.com/scalacenter/scaladex/blob/main/core/shared/src/main/scala/scaladex/core/model/ArtifactSelection.scala">
-                    ArtifactSelection.scala
-                  </a> for more details.
+                    See <a target="_blank" href="https://github.com/scalacenter/scaladex/blob/main/core/shared/src/main/scala/scaladex/core/model/ArtifactSelection.scala">ArtifactSelection.scala</a> for more details.
                   </p>
                   <select
                     id="defaultArtifact"
                     name="defaultArtifact"
                     data-live-search="true"
-                    class="selectpicker" data-style="btn-primary">
+                    class="selectpicker" data-style="btn-secondary">
                   @for(artifact <- artifactNames){
-                    <option 
+                    <option
                       value="@artifact"
                       @if(project.settings.defaultArtifact.contains(artifact)){ selected }>
                       @artifact
@@ -85,21 +86,25 @@
                   </select>
                 </div>
 
-                <div class="form-group">
-                  <label for="preferStableVersion">Stable version filter</label>
-                  <p>If enabled, Scaladex filters pre-release versions out to compute the latest version.</p>
-                  <input type="checkbox" name="preferStableVersion" id="preferStableVersion" @if(project.settings.preferStableVersion){ checked }>
+                <div class="form-group form-group-toggle">
+                  <div class="form-group-toggle-text">
+                    <label for="preferStableVersion">Stable version filter</label>
+                    <p class="help">If enabled, Scaladex filters pre-release versions out to compute the latest version.</p>
+                  </div>
+                  <input type="checkbox" id="preferStableVersion" name="preferStableVersion" @if(project.settings.preferStableVersion){ checked }>
                 </div>
+
                 <div class="form-group">
                   <label for="deprecatedArtifacts">Deprecated Artifacts</label>
                   <select
                     name="deprecatedArtifacts"
-                    class="js-keywords-multiple js-states form-control"
+                    class="selectpicker"
+                    data-style="btn-secondary"
                     id="deprecatedArtifacts"
                     multiple="multiple">
                     @for(artifact <- artifactNames) {
                       <option
-                        value="@artifact" 
+                        value="@artifact"
                         @if(project.settings.deprecatedArtifacts.contains(artifact)){selected}>
                           @artifact
                       </option>
@@ -110,77 +115,76 @@
                   <label for="cliArtifacts">Command Line Artifacts</label>
                   <select
                     name="cliArtifacts"
-                    class="js-keywords-multiple js-states form-control"
+                    class="selectpicker"
+                    data-style="btn-secondary"
                     id="cliArtifacts"
                     multiple="multiple">
                   @for(artifact <- artifactNames) {
                     <option
-                      value="@artifact" 
+                      value="@artifact"
                       @if(project.settings.cliArtifacts.contains(artifact)){selected}>
                         @artifact
                     </option>
                   }
                   </select>
                 </div>
-              </fieldset>
+              </section>
 
-              <fieldset>
-                <legend>Documentation</legend>
-                <pre>
-[groupId]    org.example
-[artifactId] foo_2.11
-[version]    1.2.3
-[major]      1
-[minor]      2
-[name]       foo
-                </pre>
-                
+              <section class="settings-section">
+                <h2>Documentation</h2>
                 <div class="form-group">
                   <label for="customScalaDoc">Custom Scaladoc Link</label>
+                  <p class="help">
+                    Use the placeholders below, filled in per-release: <code>[groupId]</code> org.example,
+                    <code>[artifactId]</code> foo_2.11, <code>[version]</code> 1.2.3, <code>[major]</code> 1,
+                    <code>[minor]</code> 2, <code>[name]</code> foo.
+                  </p>
                   <input
-                    name="customScalaDoc" 
+                    name="customScalaDoc"
                     value="@project.settings.customScalaDoc.getOrElse("")"
                     placeholder="https://www.javadoc.io/doc/[groupId]/[artifactId]/[version]"
-                    type="text" 
+                    type="text"
                     class="form-control" id="customScalaDoc">
                 </div>
 
-                <fieldset class="documentation-link">
+                <div class="form-group">
                   <label>Documentation links</label>
-                  <ul>
+                  <ul class="documentation-links">
                   @for((doc, i) <- project.settings.documentationLinks.zipWithIndex){
-                    <li class="list-group">
+                    <li>
                       <input
                         name="documentationLinks[@i].label" value="@doc.label"
                         placeholder="User Guide"
-                        class="form-control list-group-item">
-                      <input 
+                        class="form-control">
+                      <input
                         name="documentationLinks[@i].url"
                         value="@doc.pattern"
                         placeholder="http://example.org/guide/[major].x"
-                        class="form-control list-group-item">
+                        class="form-control">
                     </li>
                   }
                   @for(i <- (0 to 1).map(_ + project.settings.documentationLinks.size)) {
-                    <li class="list-group">
+                    <li>
                       <input
                         name="documentationLinks[@i].label" value=""
                         placeholder="User Guide"
-                        class="form-control list-group-item">
-                      <input 
+                        class="form-control">
+                      <input
                         name="documentationLinks[@i].url"
                         value=""
                         placeholder="http://example.org/guide/[major].x"
-                        class="form-control list-group-item">
+                        class="form-control">
                     </li>
                   }
                   </ul>
-                </fieldset>
-              </fieldset>
+                </div>
+              </section>
 
+              <div class="settings-actions">
+                <button type="submit" class="btn btn-primary">Update</button>
+                <a class="btn btn-default" href="/@project.organization/@project.repository">Cancel</a>
+              </div>
             </form>
-            <button type="submit" form="project-settings" class="btn btn-primary">Update</button>
-            <a class="btn btn-default" href="/@project.organization/@project.repository">Cancel</a>
           </div>
         </div>
       </div>

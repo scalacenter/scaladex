@@ -10,14 +10,13 @@ import scala.util.Failure
 import scala.util.Success
 
 import scaladex.core.model.*
+import scaladex.core.model.search.Pagination
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.service.SearchEngine
 import scaladex.core.web.ArtifactPageParams
 import scaladex.core.web.ArtifactsPageParams
 import scaladex.server.TwirlSupport.given
-import scaladex.server.service.ArtifactService
-import scaladex.server.service.SearchSynchronizer
+import scaladex.server.service.ProjectSettingsService
 import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
 import scaladex.view.project.html
@@ -31,14 +30,11 @@ import org.apache.pekko.http.scaladsl.server.Directives.*
 class ProjectPages(
     env: Env,
     projectService: ProjectService,
-    artifactService: ArtifactService,
-    database: SchedulerDatabase,
-    searchEngine: SearchEngine
+    settingsService: ProjectSettingsService,
+    database: SchedulerDatabase
 )(
     using ExecutionContext
 ) extends LazyLogging:
-
-  private val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
 
   def route(user: Option[UserState]): Route =
     concat(
@@ -55,7 +51,7 @@ class ProjectPages(
                 val binaryVersions = allArtifacts
                   .map(_.binaryVersion)
                   .distinct
-                  .sorted(BinaryVersion.ordering.reverse)
+                  .sorted(using BinaryVersion.ordering.reverse)
 
                 val groupedArtifacts = allArtifacts
                   .groupBy(_.name)
@@ -72,7 +68,7 @@ class ProjectPages(
                   }
                   .toSeq
                   .sortBy { case (name, version, _) => (version, name) }(
-                    Ordering.Tuple2(Version.ordering.reverse, Artifact.Name.ordering)
+                    using Ordering.Tuple2(using Version.ordering.reverse, Artifact.Name.ordering)
                   )
                 val page = html.artifacts(env, user, project, header, groupedArtifacts, params, binaryVersions)
                 complete(page)
@@ -90,7 +86,7 @@ class ProjectPages(
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
                   .distinct
-                  .sorted(BinaryVersion.ordering.reverse)
+                  .sorted(using BinaryVersion.ordering.reverse)
 
                 val artifactsByVersion = artifacts
                   .groupBy(_.version)
@@ -100,7 +96,7 @@ class ProjectPages(
                   }
                   .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
                 val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(
-                  Ordering.Tuple2(Ordering[Instant].reverse, Ordering[Version].reverse)
+                  using Ordering.Tuple2(using Ordering[Instant].reverse, Ordering[Version].reverse)
                 )
                 val page = html.versions(
                   env,
@@ -127,7 +123,7 @@ class ProjectPages(
               for
                 artifacts <- artifactsF
                 header <- headerF
-                binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted(BinaryVersion.ordering.reverse)
+                binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted(using BinaryVersion.ordering.reverse)
                 selectedArtifact = params.binaryVersion
                   .orElse(binaryVersions.headOption)
                   .flatMap(bv => artifacts.find(_.binaryVersion == bv))
@@ -171,23 +167,52 @@ class ProjectPages(
                 .distinct
                 .groupBy(_.platform)
                 .view
-                .mapValues(_.sorted(BinaryVersion.ordering.reverse))
+                .mapValues(_.sorted(using BinaryVersion.ordering.reverse))
                 .toSeq
-                .sortBy(_._1)(Platform.ordering.reverse)
+                .sortBy(_._1)(using Platform.ordering.reverse)
 
               val artifactsByVersions = artifacts
                 .groupBy(_.version)
                 .view
                 .mapValues(artifacts => artifacts.groupMap(_.name)(_.binaryVersion).toSeq.sortBy(_._1))
                 .toSeq
-                .sortBy(_._1)(Version.ordering.reverse)
+                .sortBy(_._1)(using Version.ordering.reverse)
               val page = html.versionMatrix(env, user, project, header, binaryVersionByPlatforms, artifactsByVersions)
               complete(page)
           }
         }
       },
       get {
-        path(projectM / "badges")(ref => getBadges(ref, user))
+        path(projectM / "dependents") { ref =>
+          paging(size = 20) { page =>
+            getProjectOrRedirect(ref, user) { project =>
+              for
+                header <- projectService.getHeader(project)
+                offset = (page.page - 1) * page.size
+                dependents <- database.getProjectReverseDependencies(ref, limit = page.size, offset = offset)
+                count <- database.countProjectDependents(ref)
+              yield
+                val groupedDependents = dependents
+                  .groupBy(_.source)
+                  .view
+                  .mapValues { deps =>
+                    val scope = deps.map(_.scope).min
+                    val version = deps.map(_.targetVersion).max
+                    (scope, version)
+                  }
+                  .toMap
+                val pageCount = math.max(1, math.ceil(count.toDouble / page.size).toInt)
+                val pagination = Pagination(page.page, pageCount, count)
+                val dependentsPage = html.dependents(env, user, project, header, groupedDependents, pagination)
+                complete(dependentsPage)
+            }
+          }
+        }
+      },
+      get {
+        path(projectM / "badges") { ref =>
+          parameter("artifact".?) { artifactName => getBadges(ref, artifactName.map(Artifact.Name.apply), user) }
+        }
       },
       get {
         path(projectM / "settings") { projectRef =>
@@ -201,11 +226,7 @@ class ProjectPages(
       post {
         path(projectM / "settings") { projectRef =>
           editForm { form =>
-            val updateF = for
-              _ <- database.updateProjectSettings(projectRef, form)
-              _ <- artifactService.updateLatestVersions(projectRef, form.preferStableVersion)
-              _ <- searchSynchronizer.syncProject(projectRef)
-            yield ()
+            val updateF = settingsService.updateSettings(projectRef, form)
             val projectUri = Uri((Path.Empty / projectRef.organization.value / projectRef.repository.value).toString)
             onComplete(updateF) {
               case Success(()) => redirect(projectUri, StatusCodes.SeeOther)
@@ -269,7 +290,7 @@ class ProjectPages(
         val binaryVersions = rawbinaryVersions
           .flatMap(BinaryVersion.parse)
           .toSeq
-          .sorted(Ordering[BinaryVersion].reverse)
+          .sorted(using Ordering[BinaryVersion].reverse)
         Tuple1(ArtifactsPageParams(binaryVersions, preReleases))
     }
 
@@ -299,9 +320,12 @@ class ProjectPages(
         header <- projectService.getHeader(project)
         directDependencies <-
           header
-            .map(h => database.getProjectDependencies(ref, h.latestVersion))
+            .map(h => database.getProjectDependencies(ref, h.latestVersion, limit = 100, offset = 0))
             .getOrElse(Future.successful(Seq.empty))
-        reverseDependencies <- database.getProjectReverseDependencies(ref, limit = 100, offset = 0)
+        directDependencyCount <-
+          header
+            .map(h => database.countProjectDependencies(ref, h.latestVersion))
+            .getOrElse(Future.successful(0L))
         reverseDependencyCount <- database.countProjectDependents(ref)
       yield
         val groupedDirectDependencies = directDependencies
@@ -312,14 +336,6 @@ class ProjectPages(
             val versions = deps.map(_.targetVersion).distinct
             (scope, versions)
           }
-        val groupedReverseDependencies = reverseDependencies
-          .groupBy(_.source)
-          .view
-          .mapValues { deps =>
-            val scope = deps.map(_.scope).min
-            val version = deps.map(_.targetVersion).max
-            (scope, version)
-          }
         val page =
           html.project(
             env,
@@ -327,20 +343,22 @@ class ProjectPages(
             project,
             header,
             groupedDirectDependencies.toMap,
-            groupedReverseDependencies.toMap,
+            directDependencyCount,
             reverseDependencyCount
           )
         complete(page)
     }
 
-  private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
+  private def getBadges(ref: Project.Reference, artifactName: Option[Artifact.Name], user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for header <- projectService.getHeader(project) yield header.map(_.getDefaultArtifact(None, None)) match
-        case Some(artifact) =>
-          val page = html.badges(env, user, project, header, artifact)
-          complete(StatusCodes.OK, page)
-        case None =>
-          complete(StatusCodes.NotFound)
+      for header <- projectService.getHeader(project) yield
+        val validArtifactName = artifactName.filter(name => header.exists(_.allArtifactNames.contains(name)))
+        header.flatMap(_.getDefaultArtifact0(None, validArtifactName)) match
+          case Some(artifact) =>
+            val page = html.badges(env, user, project, header, artifact)
+            complete(StatusCodes.OK, page)
+          case None =>
+            complete(StatusCodes.NotFound)
     }
 
   private val editForm: Directive1[Project.Settings] =

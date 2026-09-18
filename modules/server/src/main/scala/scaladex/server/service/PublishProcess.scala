@@ -11,6 +11,7 @@ import scaladex.core.model.Env
 import scaladex.core.model.Project
 import scaladex.core.model.Sha1
 import scaladex.core.model.UserState
+import scaladex.core.service.GithubClient
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
@@ -19,7 +20,6 @@ import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.PomsReader
 import scaladex.infra.CoursierResolver
 import scaladex.infra.DataPaths
-import scaladex.infra.GithubClientImpl
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
@@ -30,6 +30,7 @@ object PublishResult:
   object NoGithubRepo extends PublishResult
   object Success extends PublishResult
   case class Forbidden(login: String, repo: Project.Reference) extends PublishResult
+  case class Failed(reason: String) extends PublishResult
 
 class PublishProcess(
     filesystem: Storage,
@@ -38,6 +39,7 @@ class PublishProcess(
     database: WebDatabase,
     artifactService: ArtifactService,
     pomsReader: PomsReader,
+    github: GithubClient,
     env: Env
 )(using system: ActorSystem)
     extends LazyLogging:
@@ -77,7 +79,7 @@ class PublishProcess(
                 isNewProject <- artifactService.insertArtifact(artifact, deps)
                 _ <-
                   if isNewProject && userState.nonEmpty then
-                    val githubUpdater = new GithubUpdater(database, new GithubClientImpl(userState.get.info.token))
+                    val githubUpdater = new GithubUpdater(database, github, userState.get.info.token)
                     githubUpdater.update(repo).map(_ => ())
                   else Future.successful(())
               yield
@@ -124,7 +126,7 @@ class PublishProcess(
 end PublishProcess
 
 object PublishProcess:
-  def apply(paths: DataPaths, filesystem: Storage, database: SchedulerDatabase, env: Env)(
+  def apply(paths: DataPaths, filesystem: Storage, database: SchedulerDatabase, github: GithubClient, env: Env)(
       using ExecutionContext,
       ActorSystem
   ): PublishProcess =
@@ -132,5 +134,5 @@ object PublishProcess:
     val converter = new ArtifactConverter(paths)
     val pomsReader = new PomsReader(new CoursierResolver)
     val artifactService = new ArtifactService(database)
-    new PublishProcess(filesystem, githubExtractor, converter, database, artifactService, pomsReader, env)
+    new PublishProcess(filesystem, githubExtractor, converter, database, artifactService, pomsReader, github, env)
 end PublishProcess

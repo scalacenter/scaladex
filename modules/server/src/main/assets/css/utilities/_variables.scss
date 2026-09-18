@@ -6,25 +6,25 @@
 //------------------------------------------------------------------------------
 
 $brand-primary: rgb(242, 101, 39);
-$brand-secondary: rgb(0, 63, 145);
+$brand-secondary: #073642;
 $gray-darker: rgb(0, 43, 55);
 $gray-dark: rgb(34, 73, 81);
 $gray: rgb(88, 110, 117);
-$gray-light: rgb(125, 147, 154);
-$gray-lighter: rgb(237, 241, 241);
+$gray-light: rgb(137, 146, 149);
+$gray-lighter: rgb(229, 234, 234);
 
 
 // Scaffolding
 //------------------------------------------------------------------------------
 
 $text-color: $gray;
-$body-bg: $gray-lighter;
+$body-bg: $gray-darker;
 
 //Typography
 //------------------------------------------------------------------------------
 
-// Source Sans Pro
-@import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,400italic,600,700);
+// Lato
+@import url(https://fonts.googleapis.com/css?family=Lato:400,300,400italic,600,700);
 
 // Roboto Slab
 @import url(https://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700);
@@ -32,7 +32,7 @@ $body-bg: $gray-lighter;
 // Caveat
 @import url(https://fonts.googleapis.com/css?family=Caveat);
 
-$font-family-sans-serif: "Source Sans Pro", sans-serif;
+$font-family-sans-serif: "Lato", sans-serif;
 $font-family-serif: "Roboto Slab", serif;
 $font-size-base: 16px;
 $line-height-base: 1.528571429;
@@ -51,7 +51,7 @@ $headings-color: $gray-dark;
 // Components
 //------------------------------------------------------------------------------
 
-$border-radius-base: 2px;
+$border-radius-base: 6px;
 
 // Tooltips
 //------------------------------------------------------------------------------
@@ -62,6 +62,15 @@ $tooltip-bg: $gray-darker;
 //------------------------------------------------------------------------------
 
 $input-color-placeholder: $gray-light;
+$input-border: rgb(214, 221, 221);
+$input-border-focus: $brand-secondary;
+
+// Buttons
+//------------------------------------------------------------------------------
+
+$btn-default-color: $gray-dark;
+$btn-default-bg: #fff;
+$btn-default-border: rgb(214, 221, 221);
 
 // Navs
 //------------------------------------------------------------------------------

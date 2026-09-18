@@ -15,51 +15,59 @@
       <a class="btn btn-primary" href="/search?q=">Normal Search</a>
       <input type="hidden" name="contributingSearch" value="true">
     } else {
-      <a class="btn btn-primary" href="/search?q=&contributingSearch=true">Contributing Search</a>
+      <a class="btn btn-primary" href="/search?q=&contributingSearch=true"
+        data-toggle="tooltip" data-placement="bottom" data-container="body"
+        title="Only show projects that have open issues tagged as beginner-friendly, good for first contribution">Contributing Search</a>
     }
     <h3>Filters</h3>
-    <fieldset>
-      <legend>Languages</legend>
-      <ul>
-      @for((language, count) <- languages) {
-        <li>
-          <label>
-            <input type="checkbox" @if(params.languages.contains(language)) { checked }
-                    name="language" value="@language.value" onclick="this.form.submit()">
-            @language (@count)
-          </label>
-        </li>
-      }
-      </ul>
-    </fieldset>
-    <fieldset>
-      <legend>Platforms</legend>
-      <ul>
-      @for((platform, count) <- platforms) {
-        <li>
-          <label>
-            <input type="checkbox" @if(params.platforms.contains(platform)) { checked }
-                    name="platform" value="@platform.value" onclick="this.form.submit()">
-            @platform (@count)
-          </label>
-        </li>
-      }
-      </ul>
-    </fieldset>
-    <fieldset>
-      <legend>Topics</legend>
-      <ul>
-        @for((topic, count) <- topics.sortBy(_._1)) {
-        <li>
-          <label>
-            <input type="checkbox" @if(params.topics.contains(topic)) { checked }
-                   name="topic" value="@topic" onclick="this.form.submit()">
-            @topic (@count)
-          </label>
-        </li>
+    @if(languages.nonEmpty) {
+      <fieldset>
+        <legend>Languages</legend>
+        <ul>
+        @for((language, count) <- languages) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.languages.contains(language)) { checked }
+                      name="language" value="@language.value" onclick="submitFilterFormAjax(this.form, '#container-search')">
+              @language (@count)
+            </label>
+          </li>
         }
-      </ul>
-    </fieldset>
+        </ul>
+      </fieldset>
+    }
+    @if(platforms.nonEmpty) {
+      <fieldset>
+        <legend>Platforms</legend>
+        <ul>
+        @for((platform, count) <- platforms) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.platforms.contains(platform)) { checked }
+                      name="platform" value="@platform.value" onclick="submitFilterFormAjax(this.form, '#container-search')">
+              @platform (@count)
+            </label>
+          </li>
+        }
+        </ul>
+      </fieldset>
+    }
+    @if(topics.nonEmpty) {
+      <fieldset>
+        <legend>Topics</legend>
+        <ul>
+          @for((topic, count) <- topics.sortBy(_._1)) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.topics.contains(topic)) { checked }
+                     name="topic" value="@topic" onclick="submitFilterFormAjax(this.form, '#container-search')">
+              @topic (@count)
+            </label>
+          </li>
+          }
+        </ul>
+      </fieldset>
+    }
 
     <input type="hidden" name="q" value="@params.queryString">
     @if(you){

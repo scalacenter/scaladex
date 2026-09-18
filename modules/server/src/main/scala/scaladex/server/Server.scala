@@ -6,15 +6,16 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
 
+import scaladex.core.service.GithubClient
 import scaladex.core.service.ProjectService
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
 import scaladex.infra.DatabaseOverloadedException
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
+import scaladex.infra.CommonAkkaHttpClient
 import scaladex.infra.GithubClientImpl
 import scaladex.infra.MavenCentralClientImpl
-import scaladex.infra.MavenCentralHttpQueue
 import scaladex.infra.MavenCentralIndexClientImpl
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
@@ -24,6 +25,7 @@ import scaladex.server.route.api.*
 import scaladex.server.service.AdminService
 import scaladex.server.service.ArtifactService
 import scaladex.server.service.MavenCentralService
+import scaladex.server.service.ProjectSettingsService
 import scaladex.server.service.PublishProcess
 import scaladex.view.html.notfound
 
@@ -36,6 +38,7 @@ import org.apache.pekko.http.scaladsl.*
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.flywaydb.core.Flyway
 
 object Server extends LazyLogging:
@@ -70,30 +73,44 @@ object Server extends LazyLogging:
             val webDatabase = new SqlDatabase(webPool, config.caching, Some(config.database.maxConcurrentQueries))
             val schedulerDatabase = new SqlDatabase(schedulerPool, config.caching)
             val flyway = DoobieUtils.flyway(migrationDatasource, cleanDisabled = true)
-            val githubClient = config.github.token.map(new GithubClientImpl(_, config.github.httpClient))
+            val githubScheduledClient = GithubClientImpl(config.github.scheduledHttpClient)
+            val githubInteractiveClient = GithubClientImpl(config.github.interactiveHttpClient)
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
             // Web publishes (sbt/coursier) use the web pool; batch jobs use the scheduler pool
             // so Find Missing Artifacts cannot starve HTTP request connections.
-            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(using publishPool, system)
+            val publishProcess =
+              PublishProcess(paths, filesystem, webDatabase, githubInteractiveClient, config.env)(
+                using publishPool,
+                system
+              )
             val schedulerPublishProcess =
-              PublishProcess(paths, filesystem, schedulerDatabase, config.env)(using publishPool, system)
-            val mavenCentralHttpQueue = new MavenCentralHttpQueue(config.mavenCentral.httpClient)
-            val mavenCentralClient = new MavenCentralClientImpl(mavenCentralHttpQueue)
-            val mavenCentralIndexClient = new MavenCentralIndexClientImpl(mavenCentralHttpQueue)
+              PublishProcess(paths, filesystem, schedulerDatabase, githubInteractiveClient, config.env)(
+                using publishPool,
+                system
+              )
+            // shared by both Maven Central clients so the configured throttle is an actual ceiling on combined
+            // traffic to repo1.maven.org, not doubled by two independently-throttled clients
+            val mavenCentralHttpClient =
+              new CommonAkkaHttpClient(ConnectionPoolSettings("").withMaxConnections(10), config.mavenCentral.httpClient)
+            val mavenCentralClient = new MavenCentralClientImpl(mavenCentralHttpClient)
+            val mavenCentralIndexClient = new MavenCentralIndexClientImpl(mavenCentralHttpClient)
             val mavenCentralService =
               new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, schedulerPublishProcess)(
                 using system.dispatcher,
                 system
               )
-            val adminService = new AdminService(
-              env = config.env,
-              database = schedulerDatabase,
-              searchEngine = searchEngine,
-              githubClientOpt = githubClient,
-              mavenCentralService = mavenCentralService,
-              mavenCentralIndexClient = mavenCentralIndexClient
-            )
+            val adminService =
+              new AdminService(
+                config.env,
+                schedulerDatabase,
+                searchEngine,
+                config.github.token,
+                githubScheduledClient,
+                githubInteractiveClient,
+                mavenCentralService,
+                mavenCentralIndexClient
+              )
 
             for
               _ <- init(flyway, adminService, searchEngine, config.elasticsearch.reset)
@@ -102,7 +119,8 @@ object Server extends LazyLogging:
                 searchEngine,
                 webDatabase,
                 adminService,
-                publishProcess
+                publishProcess,
+                githubInteractiveClient
               )
               _ <- IO(
                 Http()
@@ -152,24 +170,27 @@ object Server extends LazyLogging:
       searchEngine: ElasticsearchEngine,
       webDatabase: SqlDatabase,
       adminService: AdminService,
-      publishProcess: PublishProcess
+      publishProcess: PublishProcess,
+      githubClient: GithubClient
   )(
       using system: ActorSystem
   ): Route =
     given ExecutionContext = system.dispatcher
 
-    val githubAuth = GithubAuthImpl(config.oAuth2)
+    val githubAuth = GithubAuthImpl(config.oAuth2, githubClient)
 
     val projectService = new ProjectService(webDatabase, searchEngine)
     val artifactService = new ArtifactService(webDatabase)
+    val settingsService = new ProjectSettingsService(webDatabase, projectService, artifactService, searchEngine)
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, adminService)
-    val projectPages = new ProjectPages(config.env, projectService, artifactService, webDatabase, searchEngine)
+    val projectPages = new ProjectPages(config.env, projectService, settingsService, webDatabase)
     val artifactPages = new ArtifactPages(config.env, webDatabase)
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)
-    val apiEndpoints = new ApiEndpointsImpl(projectService, artifactService, searchEngine)
+    val apiEndpoints =
+      new ApiEndpointsImpl(config.env, projectService, artifactService, settingsService, searchEngine, githubAuth)
     val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
     val badges = new Badges(projectService)
     val authentication = new AuthenticationApi(config.oAuth2.clientId, config.session, githubAuth, webDatabase)

@@ -6,7 +6,7 @@
 @import scaladex.core.model.search.AwesomeParams
 
 @(
-  category: Category, 
+  category: Category,
   languages: Seq[(Language, Int)],
   platforms: Seq[(Platform, Int)],
   params: AwesomeParams
@@ -15,33 +15,37 @@
   <form action="/awesome/@category.label" action="GET">
     <input type="hidden" name="sort" value="@params.sorting.label">
     <h3>Filters</h3>
-    <fieldset>
-      <legend>Languages</legend>
-      <ul>
-      @for((language, count) <- languages) {
-        <li>
-          <label>
-            <input type="checkbox" @if(params.languages.contains(language)) { checked }
-                    name="language" value="@language.value" onclick="this.form.submit()">
-            @language (@count)
-          </label>
-        </li>
-      }
-      </ul>
-    </fieldset>
-    <fieldset>
-      <legend>Platforms</legend>
-      <ul>
-      @for((platform, count) <- platforms) {
-        <li>
-          <label>
-            <input type="checkbox" @if(params.platforms.contains(platform)) { checked }
-                    name="platform" value="@platform.value" onclick="this.form.submit()">
-            @platform (@count)
-          </label>
-        </li>
-      }
-      </ul>
-    </fieldset>
+    @if(languages.nonEmpty) {
+      <fieldset>
+        <legend>Languages</legend>
+        <ul>
+        @for((language, count) <- languages) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.languages.contains(language)) { checked }
+                      name="language" value="@language.value" onclick="submitFilterFormAjax(this.form, '#container-awesome-category')">
+              @language (@count)
+            </label>
+          </li>
+        }
+        </ul>
+      </fieldset>
+    }
+    @if(platforms.nonEmpty) {
+      <fieldset>
+        <legend>Platforms</legend>
+        <ul>
+        @for((platform, count) <- platforms) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.platforms.contains(platform)) { checked }
+                      name="platform" value="@platform.value" onclick="submitFilterFormAjax(this.form, '#container-awesome-category')">
+              @platform (@count)
+            </label>
+          </li>
+        }
+        </ul>
+      </fieldset>
+    }
   </form>
 </div>

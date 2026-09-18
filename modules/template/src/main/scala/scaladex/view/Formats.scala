@@ -1,20 +1,19 @@
 package scaladex.view
 
 object Formats:
-  // TODO: add tests
+  private def pluralize(word: String, plural: String): String =
+    if plural.nonEmpty then plural
+    else if word.endsWith("y") then s"${word.dropRight(1)}ies"
+    else s"${word}s"
+
   def plural(n: Long, word: String, plural: String = ""): String =
     n match
-      case 0 => s"No $word"
+      case 0 => s"No ${pluralize(word, plural)}"
       case 1 => s"$n $word"
-      case _ if plural.isEmpty && word.endsWith("y") => s"$n ${word.dropRight(1)}ies"
-      case _ if plural.isEmpty => s"$n ${word}s"
-      case _ => s"$n $plural"
+      case _ => s"$n ${pluralize(word, plural)}"
 
   def wordPlural(n: Long, word: String, plural: String = ""): String =
     n match
-      case 0 => s"$word"
-      case 1 => s"$word"
-      case _ if plural.isEmpty && word.endsWith("y") => s"${word.dropRight(1)}ies"
-      case _ if plural.isEmpty => s"${word}s"
-      case _ => s"$plural"
+      case 1 => word
+      case _ => pluralize(word, plural)
 end Formats

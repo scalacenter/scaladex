@@ -7,7 +7,17 @@
 }
 
 .awesome-header {
-  background: url("/assets/img/head-project-background.png") no-repeat center top #0D343C;
+  background-color: $gray-darker;
+  background-image:
+    linear-gradient(to bottom, rgba($gray-darker, 0.15) 0%, rgba($gray-darker, 0.8) 100%),
+    url("/assets/img/head-project-background.png");
+  background-repeat: no-repeat, no-repeat;
+  // This header is much shorter than the mountain image's own aspect ratio,
+  // so with background-size:cover, "top" position crops out the peaks on
+  // one side (whichever is lower in the source image) and leaves flat sky
+  // on the other. Centering the crop vertically keeps it visually even.
+  background-position: center center, center center;
+  background-size: auto, cover;
   padding: 20px 0;
 
   .container {
@@ -71,6 +81,9 @@
     overflow: auto;
     background: white;
     padding: 20px;
+    @include border-top-radius($border-radius-base);
+    @include border-bottom-radius($border-radius-base);
+    @include box-shadow(0 1px 3px rgba(0, 0, 0, 0.05));
     @media screen and (max-width: $screen-md-min) {
       margin: 0 15px 20px 15px;
     }  
@@ -130,6 +143,9 @@
     background: white;
     margin-bottom: 40px;
     padding: 30px 20px;
+    @include border-top-radius($border-radius-base);
+    @include border-bottom-radius($border-radius-base);
+    @include box-shadow(0 1px 3px rgba(0, 0, 0, 0.05));
     h2 {
       text-align: center;
       text-transform: uppercase;
@@ -233,7 +249,7 @@
       color: rgba(255,255,255,0.5);
     }
   }
-  background: $gray-lighter;
+  background: $gray-darker;
   padding-bottom: 40px;
   @media screen and (min-width: $screen-md-min) {
       padding-bottom: 80px;

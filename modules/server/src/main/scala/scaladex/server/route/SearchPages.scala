@@ -8,6 +8,7 @@ import scaladex.core.service.SearchEngine
 import scaladex.server.TwirlSupport.given
 import scaladex.view.search.html.searchresult
 
+import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.model.Uri.*
 import org.apache.pekko.http.scaladsl.server.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
@@ -19,12 +20,13 @@ class SearchPages(env: Env, searchEngine: SearchEngine)(
     get(
       concat(
         path("search")(
-          searchParams(user)(params => paging(size = 20)(page => search(params, page, user, "search")))
+          searchParams(user)(params => paging(size = 20)(page => search(params, page, user, Uri("search"))))
         ),
         path(Segment)(organization =>
           searchParams(user) { params =>
             val paramsWithOrg = params.copy(queryString = s"${params.queryString} AND organization:$organization")
-            paging(size = 20)(page => search(paramsWithOrg, page, user, s"organization/$organization"))
+            val uri = Uri((Path("organization") / organization).toString)
+            paging(size = 20)(page => search(paramsWithOrg, page, user, uri))
           }
         )
       )
@@ -54,7 +56,7 @@ class SearchPages(env: Env, searchEngine: SearchEngine)(
         )
     }
 
-  private def search(params: SearchParams, page: PageParams, user: Option[UserState], uri: String) =
+  private def search(params: SearchParams, page: PageParams, user: Option[UserState], uri: Uri) =
     complete {
       val resultsF = searchEngine.find(params, page)
       val topicsF = searchEngine.countByTopics(params, 50)

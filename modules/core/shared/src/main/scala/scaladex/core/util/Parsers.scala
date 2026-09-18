@@ -17,8 +17,8 @@ trait Parsers:
 
   def tryP[T, A: P](p: => T): P[T] = Try(Pass(p)).getOrElse(Fail)
 
-  def tryParse[T](input: ParserInputSource, parser: P[?] => P[T]): Option[T] =
-    fastparse.parse(input, parser) match
+  def tryParse[T](input: ParserInputSource, parser: P[?] ?=> P[T]): Option[T] =
+    fastparse.parse(input, x => parser(using x)) match
       case Parsed.Success(v, _) => Some(v)
       case _ => None
 end Parsers
