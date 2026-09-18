@@ -122,6 +122,9 @@ object Client:
   def createSparkline(): Unit = Sparkline.createCommitActivity()
 
   @JSExport
+  def createInsightsChart(): Unit = Insights.createChart()
+
+  @JSExport
   def updateVisibleArtifactsInGrid(): Unit =
     def valuesOfCheckedInputsWithName(name: String): Set[String] =
       Dom

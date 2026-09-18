@@ -78,6 +78,20 @@ class SqlDatabase(
   private val countArtifactsCache: AsyncLoadingCache[Unit, Long] =
     Scaffeine().refreshAfterWrite(5.minutes).buildAsyncFuture[Unit, Long](_ => run(ArtifactTable.count.unique))
 
+  private type Insights = (scalaVersions: Seq[ScalaVersionInsight], scala3Migration: Seq[Scala3MigrationInsight])
+
+  // Insights are expensive full-table aggregate scans that don't change quickly (the old scheduled
+  // job only ran once a day), so they're computed on demand and cached, refreshing in the background
+  // rather than on every page view. Both scans share one cache entry since they're always read together.
+  private val insightsCache: AsyncLoadingCache[Unit, Insights] =
+    Scaffeine().refreshAfterWrite(24.hours).buildAsyncFuture[Unit, Insights] { _ =>
+      for
+        binaryCompat <- run(InsightsQueries.computeBinaryCompatCounts.to[Seq])
+        minor <- run(InsightsQueries.computeMinorVersionCounts.to[Seq])
+        migration <- run(InsightsQueries.computeScala3MigrationCounts.to[Seq])
+      yield (scalaVersions = binaryCompat ++ minor, scala3Migration = migration)
+    }
+
   private val directDependenciesCache: AsyncLoadingCache[Artifact.Reference, Seq[ArtifactDependency.Direct]] =
     buildCache(ref => run(ArtifactDependencyTable.selectDirectDependency.to[Seq](ref)))
 
@@ -305,6 +319,12 @@ class SqlDatabase(
 
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.deleteBySource.run(ref))
+
+  override def getScalaVersionInsights(): Future[Seq[ScalaVersionInsight]] =
+    insightsCache.get(()).map(_.scalaVersions)
+
+  override def getScala3MigrationInsights(): Future[Seq[Scala3MigrationInsight]] =
+    insightsCache.get(()).map(_.scala3Migration)
 
   override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))

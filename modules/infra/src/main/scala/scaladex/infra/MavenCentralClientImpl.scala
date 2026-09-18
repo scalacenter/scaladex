@@ -8,6 +8,7 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 
 import scaladex.core.model.Artifact
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Version
 import scaladex.core.service.MavenCentralClient
@@ -22,6 +23,7 @@ import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
+import org.apache.pekko.util.ByteString
 
 class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: ActorSystem)
     extends MavenCentralClient
@@ -55,6 +57,34 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
       res <- getPomFileWithLastModifiedTime(response, pomUri)
     yield res
   end getPomFile
+
+  override def getJavadocJar(ref: Artifact.Reference): Future[Option[Array[Byte]]] =
+    val jarUri = getJavadocJarUri(ref)
+    for
+      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = jarUri))
+      res <- getJarBytes(response, jarUri)
+    yield res
+  end getJavadocJar
+
+  private def getJarBytes(response: HttpResponse, uri: String): Future[Option[Array[Byte]]] =
+    response.status match
+      case StatusCodes.OK =>
+        response.entity.dataBytes.runFold(ByteString.empty)(_ ++ _).map(bytes => Some(bytes.toArray))
+      case StatusCodes.NotFound =>
+        response.discardEntityBytes()
+        Future.successful(None)
+      case status =>
+        response.discardEntityBytes()
+        Future.failed(new Exception(s"Cannot get $uri: $status"))
+
+  private def getJavadocJarUri(ref: Artifact.Reference): String =
+    val jarFileName = getJavadocJarFileName(ref.artifactId, ref.version)
+    s"$baseUri/${ref.groupId.mavenUrl}/${ref.artifactId.value}/${ref.version.value}/$jarFileName"
+
+  private def getJavadocJarFileName(artifactId: Artifact.ArtifactId, version: Version) = artifactId match
+    case Artifact.ArtifactId(name, BinaryVersion(SbtPlugin(Version.Minor(0, 13)), _)) =>
+      s"$name-${version.value}-javadoc.jar"
+    case _ => s"${artifactId.value}-${version.value}-javadoc.jar"
 
   private def getPomFileWithLastModifiedTime(response: HttpResponse, uri: String): Future[(String, Instant)] =
     response match
@@ -106,9 +136,8 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
     page.iterator.take(200).mkString.replaceAll("\\s+", " ")
 
   private def getPomUri(ref: Artifact.Reference): String =
-    val groupIdUrl: String = ref.groupId.value.replace('.', '/')
     val pomFileName = getPomFileName(ref.artifactId, ref.version)
-    s"$baseUri/${groupIdUrl}/${ref.artifactId.value}/${ref.version.value}/$pomFileName"
+    s"$baseUri/${ref.groupId.mavenUrl}/${ref.artifactId.value}/${ref.version.value}/$pomFileName"
 
   // Wed, 04 Nov 2020 23:36:02 GMT
   private val dateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
