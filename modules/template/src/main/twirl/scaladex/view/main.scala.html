@@ -342,7 +342,7 @@
             });
           }
           if (window.emojify) { emojify.run(); }
-          if (window.ScaladexClient) { ScaladexClient.createSparkline(); }
+          if (typeof ScaladexClient !== 'undefined') { ScaladexClient.createSparkline(); }
         }
 
         // Several links/forms (the artifacts/versions filters, the project

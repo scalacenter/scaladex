@@ -12,11 +12,13 @@ import scaladex.core.model.Project
 import scaladex.core.service.GithubClient
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions.*
+import scaladex.core.util.Secret
 import scaladex.infra.Resilience.tolerateHttpClientErrors
 
 import com.typesafe.scalalogging.LazyLogging
 
-class GithubUpdater(database: WebDatabase, github: GithubClient)(using ExecutionContext) extends LazyLogging:
+class GithubUpdater(database: WebDatabase, github: GithubClient, token: Secret)(using ExecutionContext)
+    extends LazyLogging:
   def updateAll(): Future[String] =
     database.getAllProjectsStatuses().flatMap { projectStatuses =>
       val projectToUpdate =
@@ -46,7 +48,7 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(using Execution
 
   def update(ref: Project.Reference): Future[GithubStatus] =
     for
-      response <- github.getProjectInfo(ref)
+      response <- github.getProjectInfo(ref, token)
       status <- updateGithubInfo(ref, response)
     yield status
 
@@ -65,9 +67,13 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(using Execution
         logger.info(s"$repo moved to $destination")
         database.moveProject(repo, info, status).map(_ => status)
 
+      case GithubResponse.NotFound(_) =>
+        val status = GithubStatus.NotFound(now)
+        logger.info(s"$repo not found on GitHub")
+        database.updateGithubStatus(repo, status).map(_ => status)
+
       case GithubResponse.Failed(code, reason) =>
-        val status =
-          if code == 404 then GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
+        val status = GithubStatus.Failed(now, code, reason)
         logger.info(s"Failed to download github info for $repo because of $status")
         database.updateGithubStatus(repo, status).map(_ => status)
     end match
