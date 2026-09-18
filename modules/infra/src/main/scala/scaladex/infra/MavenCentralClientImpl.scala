@@ -33,11 +33,8 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
 
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/"
-    val request =
-      HttpRequest(uri = uri)
-
     for
-      response <- httpClient.queueRequestWithRetry(request)
+      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = uri))
       directories <- listDirectories(uri, response)
     yield directories.map(Artifact.ArtifactId.apply)
   end getAllArtifactIds
@@ -152,6 +149,8 @@ end MavenCentralClientImpl
 object MavenCentralClientImpl:
   private val poolSettings: ConnectionPoolSettings = ConnectionPoolSettings("").withMaxConnections(10)
 
+  private def retryForbidden(response: HttpResponse): Boolean = response.status == StatusCodes.Forbidden
+
   def apply(config: HttpClientConfig = HttpClientConfig.default)(using ActorSystem): MavenCentralClientImpl =
-    new MavenCentralClientImpl(new CommonAkkaHttpClient(poolSettings, config))
+    new MavenCentralClientImpl(new CommonAkkaHttpClient(poolSettings, config, retryForbidden))
 end MavenCentralClientImpl
