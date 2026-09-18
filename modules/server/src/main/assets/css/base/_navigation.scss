@@ -1,0 +1,143 @@
+// Dropdown menus, nav-tabs and tab panes -- a vanilla replacement for the
+// Bootstrap 3 components of the same name. Open/close and tab-switching
+// behavior comes from plain JS in main.scala.html (no jQuery / Bootstrap JS).
+
+.caret {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    margin-left: 2px;
+    vertical-align: middle;
+    border-top: 4px solid;
+    border-right: 4px solid transparent;
+    border-left: 4px solid transparent;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-toggle:focus {
+    outline: 0;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    display: none;
+    float: left;
+    min-width: 160px;
+    padding: 5px 0;
+    margin: 2px 0 0;
+    font-size: $font-size-base;
+    text-align: left;
+    list-style: none;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: $border-radius-base;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+
+    &.show {
+        display: block;
+    }
+
+    &.dropdown-menu-right {
+        right: 0;
+        left: auto;
+    }
+
+    .divider {
+        height: 1px;
+        margin: 9px 0;
+        overflow: hidden;
+        background-color: $gray-lighter;
+    }
+
+    > li > a {
+        display: block;
+        padding: 3px 20px;
+        clear: both;
+        font-weight: 400;
+        line-height: $line-height-base;
+        color: $gray-dark;
+        white-space: nowrap;
+
+        &:hover,
+        &:focus {
+            color: darken($gray-dark, 5%);
+            text-decoration: none;
+            background-color: #f5f5f5;
+        }
+    }
+}
+
+.nav {
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+
+    &::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+
+    > li {
+        position: relative;
+        display: block;
+
+        > a {
+            position: relative;
+            display: block;
+            padding: 6px 16px;
+
+            &:hover,
+            &:focus {
+                text-decoration: none;
+            }
+        }
+    }
+}
+
+// Flat tabs: a translucent background tells active/inactive apart
+// instead of Bootstrap's default folder-tab borders.
+.nav-tabs {
+    > li {
+        float: left;
+        margin-bottom: 0;
+
+        > a {
+            margin-right: 2px;
+            line-height: $line-height-base;
+            color: $gray;
+            background: rgba($gray-darker, 0.1);
+            border-radius: $border-radius-base $border-radius-base 0 0;
+
+            &:hover {
+                background: rgba($gray-darker, 0.2);
+            }
+        }
+
+        &.active > a {
+            &,
+            &:hover,
+            &:focus {
+                color: $gray;
+                cursor: default;
+                background: #fff;
+            }
+        }
+    }
+}
+
+.tab-content {
+    > .tab-pane {
+        display: none;
+    }
+    > .active {
+        display: block;
+    }
+}
