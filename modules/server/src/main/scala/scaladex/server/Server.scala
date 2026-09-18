@@ -10,12 +10,14 @@ import scaladex.core.service.GithubClient
 import scaladex.core.service.MavenCentralClient
 import scaladex.core.service.ProjectService
 import scaladex.data.util.PidLock
+import scaladex.infra.CommonAkkaHttpClient
 import scaladex.infra.DataPaths
 import scaladex.infra.DatabaseOverloadedException
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
 import scaladex.infra.GithubClientImpl
 import scaladex.infra.MavenCentralClientImpl
+import scaladex.infra.MavenCentralIndexClientImpl
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
@@ -38,6 +40,7 @@ import org.apache.pekko.http.scaladsl.*
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.flywaydb.core.Flyway
 
 object Server extends LazyLogging:
@@ -88,7 +91,15 @@ object Server extends LazyLogging:
                 using publishPool,
                 system
               )
-            val mavenCentralClient = MavenCentralClientImpl(config.mavenCentral.httpClient)
+            // shared by both Maven Central clients so the configured throttle is an actual ceiling on combined
+            // traffic to repo1.maven.org, not doubled by two independently-throttled clients
+            val mavenCentralHttpClient =
+              new CommonAkkaHttpClient(
+                ConnectionPoolSettings("").withMaxConnections(10),
+                config.mavenCentral.httpClient
+              )
+            val mavenCentralClient = new MavenCentralClientImpl(mavenCentralHttpClient)
+            val mavenCentralIndexClient = new MavenCentralIndexClientImpl(mavenCentralHttpClient)
             val mavenCentralService =
               new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, schedulerPublishProcess)(
                 using system.dispatcher,
@@ -102,7 +113,8 @@ object Server extends LazyLogging:
                 config.github.token,
                 githubScheduledClient,
                 githubInteractiveClient,
-                mavenCentralService
+                mavenCentralService,
+                mavenCentralIndexClient
               )
 
             for

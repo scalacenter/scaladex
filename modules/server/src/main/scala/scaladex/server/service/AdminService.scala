@@ -1,4 +1,5 @@
 package scaladex.server.service
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -10,6 +11,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.Project.Settings
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
+import scaladex.core.service.MavenCentralIndexClient
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
@@ -28,10 +30,14 @@ class AdminService(
     githubTokenOpt: Option[Secret],
     githubScheduledClient: GithubClient,
     githubInteractiveClient: GithubClient,
-    mavenCentralService: MavenCentralService
+    mavenCentralService: MavenCentralService,
+    mavenCentralIndexClient: MavenCentralIndexClient
 )(using system: ActorSystem)
     extends LazyLogging:
   private given ExecutionContext = system.dispatcher
+
+  private val discoveryService =
+    new DiscoveryService(database, mavenCentralIndexClient, mavenCentralService.syncOne(_, None))
 
   val projectService = new ProjectService(database, searchEngine)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
@@ -59,7 +65,8 @@ class AdminService(
         if !env.isLocal then
           Seq(
             new JobScheduler(Job.missingMavenArtifacts, mavenCentralService.findMissing),
-            new JobScheduler(Job.nonStandardArtifacts, mavenCentralService.findNonStandard)
+            new JobScheduler(Job.nonStandardArtifacts, mavenCentralService.findNonStandard),
+            new JobScheduler(Job.discoverMavenNamespaces, discoveryService.discover)
           )
         else Seq.empty
       )
@@ -147,6 +154,13 @@ class AdminService(
   def republishArtifacts(user: UserState): Unit =
     val task = TaskRunner.run(Task.republishArtifacts, user.info.login, input = Seq.empty) { () =>
       mavenCentralService.republishArtifacts()
+    }
+    tasks = tasks :+ task
+
+  def rewindDiscoveryCursor(chunksBack: Int, user: UserState): Unit =
+    val input = Seq("Chunks back" -> chunksBack.toString)
+    val task = TaskRunner.run(Task.rewindDiscoveryCursor, user.info.login, input) { () =>
+      discoveryService.rewindCursor(chunksBack)
     }
     tasks = tasks :+ task
 

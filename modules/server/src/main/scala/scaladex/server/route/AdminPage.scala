@@ -23,8 +23,7 @@ class AdminPage(env: Env, adminService: AdminService):
             pathEnd {
               val jobs = adminService.allJobStatuses
               val tasks = adminService.allTaskStatuses
-              val html = view.admin.html.admin(env, user, jobs, tasks)
-              complete(html)
+              complete(view.admin.html.admin(env, user, jobs, tasks))
             }
           } ~
             post {
@@ -71,6 +70,14 @@ class AdminPage(env: Env, adminService: AdminService):
               path("tasks" / Task.republishArtifacts.name) {
                 adminService.republishArtifacts(user)
                 redirect(Uri("/admin"), StatusCodes.SeeOther)
+              }
+            } ~
+            post {
+              path("tasks" / Task.rewindDiscoveryCursor.name) {
+                formField("chunks-back") { raw =>
+                  adminService.rewindDiscoveryCursor(raw.toIntOption.getOrElse(8), user)
+                  redirect(Uri("/admin"), StatusCodes.SeeOther)
+                }
               }
             }
 
