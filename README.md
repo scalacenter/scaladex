@@ -55,6 +55,23 @@ If your project is not hosted by Github you should consider creating a mirror of
 
 Do not forget to update the `scmInfo` setting in your build file before the next release.
 
+#### Did you publish via Sonatype Central Portal?
+
+If you published your artifacts using the new Sonatype Central Portal (e.g., via sbt-typelevel's `tlCiRelease`), they may not appear in Scaladex automatically.
+This is because the Central Portal does not notify Scaladex when new artifacts are published, and Scaladex's periodic scan only checks group IDs it already knows about.
+
+To have your artifacts indexed, submit your group ID to the [new-groups.json](https://github.com/scalacenter/scaladex-contrib/blob/master/new-groups.json) file in the [scaladex-contrib](https://github.com/scalacenter/scaladex-contrib) repository.
+The file format is a simple JSON array of group ID strings:
+
+```json
+[
+  "dev.constructive",
+  "com.example.mylib"
+]
+```
+
+Once merged, Scaladex will discover and index all Scala artifacts from your group ID within 6 hours.
+
 ### My project is hard to find in the search page
 
 Read [How to improve the visibility of your project](doc/user/improve-visibility.md).

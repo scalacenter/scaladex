@@ -59,7 +59,8 @@ class AdminService(
         if !env.isLocal then
           Seq(
             new JobScheduler(Job.missingMavenArtifacts, mavenCentralService.findMissing),
-            new JobScheduler(Job.nonStandardArtifacts, mavenCentralService.findNonStandard)
+            new JobScheduler(Job.nonStandardArtifacts, mavenCentralService.findNonStandard),
+            new JobScheduler(Job.newGroupIds, mavenCentralService.findNewGroups)
           )
         else Seq.empty
       )
