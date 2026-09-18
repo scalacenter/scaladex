@@ -17,6 +17,14 @@ object ChartDataset:
     js.Dynamic
       .literal(data = data.toJSArray, label = label)
       .asInstanceOf[ChartDataset]
+
+  // For a bar chart: plain values (not x/y points) paired positionally with ChartData's labels.
+  // backgroundColor is one color per bar (Chart.js supports an array here), same order as data.
+  def bar(data: Seq[Double], label: String, backgroundColor: Seq[String]): ChartDataset =
+    js.Dynamic
+      .literal(data = data.toJSArray, label = label, backgroundColor = backgroundColor.toJSArray)
+      .asInstanceOf[ChartDataset]
+end ChartDataset
 @js.native
 trait DataPoint extends js.Object:
   def x: Double = js.native
@@ -39,6 +47,16 @@ object ChartData:
         datasets = datasets.toJSArray
       )
       .asInstanceOf[ChartData]
+
+  // With category labels, used by a bar chart's plain-value datasets (see ChartDataset.bar).
+  def apply(labels: Seq[String], datasets: Seq[ChartDataset]): ChartData =
+    js.Dynamic
+      .literal(
+        labels = labels.toJSArray,
+        datasets = datasets.toJSArray
+      )
+      .asInstanceOf[ChartData]
+end ChartData
 
 @js.native
 trait ChartConfig extends js.Object:
@@ -63,14 +81,21 @@ trait ChartOptions extends js.Object:
   def scales: ScaleOptions = js.native
 
 object ChartOptions:
-  def apply(plugins: PluginOptions, elements: ElementOptions, scales: ScaleOptions): ChartOptions =
+  def apply(
+      plugins: PluginOptions,
+      scales: ScaleOptions,
+      elements: js.UndefOr[ElementOptions] = js.undefined,
+      maintainAspectRatio: js.UndefOr[Boolean] = js.undefined
+  ): ChartOptions =
     js.Dynamic
       .literal(
         plugins = plugins,
         elements = elements,
-        scales = scales
+        scales = scales,
+        maintainAspectRatio = maintainAspectRatio
       )
       .asInstanceOf[ChartOptions]
+end ChartOptions
 
 @js.native
 trait PluginOptions extends js.Object:
