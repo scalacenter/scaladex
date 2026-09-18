@@ -66,8 +66,6 @@ object DoobieMappings extends Instances with JavaTimeInstances:
       .timap(_.split(",").filter(_.nonEmpty).map(Project.Reference.unsafe).toSeq)(_.map(_.toString).mkString(","))
   given Meta[DiscoveredGroupId.Source] =
     Meta[String].timap(DiscoveredGroupId.Source.valueOf)(_.toString)
-  given Meta[DiscoveredGroupId.Status] =
-    Meta[String].timap(DiscoveredGroupId.Status.valueOf)(_.toString)
   given Meta[Category] = Meta[String].timap(Category.byLabel)(_.label)
 
   given Read[Project.Reference] =
@@ -139,10 +137,7 @@ object DoobieMappings extends Instances with JavaTimeInstances:
       Instant,
       Option[Instant],
       Option[String],
-      Option[Seq[Project.Reference]],
-      DiscoveredGroupId.Status,
-      Option[String],
-      Option[Instant]
+      Option[Seq[Project.Reference]]
   )
   given Write[DiscoveredGroupId] =
     Write[DiscoveredGroupIdRow].contramap { d =>
@@ -152,10 +147,7 @@ object DoobieMappings extends Instances with JavaTimeInstances:
         d.discoveredAt,
         d.lastSyncedAt,
         d.syncSummary,
-        Option.when(d.projectRefs.nonEmpty)(d.projectRefs),
-        d.status,
-        d.reviewedBy,
-        d.reviewedAt
+        Option.when(d.projectRefs.nonEmpty)(d.projectRefs)
       )
     }
   given Read[IndexCursor] =
@@ -163,18 +155,8 @@ object DoobieMappings extends Instances with JavaTimeInstances:
 
   given Read[DiscoveredGroupId] =
     Read[DiscoveredGroupIdRow].map {
-      case (groupId, source, discoveredAt, lastSyncedAt, syncSummary, projectRefs, status, reviewedBy, reviewedAt) =>
-        DiscoveredGroupId(
-          groupId,
-          source,
-          discoveredAt,
-          lastSyncedAt,
-          syncSummary,
-          projectRefs.getOrElse(Nil),
-          status,
-          reviewedBy,
-          reviewedAt
-        )
+      case (groupId, source, discoveredAt, lastSyncedAt, syncSummary, projectRefs) =>
+        DiscoveredGroupId(groupId, source, discoveredAt, lastSyncedAt, syncSummary, projectRefs.getOrElse(Nil))
     }
 
   private def toJson[A](v: A)(using Encoder[A]): String =

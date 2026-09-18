@@ -5,9 +5,6 @@ CREATE TABLE discovered_group_id(
     last_synced_at   TIMESTAMPTZ,
     sync_summary     VARCHAR,
     project_refs     VARCHAR,
-    status           VARCHAR      NOT NULL DEFAULT 'Pending',
-    reviewed_by      VARCHAR,
-    reviewed_at      TIMESTAMPTZ,
     PRIMARY KEY (group_id)
 );
 

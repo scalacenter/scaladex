@@ -389,14 +389,8 @@ class SqlDatabase(
   override def getAllDiscoveredGroupIds(): Future[Seq[DiscoveredGroupId]] =
     run(DiscoveredGroupIdTable.selectAll.to[Seq])
 
-  override def getDiscoveredGroupIds(status: DiscoveredGroupId.Status): Future[Seq[DiscoveredGroupId]] =
-    run(DiscoveredGroupIdTable.selectByStatus.to[Seq](status))
-
   override def getPendingDiscoveredGroupIdsToSync(limit: Int): Future[Seq[DiscoveredGroupId]] =
     run(DiscoveredGroupIdTable.selectPendingToSync.to[Seq](limit.toLong))
-
-  override def getPendingDiscoveredGroupIdsToReview(limit: Int): Future[Seq[DiscoveredGroupId]] =
-    run(DiscoveredGroupIdTable.selectPendingToReview.to[Seq](limit.toLong))
 
   override def updateDiscoveredGroupIdError(groupId: Artifact.GroupId, syncSummary: String): Future[Unit] =
     run(DiscoveredGroupIdTable.updateError.run((syncSummary, groupId))).map(_ => ())
@@ -408,14 +402,6 @@ class SqlDatabase(
       projectRefs: Seq[Project.Reference]
   ): Future[Unit] =
     run(DiscoveredGroupIdTable.updateSync.run((lastSyncedAt, syncSummary, projectRefs, groupId))).map(_ => ())
-
-  override def updateDiscoveredGroupIdStatus(
-      groupId: Artifact.GroupId,
-      status: DiscoveredGroupId.Status,
-      reviewedBy: String,
-      reviewedAt: Instant
-  ): Future[Unit] =
-    run(DiscoveredGroupIdTable.updateStatus.run((status, reviewedBy, reviewedAt, groupId))).map(_ => ())
 
   override def getProjectRefsByGroupId(groupId: Artifact.GroupId): Future[Seq[Project.Reference]] =
     run(ArtifactTable.selectProjectRefsByGroupId.to[Seq](groupId))

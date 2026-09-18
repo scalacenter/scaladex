@@ -314,15 +314,13 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       obtained2 should contain theSameElementsAs Seq(Cats.`core_2.13:2.5.0`)
   }
 
-  it("insert, list by status and review discovered group ids") {
+  it("insert and sync discovered group ids, deduplicating re-inserts") {
     val now = java.time.Instant.now
     val newGroup = DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.new"), now)
-    val rejected = DiscoveredGroupId
-      .pending(DiscoveredGroupId.Source.Manual, Artifact.GroupId("dev.spam"), now)
-      .copy(status = DiscoveredGroupId.Status.Rejected)
+    val spam = DiscoveredGroupId.pending(DiscoveredGroupId.Source.Manual, Artifact.GroupId("dev.spam"), now)
     for
-      inserted <- database.insertDiscoveredGroupIds(Seq(newGroup, rejected))
-      // re-inserting must not overwrite the rejected status
+      inserted <- database.insertDiscoveredGroupIds(Seq(newGroup, spam))
+      // re-inserting an already-known group id must be a no-op
       reinserted <- database.insertDiscoveredGroupIds(
         Seq(DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.spam"), now))
       )
@@ -332,23 +330,14 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
         "Inserted 3 poms",
         Seq(Cats.reference)
       )
-      pending <- database.getDiscoveredGroupIds(DiscoveredGroupId.Status.Pending)
-      _ <- database.updateDiscoveredGroupIdStatus(
-        Artifact.GroupId("dev.new"),
-        DiscoveredGroupId.Status.Reviewed,
-        "admin",
-        now
-      )
-      afterReview <- database.getDiscoveredGroupIds(DiscoveredGroupId.Status.Pending)
       all <- database.getAllDiscoveredGroupIds()
     yield
       inserted shouldBe 2
       reinserted shouldBe 0
-      pending.map(_.groupId.value) shouldBe Seq("dev.new")
-      pending.head.syncSummary shouldBe Some("Inserted 3 poms")
-      pending.head.projectRefs shouldBe Seq(Cats.reference)
-      afterReview shouldBe empty
       all.map(_.groupId.value).sorted shouldBe Seq("dev.new", "dev.spam")
+      val synced = all.find(_.groupId.value == "dev.new").get
+      synced.syncSummary shouldBe Some("Inserted 3 poms")
+      synced.projectRefs shouldBe Seq(Cats.reference)
     end for
   }
 

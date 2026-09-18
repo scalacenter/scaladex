@@ -77,16 +77,16 @@ class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
     end for
   }
 
-  it("does not re-surface a rejected group ID") {
+  it("does not re-discover or re-sync an already-synced group ID") {
     val db = new InMemoryDatabase
-    val rejected = DiscoveredGroupId
-      .pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.rejected"), Instant.now)
-      .copy(status = DiscoveredGroupId.Status.Rejected)
-    db.insertDiscoveredGroupIds(Seq(rejected))
+    val alreadySynced = DiscoveredGroupId
+      .pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.recorded"), Instant.now)
+      .copy(lastSyncedAt = Some(Instant.now), syncSummary = Some("Inserted 1 poms"))
+    db.insertDiscoveredGroupIds(Seq(alreadySynced))
 
     val client = new StubIndexClient(
       IndexCursor("chain-1", 900),
-      Seq(Record("dev.rejected", "lib_3", "2.0.0", deleted = false))
+      Seq(Record("dev.recorded", "lib_3", "2.0.0", deleted = false))
     )
     val synced = collection.mutable.Buffer.empty[String]
 
@@ -122,7 +122,6 @@ class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
     yield
       discovered.head.lastSyncedAt shouldBe None
       discovered.head.syncSummary.getOrElse("") should include("503")
-      discovered.head.status shouldBe DiscoveredGroupId.Status.Pending
       pending.map(_.groupId.value) shouldBe Seq("dev.flaky") // still in the sync queue
   }
 

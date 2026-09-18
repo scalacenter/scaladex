@@ -23,9 +23,7 @@ class AdminPage(env: Env, adminService: AdminService):
             pathEnd {
               val jobs = adminService.allJobStatuses
               val tasks = adminService.allTaskStatuses
-              onSuccess(adminService.discoveredProjectsToReview()) { discovered =>
-                complete(view.admin.html.admin(env, user, jobs, tasks, discovered))
-              }
+              complete(view.admin.html.admin(env, user, jobs, tasks))
             }
           } ~
             post {
@@ -79,15 +77,6 @@ class AdminPage(env: Env, adminService: AdminService):
                 formField("chunks-back") { raw =>
                   adminService.rewindDiscoveryCursor(raw.toIntOption.getOrElse(8), user)
                   redirect(Uri("/admin"), StatusCodes.SeeOther)
-                }
-              }
-            } ~
-            post {
-              path("discovered" / Segment / "review") { rawGroupId =>
-                formField("decision") { decision =>
-                  onSuccess(adminService.reviewDiscoveredGroupId(Artifact.GroupId(rawGroupId), decision, user)) {
-                    redirect(Uri("/admin"), StatusCodes.SeeOther)
-                  }
                 }
               }
             }

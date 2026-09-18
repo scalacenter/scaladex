@@ -243,21 +243,11 @@ class InMemoryDatabase extends SchedulerDatabase:
   override def getAllDiscoveredGroupIds(): Future[Seq[DiscoveredGroupId]] =
     Future.successful(discoveredGroupIds.values.toSeq)
 
-  override def getDiscoveredGroupIds(status: DiscoveredGroupId.Status): Future[Seq[DiscoveredGroupId]] =
-    Future.successful(discoveredGroupIds.values.filter(_.status == status).toSeq)
-
   override def getPendingDiscoveredGroupIdsToSync(limit: Int): Future[Seq[DiscoveredGroupId]] = Future.successful:
     discoveredGroupIds.values
-      .filter(d => d.status == DiscoveredGroupId.Status.Pending && d.lastSyncedAt.isEmpty)
+      .filter(_.lastSyncedAt.isEmpty)
       .toSeq
       .sortBy(_.discoveredAt.toEpochMilli)
-      .take(limit)
-
-  override def getPendingDiscoveredGroupIdsToReview(limit: Int): Future[Seq[DiscoveredGroupId]] = Future.successful:
-    discoveredGroupIds.values
-      .filter(_.status == DiscoveredGroupId.Status.Pending)
-      .toSeq
-      .sortBy(-_.discoveredAt.toEpochMilli)
       .take(limit)
 
   override def updateDiscoveredGroupIdError(groupId: Artifact.GroupId, syncSummary: String): Future[Unit] =
@@ -275,18 +265,6 @@ class InMemoryDatabase extends SchedulerDatabase:
     )
     Future.unit
   end updateDiscoveredGroupIdSync
-
-  override def updateDiscoveredGroupIdStatus(
-      groupId: Artifact.GroupId,
-      status: DiscoveredGroupId.Status,
-      reviewedBy: String,
-      reviewedAt: Instant
-  ): Future[Unit] =
-    discoveredGroupIds.updateWith(groupId)(
-      _.map(_.copy(status = status, reviewedBy = Some(reviewedBy), reviewedAt = Some(reviewedAt)))
-    )
-    Future.unit
-  end updateDiscoveredGroupIdStatus
 
   override def getProjectRefsByGroupId(groupId: Artifact.GroupId): Future[Seq[Project.Reference]] =
     Future.successful(allArtifacts.values.filter(_.groupId == groupId).map(_.projectRef).toSeq.distinct)
