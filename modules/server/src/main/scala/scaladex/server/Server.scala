@@ -14,6 +14,7 @@ import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
 import scaladex.infra.GithubClientImpl
 import scaladex.infra.MavenCentralClientImpl
+import scaladex.infra.MavenCentralHttpQueue
 import scaladex.infra.MavenCentralIndexClientImpl
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
@@ -77,8 +78,9 @@ object Server extends LazyLogging:
             val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(using publishPool, system)
             val schedulerPublishProcess =
               PublishProcess(paths, filesystem, schedulerDatabase, config.env)(using publishPool, system)
-            val mavenCentralClient = new MavenCentralClientImpl(config.mavenCentral.httpClient)
-            val mavenCentralIndexClient = new MavenCentralIndexClientImpl(config.mavenCentral.httpClient)
+            val mavenCentralHttpQueue = new MavenCentralHttpQueue(config.mavenCentral.httpClient)
+            val mavenCentralClient = new MavenCentralClientImpl(mavenCentralHttpQueue)
+            val mavenCentralIndexClient = new MavenCentralIndexClientImpl(mavenCentralHttpQueue)
             val mavenCentralService =
               new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, schedulerPublishProcess)(
                 using system.dispatcher,

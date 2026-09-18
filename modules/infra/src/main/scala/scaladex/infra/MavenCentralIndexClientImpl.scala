@@ -7,52 +7,34 @@ import java.util.zip.GZIPInputStream
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
-import scala.concurrent.Promise
 import scala.util.Failure
 import scala.util.Success
-import scala.util.Try
 import scala.util.control.NonFatal
 
 import scaladex.core.model.IndexCursor
 import scaladex.core.service.MavenCentralIndexClient
 import scaladex.core.service.MavenCentralIndexClient.Record
 import scaladex.core.service.MavenCentralIndexClient.Result
-import scaladex.infra.config.HttpClientConfig
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.HttpRequest
-import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
-import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
 
 /** Reads the Maven Central nexus index. The chunk binary format (`doc/dev/maven-central-discovery.md` §2.5.2) is
   * trivial enough to parse without `maven-indexer` / Lucene.
   */
-class MavenCentralIndexClientImpl(config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
-    extends CommonAkkaHttpClient(config)
-    with MavenCentralIndexClient
+class MavenCentralIndexClientImpl(httpQueue: MavenCentralHttpQueue)(using system: ActorSystem)
+    extends MavenCentralIndexClient
     with LazyLogging:
   private given ExecutionContextExecutor = system.dispatcher
-  private val host = "repo1.maven.org"
-  private val baseUri = s"https://$host/maven2/.index"
+  private val baseUri = "https://repo1.maven.org/maven2/.index"
   private val filePrefix = "nexus-maven-repository-index"
 
-  override def initPoolClientFlow: Flow[
-    (HttpRequest, Promise[HttpResponse]),
-    (Try[HttpResponse], Promise[HttpResponse]),
-    Http.HostConnectionPool
-  ] = Http().cachedHostConnectionPoolHttps[Promise[HttpResponse]](
-    host,
-    settings = ConnectionPoolSettings("max-open-requests = 4")
-  )
-
   def fetchRemoteCursor(): Future[IndexCursor] = for
-    response <- queueRequestWithRetry(HttpRequest(uri = s"$baseUri/$filePrefix.properties"))
+    response <- httpQueue.queueRequestWithRetry(HttpRequest(uri = s"$baseUri/$filePrefix.properties"))
     body <- Unmarshaller.stringUnmarshaller(response.entity)
     props = body.linesIterator
       .filterNot(_.startsWith("#"))
@@ -89,7 +71,7 @@ class MavenCentralIndexClientImpl(config: HttpClientConfig = HttpClientConfig.de
   private def fetchChunk(n: Int, keep: Record => Boolean): Future[Seq[Record]] =
     val uri = s"$baseUri/$filePrefix.$n.gz"
     for
-      response <- queueRequestWithRetry(HttpRequest(uri = uri))
+      response <- httpQueue.queueRequestWithRetry(HttpRequest(uri = uri))
       records <-
         if response.status != StatusCodes.OK then
           response.discardEntityBytes()

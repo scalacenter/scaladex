@@ -6,8 +6,6 @@ import java.time.format.DateTimeFormatter
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.util.Try
 import scala.util.control.NonFatal
 
 import scaladex.core.model.Artifact
@@ -15,35 +13,20 @@ import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Version
 import scaladex.core.service.MavenCentralClient
 import scaladex.core.util.JsoupUtils
-import scaladex.infra.config.HttpClientConfig
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
-import org.apache.pekko.stream.scaladsl.Flow
 
-class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
-    extends CommonAkkaHttpClient(config)
-    with MavenCentralClient
+class MavenCentralClientImpl(httpQueue: MavenCentralHttpQueue)(using system: ActorSystem)
+    extends MavenCentralClient
     with LazyLogging:
   private given ExecutionContextExecutor = system.dispatcher
   private val baseUri = "https://repo1.maven.org/maven2"
-  override def initPoolClientFlow: Flow[
-    (HttpRequest, Promise[HttpResponse]),
-    (Try[HttpResponse], Promise[HttpResponse]),
-    Http.HostConnectionPool
-  ] =
-    Http()
-      .cachedHostConnectionPoolHttps[Promise[HttpResponse]](
-        "repo1.maven.org",
-        settings = ConnectionPoolSettings("max-open-requests = 32")
-      )
 
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/"
@@ -51,7 +34,7 @@ class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default
       HttpRequest(uri = uri)
 
     for
-      response <- queueRequestWithRetry(request)
+      response <- httpQueue.queueRequestWithRetry(request)
       directories <- listDirectories(uri, response)
     yield directories.map(Artifact.ArtifactId.apply)
   end getAllArtifactIds
@@ -60,7 +43,7 @@ class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default
     val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/"
     val request = HttpRequest(uri = uri)
     val future = for
-      response <- queueRequestWithRetry(request)
+      response <- httpQueue.queueRequestWithRetry(request)
       directories <- listDirectories(uri, response)
     yield directories.map(Version.apply)
     future.recoverWith {
@@ -73,7 +56,7 @@ class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default
   override def getPomFile(ref: Artifact.Reference): Future[Option[(String, Instant)]] =
     val pomUri = getPomUri(ref)
     val future = for
-      response <- queueRequestWithRetry(HttpRequest(uri = pomUri))
+      response <- httpQueue.queueRequestWithRetry(HttpRequest(uri = pomUri))
       res <- getPomFileWithLastModifiedTime(response, pomUri)
     yield res
     future.recoverWith {

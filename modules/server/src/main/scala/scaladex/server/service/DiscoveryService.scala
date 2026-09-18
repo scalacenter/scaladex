@@ -18,6 +18,11 @@ import com.typesafe.scalalogging.LazyLogging
 /** Finds Scala group IDs newly published to Maven Central by reading the nexus incremental index, then auto-indexes
   * each one through the existing `MavenCentralService.syncOne`. Every discovered group ID is recorded in
   * `discovered_group_id` for the admin review queue. See `doc/dev/maven-central-discovery.md`.
+  *
+  * Neither the chunk scan nor the group sync below cap how much work one run does: both pull everything currently
+  * available. The pacing safeguard is `MavenCentralHttpQueue`'s shared, cross-client throttle, not a per-run
+  * batch size — so a large backlog (a fresh deploy backfilling from chunk 0, or a long outage) drains at the
+  * throttled request rate instead of trickling in over many scheduled runs.
   */
 class DiscoveryService(
     database: SchedulerDatabase,
@@ -26,19 +31,18 @@ class DiscoveryService(
 )(using ExecutionContext)
     extends LazyLogging:
 
-  // never pull more than this many ~40 MB chunks in one run (a long outage would otherwise be multi-GB)
-  private val maxChunksPerRun = 8
-  // cap how many freshly-discovered group IDs we sync per run, so a burst can't hammer Maven Central
-  private val syncBatchSize = 10
+  // defensive cap on one run's DB query / duration, not a throttle (MavenCentralHttpQueue paces the actual
+  // requests) -- comfortably above any realistic backlog
+  private val syncBatchSize = 1000
 
   def discover(): Future[String] = for
     remote <- indexClient.fetchRemoteCursor()
     localOpt <- database.getMavenIndexCursor()
     from = resolveFrom(localOpt, remote)
+    chunksAvailable = remote.lastIncremental - from.lastIncremental
     result <-
-      if from.lastIncremental >= remote.lastIncremental then
-        Future.successful(MavenCentralIndexClient.Result(Nil, from.lastIncremental))
-      else indexClient.recordsSince(from, remote, maxChunksPerRun)(r => isScalaArtifact(r.artifactId))
+      if chunksAvailable <= 0 then Future.successful(MavenCentralIndexClient.Result(Nil, from.lastIncremental))
+      else indexClient.recordsSince(from, remote, chunksAvailable)(r => isScalaArtifact(r.artifactId))
     newGroupIds <- selectNewGroupIds(result.records)
     now = Instant.now
     inserted <- database.insertDiscoveredGroupIds(
@@ -49,8 +53,8 @@ class DiscoveryService(
     synced <- syncPending()
   yield s"Discovered $inserted new group IDs from ${result.records.size} Scala records; synced $synced"
 
-  /** Rewind the cursor so the next `discover()` re-scans the last `chunksBack` chunks (capped at `maxChunksPerRun`).
-    * Admin action for backfilling after a deploy or a missed chunk.
+  /** Rewind the cursor so the next `discover()` re-scans the last `chunksBack` chunks. Admin action for backfilling
+    * after a deploy or a missed chunk.
     */
   def rewindCursor(chunksBack: Int): Future[String] =
     indexClient
@@ -61,10 +65,13 @@ class DiscoveryService(
           .setMavenIndexCursor(target)
           .map: _ =>
             s"Cursor set to chunk ${target.lastIncremental} (remote is ${remote.lastIncremental}); " +
-              s"the next discovery run will re-scan up to $maxChunksPerRun chunks"
+              s"the next discovery run will re-scan the missed chunks"
 
-  /** If the remote chain was rebuilt, or we have no cursor yet, start from "now" (remote.lastIncremental - 1) rather
-    * than downloading the 3.2 GB full index.
+  /** If the remote chain was rebuilt, start from "now" (remote.lastIncremental - 1) rather than downloading the
+    * 3.2 GB full index. If we have no cursor yet, start from chunk 0 instead: the chain goes back to 2012-06-15,
+    * well before the OSSRH-to-Central-Portal migration that actually caused the discovery gap (new namespace
+    * registration moved to the Portal from 2024-02-01), but scanning the full chain is cheap enough (paced by
+    * `MavenCentralHttpQueue`, not by a per-run chunk cap) that there is no need to rely on that date estimate.
     */
   private def resolveFrom(localOpt: Option[IndexCursor], remote: IndexCursor): IndexCursor = localOpt match
     case Some(local) if local.chainId == remote.chainId => local
@@ -72,8 +79,8 @@ class DiscoveryService(
       logger.warn(s"Maven index chain changed (${local.chainId} -> ${remote.chainId}); skipping the gap")
       IndexCursor(remote.chainId, remote.lastIncremental - 1)
     case None =>
-      logger.info("No Maven index cursor yet; starting from the latest chunk")
-      IndexCursor(remote.chainId, remote.lastIncremental - 1)
+      logger.info("No Maven index cursor yet; starting from the beginning of the chain to backfill history")
+      IndexCursor(remote.chainId, 0)
 
   private def isScalaArtifact(artifactId: String): Boolean =
     val parsed = Artifact.ArtifactId(artifactId)

@@ -20,10 +20,17 @@ import org.scalatest.matchers.should.Matchers
 class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
   given ExecutionContext = ExecutionContext.global
 
-  class StubIndexClient(remote: IndexCursor, records: Seq[Record], reached: Option[Int] = None)
-      extends MavenCentralIndexClient:
+  class StubIndexClient(
+      remote: IndexCursor,
+      records: Seq[Record],
+      reached: Option[Int] = None,
+      seenFrom: collection.mutable.Buffer[IndexCursor] = collection.mutable.Buffer.empty,
+      seenMaxChunks: collection.mutable.Buffer[Int] = collection.mutable.Buffer.empty
+  ) extends MavenCentralIndexClient:
     def fetchRemoteCursor(): Future[IndexCursor] = Future.successful(remote)
     def recordsSince(from: IndexCursor, to: IndexCursor, maxChunks: Int)(keep: Record => Boolean): Future[Result] =
+      seenFrom += from
+      seenMaxChunks += maxChunks
       Future.successful(Result(records.filter(keep), reached.getOrElse(to.lastIncremental)))
 
   private def service(
@@ -44,7 +51,7 @@ class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
     db.insertArtifacts(Seq(Values.Scalafix.artifact)) // ch.epfl.scala already indexed
 
     val client = new StubIndexClient(
-      IndexCursor("chain-1", 100),
+      IndexCursor("chain-1", 900),
       Seq(
         Record("ch.epfl.scala", "scalafix-core_2.13", "0.9.31", deleted = false), // known group
         Record("dev.new", "lib_3", "1.0.0", deleted = false), // new, Scala
@@ -77,7 +84,7 @@ class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
     db.insertDiscoveredGroupIds(Seq(rejected))
 
     val client = new StubIndexClient(
-      IndexCursor("chain-1", 50),
+      IndexCursor("chain-1", 900),
       Seq(Record("dev.rejected", "lib_3", "2.0.0", deleted = false))
     )
     val synced = collection.mutable.Buffer.empty[String]
@@ -88,22 +95,22 @@ class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
 
   it("advances the cursor only to the last chunk actually read") {
     val db = new InMemoryDatabase
-    // remote is at 100, but the client only got through chunk 96 before a chunk failed
+    // remote is at 900, but the client only got through chunk 896 before a chunk failed
     val client = new StubIndexClient(
-      IndexCursor("chain-1", 100),
+      IndexCursor("chain-1", 900),
       Seq(Record("dev.partial", "lib_3", "1.0.0", deleted = false)),
-      reached = Some(96)
+      reached = Some(896)
     )
     for
       _ <- service(db, client, collection.mutable.Buffer.empty[String]).discover()
       cursor <- db.getMavenIndexCursor()
-    yield cursor shouldBe Some(IndexCursor("chain-1", 96))
+    yield cursor shouldBe Some(IndexCursor("chain-1", 896))
   }
 
   it("keeps a group retryable when its sync fails") {
     val db = new InMemoryDatabase
     val client = new StubIndexClient(
-      IndexCursor("chain-1", 10),
+      IndexCursor("chain-1", 900),
       Seq(Record("dev.flaky", "lib_3", "1.0.0", deleted = false))
     )
     val failing = new DiscoveryService(db, client, _ => Future.failed(new RuntimeException("503 rate limited")))
@@ -116,6 +123,22 @@ class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
       discovered.head.syncSummary.getOrElse("") should include("503")
       discovered.head.status shouldBe DiscoveredGroupId.Status.Pending
       pending.map(_.groupId.value) shouldBe Seq("dev.flaky") // still in the sync queue
+  }
+
+  it("starts from chunk 0 when there is no cursor yet, to backfill history") {
+    val db = new InMemoryDatabase
+    val seenFrom = collection.mutable.Buffer.empty[IndexCursor]
+    val client = new StubIndexClient(IndexCursor("chain-1", 900), Nil, seenFrom = seenFrom)
+    for _ <- service(db, client, collection.mutable.Buffer.empty[String]).discover()
+    yield seenFrom shouldBe Seq(IndexCursor("chain-1", 0))
+  }
+
+  it("pulls the entire available backlog in one run, with no artificial per-run cap") {
+    val db = new InMemoryDatabase // no cursor yet -> resolves to chunk 0, 900 chunks behind remote
+    val seenMaxChunks = collection.mutable.Buffer.empty[Int]
+    val client = new StubIndexClient(IndexCursor("chain-1", 900), Nil, seenMaxChunks = seenMaxChunks)
+    for _ <- service(db, client, collection.mutable.Buffer.empty[String]).discover()
+    yield seenMaxChunks shouldBe Seq(900)
   }
 
   it("rewindCursor sets the cursor back by N chunks (clamped at 0)") {
