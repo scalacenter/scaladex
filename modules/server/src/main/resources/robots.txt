@@ -53,6 +53,21 @@ Disallow: /
 User-agent: YouBot
 Disallow: /
 
-# Allow all other bots (search engines, etc.)
+# Search engines: allow main pages (home, search, awesome, insights, project pages)
+# but do not crawl artifact versions, APIs, or other dynamic endpoints.
+# Example blocked: /zio/zio-aws/artifacts/zio-aws-appintegrations/7.31.6.2?binary-version=_3
 User-agent: *
+Disallow: /*/artifacts/*/
+Disallow: /*?*binary-version=
+Disallow: /*/version-matrix
+Disallow: /*/dependents
+Disallow: /*/settings
+Disallow: /*/badges
+Disallow: /artifacts/
+Disallow: /api/
+Disallow: /admin/
+Disallow: /login
+Disallow: /logout
+Disallow: /callback
+Disallow: /publish
 Allow: /
