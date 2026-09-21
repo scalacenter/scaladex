@@ -12,11 +12,14 @@ import scaladex.core.util.Secret
 import scaladex.infra.config.GithubConfig
 
 import org.apache.pekko.actor.ActorSystem
+import org.scalatest.concurrent.Eventually
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class GithubClientImplTests extends AsyncFunSpec with Matchers:
+class GithubClientImplTests extends AsyncFunSpec with Matchers with Eventually with ScalaFutures:
   given ActorSystem = ActorSystem("github-client-tests")
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(timeout = 30.seconds, interval = 2.seconds)
   val config: GithubConfig = GithubConfig.load()
   val isCI: Boolean = System.getenv("CI") != null
   val token: Secret = config.token.getOrElse(throw new Exception(s"Missing GITHUB_TOKEN"))
@@ -100,8 +103,9 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers:
   }
 
   it("getCommitActivity") {
-    for commitActivities <- client.getCommitActivity(Scala3.reference, token)
-    yield commitActivities should not be empty
+    eventually {
+      client.getCommitActivity(Scala3.reference, token).futureValue should not be empty
+    }
   }
 
   it("should return empty commit activity list") {

@@ -108,7 +108,9 @@ class GithubClientImpl(httpClient: CommonAkkaHttpClient)(using system: ActorSyst
     val request = HttpRequest(uri = s"${repoUrl(ref)}/community/profile")
       .addCredentials(credentials(token))
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
-    get[GithubModel.CommunityProfile](request)
+    getOrDefault(request, GithubModel.CommunityProfile(None, None, None)) { (_, entity) =>
+      Unmarshal(entity).to[GithubModel.CommunityProfile]
+    }
 
   def getContributors(ref: Project.Reference, token: Secret): Future[List[GithubModel.Contributor]] =
     def request(page: Int) =
