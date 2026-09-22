@@ -4,12 +4,31 @@ import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.util.zip.GZIPOutputStream
 
+import scaladex.core.model.IndexCursor
 import scaladex.core.service.MavenCentralIndexClient.Record
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class MavenCentralIndexParserTests extends AnyFunSpec with Matchers:
+  it("parses the Maven index properties cursor") {
+    val body =
+      """#Tue Sep 15 13:07:25 UTC 2026
+        |nexus.index.id=central
+        |nexus.index.chain-id=1318453614498
+        |nexus.index.last-incremental=938
+        |""".stripMargin
+
+    MavenCentralIndexClientImpl.parseCursor(body) shouldBe IndexCursor("1318453614498", 938)
+  }
+
+  it("rejects an index properties response without a cursor") {
+    val error = intercept[IllegalArgumentException] {
+      MavenCentralIndexClientImpl.parseCursor("<html>temporary CDN response</html>")
+    }
+    error.getMessage should include("nexus.index.chain-id")
+  }
+
   /** Writes a chunk in the maven-indexer transport format. */
   private def chunk(records: Seq[Map[String, String]]): Array[Byte] =
     val raw = new ByteArrayOutputStream()
