@@ -313,4 +313,66 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       obtained1 should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`)
       obtained2 should contain theSameElementsAs Seq(Cats.`core_2.13:2.5.0`)
   }
+
+  it("insert and sync discovered group ids, deduplicating re-inserts") {
+    val now = java.time.Instant.now
+    val newGroup = DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.new"), now)
+    val spam = DiscoveredGroupId.pending(DiscoveredGroupId.Source.Manual, Artifact.GroupId("dev.spam"), now)
+    for
+      inserted <- database.insertDiscoveredGroupIds(Seq(newGroup, spam))
+      // re-inserting an already-known group id must be a no-op
+      reinserted <- database.insertDiscoveredGroupIds(
+        Seq(DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.spam"), now))
+      )
+      _ <- database.updateDiscoveredGroupIdSync(
+        Artifact.GroupId("dev.new"),
+        now,
+        "Inserted 3 poms",
+        Seq(Cats.reference)
+      )
+      all <- database.getAllDiscoveredGroupIds()
+    yield
+      inserted shouldBe 2
+      reinserted shouldBe 0
+      all.map(_.groupId.value).sorted shouldBe Seq("dev.new", "dev.spam")
+      val synced = all.find(_.groupId.value == "dev.new").get
+      synced.syncSummary shouldBe Some("Inserted 3 poms")
+      synced.projectRefs shouldBe Seq(Cats.reference)
+    end for
+  }
+
+  it("sync queue is FIFO and an error keeps a group retryable") {
+    val t0 = java.time.Instant.parse("2026-01-01T00:00:00Z")
+    val older = DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, Artifact.GroupId("dev.older"), t0)
+    val newer = DiscoveredGroupId.pending(
+      DiscoveredGroupId.Source.MavenIndex,
+      Artifact.GroupId("dev.newer"),
+      t0.plusSeconds(3600)
+    )
+    for
+      _ <- database.insertDiscoveredGroupIds(Seq(newer, older))
+      toSync <- database.getPendingDiscoveredGroupIdsToSync(10)
+      _ <- database.updateDiscoveredGroupIdError(Artifact.GroupId("dev.older"), "error: boom")
+      stillQueued <- database.getPendingDiscoveredGroupIdsToSync(10)
+      _ <- database.updateDiscoveredGroupIdSync(Artifact.GroupId("dev.newer"), t0, "Inserted 0 poms", Nil)
+      afterOneSynced <- database.getPendingDiscoveredGroupIdsToSync(10)
+    yield
+      toSync.map(_.groupId.value) shouldBe Seq("dev.older", "dev.newer") // oldest first
+      stillQueued.map(_.groupId.value) shouldBe Seq("dev.older", "dev.newer") // error did not set last_synced_at
+      afterOneSynced.map(_.groupId.value) shouldBe Seq("dev.older") // dev.newer left the queue
+    end for
+  }
+
+  it("stores and reads back the maven index cursor") {
+    for
+      empty <- database.getMavenIndexCursor()
+      _ <- database.setMavenIndexCursor(IndexCursor("chain-1", 900))
+      first <- database.getMavenIndexCursor()
+      _ <- database.setMavenIndexCursor(IndexCursor("chain-1", 912))
+      second <- database.getMavenIndexCursor()
+    yield
+      empty shouldBe None
+      first shouldBe Some(IndexCursor("chain-1", 900))
+      second shouldBe Some(IndexCursor("chain-1", 912))
+  }
 end SqlDatabaseTests

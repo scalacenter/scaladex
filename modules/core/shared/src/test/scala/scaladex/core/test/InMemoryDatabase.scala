@@ -167,7 +167,8 @@ class InMemoryDatabase extends SchedulerDatabase:
     Future.successful(0)
 
   override def updateArtifacts(allArtifacts: Seq[Artifact.Reference], newRef: Project.Reference): Future[Int] = ???
-  override def getGroupIds(): Future[Seq[Artifact.GroupId]] = ???
+  override def getGroupIds(): Future[Seq[Artifact.GroupId]] =
+    Future.successful(allArtifacts.values.map(_.groupId).toSeq.distinct)
   override def getGroupIds(limit: Int, offset: Int): Future[Seq[Artifact.GroupId]] = ???
   override def getArtifactRefs(): Future[Seq[Artifact.Reference]] = ???
   override def getArtifactRefs(groupId: Artifact.GroupId): Future[Seq[Artifact.Reference]] = ???
@@ -234,6 +235,47 @@ class InMemoryDatabase extends SchedulerDatabase:
 
   override def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit] =
     latestArtifacts += (ref, artifact.groupId, artifact.artifactId) -> artifact
+    Future.unit
+
+  private val discoveredGroupIds = TrieMap[Artifact.GroupId, DiscoveredGroupId]()
+  private var mavenIndexCursor = Option.empty[IndexCursor]
+
+  override def insertDiscoveredGroupIds(discovered: Seq[DiscoveredGroupId]): Future[Int] = Future.successful:
+    discovered.count(d => discoveredGroupIds.putIfAbsent(d.groupId, d).isEmpty)
+
+  override def getAllDiscoveredGroupIds(): Future[Seq[DiscoveredGroupId]] =
+    Future.successful(discoveredGroupIds.values.toSeq)
+
+  override def getPendingDiscoveredGroupIdsToSync(limit: Int): Future[Seq[DiscoveredGroupId]] = Future.successful:
+    discoveredGroupIds.values
+      .filter(_.lastSyncedAt.isEmpty)
+      .toSeq
+      .sortBy(_.discoveredAt.toEpochMilli)
+      .take(limit)
+
+  override def updateDiscoveredGroupIdError(groupId: Artifact.GroupId, syncSummary: String): Future[Unit] =
+    discoveredGroupIds.updateWith(groupId)(_.map(_.copy(syncSummary = Some(syncSummary))))
+    Future.unit
+
+  override def updateDiscoveredGroupIdSync(
+      groupId: Artifact.GroupId,
+      lastSyncedAt: Instant,
+      syncSummary: String,
+      projectRefs: Seq[Project.Reference]
+  ): Future[Unit] =
+    discoveredGroupIds.updateWith(groupId)(
+      _.map(_.copy(lastSyncedAt = Some(lastSyncedAt), syncSummary = Some(syncSummary), projectRefs = projectRefs))
+    )
+    Future.unit
+  end updateDiscoveredGroupIdSync
+
+  override def getProjectRefsByGroupId(groupId: Artifact.GroupId): Future[Seq[Project.Reference]] =
+    Future.successful(allArtifacts.values.filter(_.groupId == groupId).map(_.projectRef).toSeq.distinct)
+
+  override def getMavenIndexCursor(): Future[Option[IndexCursor]] = Future.successful(mavenIndexCursor)
+
+  override def setMavenIndexCursor(cursor: IndexCursor): Future[Unit] =
+    mavenIndexCursor = Some(cursor)
     Future.unit
 
   override def getArtifactVersions(

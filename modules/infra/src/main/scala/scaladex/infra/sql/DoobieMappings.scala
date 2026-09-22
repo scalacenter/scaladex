@@ -62,6 +62,11 @@ object DoobieMappings extends Instances with JavaTimeInstances:
     Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Reference.unsafe).toSet)(_.mkString(","))
   given given_Meta_Set_Project_Organization: Meta[Set[Project.Organization]] =
     Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Organization.apply).toSet)(_.mkString(","))
+  given given_Meta_Seq_Project_Reference: Meta[Seq[Project.Reference]] =
+    Meta[String]
+      .timap(_.split(",").filter(_.nonEmpty).map(Project.Reference.unsafe).toSeq)(_.map(_.toString).mkString(","))
+  given Meta[DiscoveredGroupId.Source] =
+    Meta[String].timap(DiscoveredGroupId.Source.valueOf)(_.toString)
   given Meta[Category] = Meta[String].timap(Category.byLabel)(_.label)
 
   given Read[Project.Reference] =
@@ -126,6 +131,34 @@ object DoobieMappings extends Instances with JavaTimeInstances:
     }
   // not strictly needed, but keeping it to speed compilation up
   given Read[Artifact] = Read.given_Read_P
+
+  private type DiscoveredGroupIdRow = (
+      Artifact.GroupId,
+      DiscoveredGroupId.Source,
+      Instant,
+      Option[Instant],
+      Option[String],
+      Option[Seq[Project.Reference]]
+  )
+  given Write[DiscoveredGroupId] =
+    Write[DiscoveredGroupIdRow].contramap { d =>
+      (
+        d.groupId,
+        d.source,
+        d.discoveredAt,
+        d.lastSyncedAt,
+        d.syncSummary,
+        Option.when(d.projectRefs.nonEmpty)(d.projectRefs)
+      )
+    }
+  given Read[IndexCursor] =
+    Read[(String, Int)].map { case (chainId, lastIncremental) => IndexCursor(chainId, lastIncremental) }
+
+  given Read[DiscoveredGroupId] =
+    Read[DiscoveredGroupIdRow].map {
+      case (groupId, source, discoveredAt, lastSyncedAt, syncSummary, projectRefs) =>
+        DiscoveredGroupId(groupId, source, discoveredAt, lastSyncedAt, syncSummary, projectRefs.getOrElse(Nil))
+    }
 
   private def toJson[A](v: A)(using Encoder[A]): String =
     Encoder[A].apply(v).noSpaces
