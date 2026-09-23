@@ -3,6 +3,8 @@ package scaladex.infra
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.EOFException
+import java.io.StringReader
+import java.util.Properties
 import java.util.zip.GZIPInputStream
 
 import scala.concurrent.ExecutionContextExecutor
@@ -30,26 +32,36 @@ class MavenCentralIndexClientImpl(httpClient: CommonAkkaHttpClient)(using system
     extends MavenCentralIndexClient
     with LazyLogging:
   private given ExecutionContextExecutor = system.dispatcher
-  private val baseUri = "https://repo1.maven.org/maven2/.index"
+  private val baseUris = Seq(
+    "https://repo1.maven.org/maven2/.index",
+    "https://repo.maven.apache.org/maven2/.index"
+  )
   private val filePrefix = "nexus-maven-repository-index"
 
-  def fetchRemoteCursor(): Future[IndexCursor] = for
-    response <- httpClient.queueRequestWithRetry(HttpRequest(uri = s"$baseUri/$filePrefix.properties"))
-    body <- Unmarshaller.stringUnmarshaller(response.entity)
-    props = body.linesIterator
-      .filterNot(_.startsWith("#"))
-      .map(_.split("=", 2))
-      .flatMap {
-        case Array(k, v) => Some((k.trim, v.trim))
-        case _ => None
-      }
-      .toMap
-    chainId = props.getOrElse("nexus.index.chain-id", sys.error("missing nexus.index.chain-id"))
-    lastIncremental = props
-      .get("nexus.index.last-incremental")
-      .flatMap(_.toIntOption)
-      .getOrElse(sys.error("missing last-incremental"))
-  yield IndexCursor(chainId, lastIncremental)
+  def fetchRemoteCursor(): Future[IndexCursor] =
+    def loop(remaining: List[String], failures: List[String]): Future[IndexCursor] = remaining match
+      case Nil =>
+        Future.failed(
+          new RuntimeException(s"Unable to read Maven Central index properties: ${failures.reverse.mkString("; ")}")
+        )
+      case baseUri :: rest =>
+        val uri = s"$baseUri/$filePrefix.properties"
+        httpClient
+          .queueRequestWithRetry(HttpRequest(uri = uri))
+          .flatMap: response =>
+            if response.status != StatusCodes.OK then
+              response.discardEntityBytes()
+              Future.failed(new RuntimeException(s"$uri returned ${response.status}"))
+            else
+              Unmarshaller
+                .stringUnmarshaller(response.entity)
+                .map(MavenCentralIndexClientImpl.parseCursor)
+          .recoverWith:
+            case NonFatal(e) =>
+              logger.warn(s"Failed to read Maven index cursor from $uri: ${e.getMessage}")
+              loop(rest, s"$uri: ${e.getMessage}" :: failures)
+    loop(baseUris.toList, Nil)
+  end fetchRemoteCursor
 
   def recordsSince(from: IndexCursor, to: IndexCursor, maxChunks: Int)(
       keep: Record => Boolean
@@ -69,23 +81,44 @@ class MavenCentralIndexClientImpl(httpClient: CommonAkkaHttpClient)(using system
   end recordsSince
 
   private def fetchChunk(n: Int, keep: Record => Boolean): Future[Seq[Record]] =
-    val uri = s"$baseUri/$filePrefix.$n.gz"
-    for
-      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = uri))
-      records <-
-        if response.status != StatusCodes.OK then
-          response.discardEntityBytes()
-          Future.failed(new RuntimeException(s"$uri returned ${response.status}"))
-        else
-          response.entity
-            .withoutSizeLimit()
-            .dataBytes
-            .runFold(ByteString.empty)(_ ++ _)
-            .map(bytes => MavenCentralIndexParser.parseChunk(bytes.toArray, keep))
-    yield records
-    end for
+    def loop(remaining: List[String], failures: List[String]): Future[Seq[Record]] = remaining match
+      case Nil =>
+        Future.failed(new RuntimeException(s"Unable to read Maven index chunk $n: ${failures.reverse.mkString("; ")}"))
+      case baseUri :: rest =>
+        val uri = s"$baseUri/$filePrefix.$n.gz"
+        httpClient
+          .queueRequestWithRetry(HttpRequest(uri = uri))
+          .flatMap: response =>
+            if response.status != StatusCodes.OK then
+              response.discardEntityBytes()
+              Future.failed(new RuntimeException(s"$uri returned ${response.status}"))
+            else
+              response.entity
+                .withoutSizeLimit()
+                .dataBytes
+                .runFold(ByteString.empty)(_ ++ _)
+                .map(bytes => MavenCentralIndexParser.parseChunk(bytes.toArray, keep))
+          .recoverWith:
+            case NonFatal(e) =>
+              logger.warn(s"Failed to read Maven index chunk $n from $uri: ${e.getMessage}")
+              loop(rest, s"$uri: ${e.getMessage}" :: failures)
+    loop(baseUris.toList, Nil)
   end fetchChunk
 
+end MavenCentralIndexClientImpl
+
+object MavenCentralIndexClientImpl:
+  private[infra] def parseCursor(body: String): IndexCursor =
+    val props = new Properties()
+    props.load(new StringReader(body))
+    val chainId = Option(props.getProperty("nexus.index.chain-id"))
+      .filter(_.nonEmpty)
+      .getOrElse(throw new IllegalArgumentException("missing nexus.index.chain-id"))
+    val lastIncremental = Option(props.getProperty("nexus.index.last-incremental"))
+      .flatMap(_.toIntOption)
+      .getOrElse(throw new IllegalArgumentException("missing or invalid nexus.index.last-incremental"))
+    IndexCursor(chainId, lastIncremental)
+  end parseCursor
 end MavenCentralIndexClientImpl
 
 /** Parser for one `nexus-maven-repository-index.<n>.gz` chunk. The binary framing (`doc/dev/maven-central-discovery.md`
