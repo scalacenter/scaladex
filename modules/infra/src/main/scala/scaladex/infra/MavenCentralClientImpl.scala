@@ -31,7 +31,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
     with LazyLogging:
   private given ExecutionContextExecutor = system.dispatcher
   private val baseUri = "https://repo1.maven.org/maven2"
-  
+
   private val userAgent = `User-Agent`("Scaladex (+https://index.scala-lang.org)")
 
   private def get(uri: String): HttpRequest = HttpRequest(uri = uri).withHeaders(userAgent)
