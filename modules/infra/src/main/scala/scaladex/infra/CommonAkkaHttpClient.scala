@@ -18,7 +18,6 @@ import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.model.headers.`User-Agent`
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.pattern.after
@@ -39,8 +38,6 @@ class CommonAkkaHttpClient(
     extends LazyLogging:
 
   private val accessLog = LoggerFactory.getLogger("scaladex.infra.http-client")
-
-  private val userAgent = `User-Agent`("Scaladex (+https://index.scala-lang.org)")
 
   private val maxConcurrentOffers = 256
 
@@ -63,14 +60,9 @@ class CommonAkkaHttpClient(
   end queue
 
   def queueRequestWithRetry(request: HttpRequest)(using ExecutionContextExecutor): Future[HttpResponse] =
-    val req = withUserAgent(request)
     breaker match
-      case Some(cb) => cb.withCircuitBreaker(retryLoop(req, attempt = 0), isBreakerFailure)
-      case None => retryLoop(req, attempt = 0)
-
-  private def withUserAgent(request: HttpRequest): HttpRequest =
-    if request.headers.exists(_.is("user-agent")) then request
-    else request.addHeader(userAgent)
+      case Some(cb) => cb.withCircuitBreaker(retryLoop(request, attempt = 0), isBreakerFailure)
+      case None => retryLoop(request, attempt = 0)
 
   private def tryEnqueue(
       request: HttpRequest
