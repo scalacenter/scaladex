@@ -21,6 +21,7 @@ import org.apache.pekko.http.scaladsl.model
 import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.`User-Agent`
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.util.ByteString
@@ -31,13 +32,14 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   private given ExecutionContextExecutor = system.dispatcher
   private val baseUri = "https://repo1.maven.org/maven2"
 
+  private val userAgent = `User-Agent`("Scaladex (+https://index.scala-lang.org)")
+
+  private def get(uri: String): HttpRequest = HttpRequest(uri = uri).withHeaders(userAgent)
+
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/"
-    val request =
-      HttpRequest(uri = uri)
-
     for
-      response <- httpClient.queueRequestWithRetry(request)
+      response <- httpClient.queueRequestWithRetry(get(uri))
       directories <- listDirectories(uri, response)
     yield directories.map(Artifact.ArtifactId.apply)
   end getAllArtifactIds
@@ -45,7 +47,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/maven-metadata.xml"
     for
-      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = uri))
+      response <- httpClient.queueRequestWithRetry(get(uri))
       versions <- parseMavenMetadata(uri, response)
     yield versions
   end getAllVersions
@@ -53,7 +55,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   override def getPomFile(ref: Artifact.Reference): Future[(String, Instant)] =
     val pomUri = getPomUri(ref)
     for
-      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = pomUri))
+      response <- httpClient.queueRequestWithRetry(get(pomUri))
       res <- getPomFileWithLastModifiedTime(response, pomUri)
     yield res
   end getPomFile
@@ -61,7 +63,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   override def getJavadocJar(ref: Artifact.Reference): Future[Option[Array[Byte]]] =
     val jarUri = getJavadocJarUri(ref)
     for
-      response <- httpClient.queueRequestWithRetry(HttpRequest(uri = jarUri))
+      response <- httpClient.queueRequestWithRetry(get(jarUri))
       res <- getJarBytes(response, jarUri)
     yield res
   end getJavadocJar
@@ -152,6 +154,8 @@ end MavenCentralClientImpl
 object MavenCentralClientImpl:
   private val poolSettings: ConnectionPoolSettings = ConnectionPoolSettings("").withMaxConnections(10)
 
+  private def retryForbidden(response: HttpResponse): Boolean = response.status == StatusCodes.Forbidden
+
   def apply(config: HttpClientConfig = HttpClientConfig.default)(using ActorSystem): MavenCentralClientImpl =
-    new MavenCentralClientImpl(new CommonAkkaHttpClient(poolSettings, config))
+    new MavenCentralClientImpl(new CommonAkkaHttpClient(poolSettings, config, retryForbidden))
 end MavenCentralClientImpl
