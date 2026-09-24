@@ -41,20 +41,16 @@
     <div class="container">
       <div class="row">
         <div class="col-md-9 col-md-offset-3 topbar">
-          <div class="col-md-3">
-            <div class="result-count">
-              @if(projects.pagination.totalSize > 0) {
-                @if(projects.pagination.current == 1) {
-                  @Formats.plural(projects.pagination.totalSize, "result")
-                } else {
-                  Page @projects.pagination.current of @Formats.plural(projects.pagination.totalSize, "result")
-                }
+          <div class="result-count">
+            @if(projects.pagination.totalSize > 0) {
+              @if(projects.pagination.current == 1) {
+                @Formats.plural(projects.pagination.totalSize, "result")
+              } else {
+                Page @projects.pagination.current of @Formats.plural(projects.pagination.totalSize, "result")
               }
-            </div>
+            }
           </div>
-          <div class="col-md-9">
-            @sorting(category, params)
-          </div>
+          @sorting(category, params)
         </div>
       </div>
       <div class="row">

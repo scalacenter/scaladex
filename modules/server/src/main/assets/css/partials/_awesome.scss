@@ -99,7 +99,16 @@
   }
 
   .filter {
-    display: inline-block;
+    display: block;
+    margin-bottom: 16px;
+
+    .combobox {
+      width: 100%;
+
+      .dropdown-toggle {
+        width: 100%;
+      }
+    }
   }
 
   nav {
@@ -245,9 +254,6 @@
       font-size: 18px;
       color: white;
     }
-    .bs-placeholder {
-      color: rgba(255,255,255,0.5);
-    }
   }
   background: $gray-darker;
   padding-bottom: 40px;
@@ -255,8 +261,17 @@
       padding-bottom: 80px;
   }
   .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-top: 20px;
     margin-bottom: 20px;
+
+    .order-by {
+      margin-top: 0;
+    }
   }
   .sidebar {
     padding: 20px;

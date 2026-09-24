@@ -27,11 +27,12 @@
       </div>
     </div>
     <div class="container awesome-content">
+      <div class="row">
       <div class="col-lg-3 col-md-4 sidebar">
         <form action="/awesome" action="GET">
           <div class="filter">
-            <label for="select-platform"><h3>Platform:</h3></label>
-            <select id="select-platform" name="platform" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+            <label class="sr-only" for="select-platform">Platform</label>
+            <select id="select-platform" name="platform" class="selectpicker" title="Platform" multiple data-max-options="1" onchange="this.form.submit()">
               @for(platform <- platforms) {
                 <option value="@platform.value" @if(params.platforms.contains(platform)){selected}>
                   @platform
@@ -41,8 +42,8 @@
           </div>
           
           <div class="filter">
-            <label for="select-language"><h3>Scala Version:</h3></label>
-            <select id="select-language" name="language" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+            <label class="sr-only" for="select-language">Scala Version</label>
+            <select id="select-language" name="language" class="selectpicker" title="Scala Version" multiple data-max-options="1" onchange="this.form.submit()">
               @for(language <- languages) {
                 <option value="@language.value" @if(params.languages.contains(language)){selected}>
                   @language
@@ -61,8 +62,8 @@
               </li>
             }
           </ul>
-        </div>
-      </nav>
+        </nav>
+      </div>
       <div class="col-lg-9 col-md-8 col-sm-12">
         @for((meta, categories) <- categoriesByMetaCategory) {
           <section class="meta-category" id="@meta.label">
@@ -121,6 +122,7 @@
             </div>
           </section>
         }
+      </div>
       </div>
     </div>
   </main>

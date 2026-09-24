@@ -1,0 +1,34 @@
+// Tables -- a vanilla replacement for Bootstrap 3's base .table component
+// (the admin page's job tables).
+
+th {
+    text-align: left;
+}
+
+.table {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: $line-height-computed;
+
+    > thead,
+    > tbody,
+    > tfoot {
+        > tr > th,
+        > tr > td {
+            padding: 10px;
+            line-height: $line-height-base;
+            vertical-align: top;
+            border-top: 1px solid $gray-lighter;
+        }
+    }
+
+    > thead > tr > th {
+        vertical-align: bottom;
+        border-bottom: 2px solid $gray-lighter;
+    }
+
+    > thead:first-child > tr:first-child > th,
+    > thead:first-child > tr:first-child > td {
+        border-top: 0;
+    }
+}
