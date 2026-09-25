@@ -59,7 +59,7 @@ class CommonAkkaHttpClient(
       .run()
   end queue
 
-  def queueRequestWithRetry(request: HttpRequest)(using ExecutionContextExecutor): Future[HttpResponse] =
+  def queueRequest(request: HttpRequest)(using ExecutionContextExecutor): Future[HttpResponse] =
     breaker match
       case Some(cb) => cb.withCircuitBreaker(retryLoop(request, attempt = 0), isBreakerFailure)
       case None => retryLoop(request, attempt = 0)
