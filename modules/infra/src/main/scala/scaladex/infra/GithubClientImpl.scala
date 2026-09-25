@@ -386,7 +386,7 @@ class GithubClientImpl(httpClient: CommonAkkaHttpClient)(using system: ActorSyst
 
   private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] =
     assert(request.headers.exists(_.is("authorization")), "GitHub request must carry an Authorization header")
-    httpClient.queueRequestWithRetry(request).flatMap {
+    httpClient.queueRequest(request).flatMap {
       case HttpResponse(StatusCodes.OK, headers, entity, _) =>
         Future.successful(GithubResponse.Ok((headers, entity)))
       case HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>

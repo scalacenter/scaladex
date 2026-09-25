@@ -39,7 +39,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/"
     for
-      response <- httpClient.queueRequestWithRetry(get(uri))
+      response <- httpClient.queueRequest(get(uri))
       directories <- listDirectories(uri, response)
     yield directories.map(Artifact.ArtifactId.apply)
   end getAllArtifactIds
@@ -47,7 +47,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/maven-metadata.xml"
     for
-      response <- httpClient.queueRequestWithRetry(get(uri))
+      response <- httpClient.queueRequest(get(uri))
       versions <- parseMavenMetadata(uri, response)
     yield versions
   end getAllVersions
@@ -55,7 +55,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   override def getPomFile(ref: Artifact.Reference): Future[(String, Instant)] =
     val pomUri = getPomUri(ref)
     for
-      response <- httpClient.queueRequestWithRetry(get(pomUri))
+      response <- httpClient.queueRequest(get(pomUri))
       res <- getPomFileWithLastModifiedTime(response, pomUri)
     yield res
   end getPomFile
@@ -63,7 +63,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   override def getJavadocJar(ref: Artifact.Reference): Future[Option[Array[Byte]]] =
     val jarUri = getJavadocJarUri(ref)
     for
-      response <- httpClient.queueRequestWithRetry(get(jarUri))
+      response <- httpClient.queueRequest(get(jarUri))
       res <- getJarBytes(response, jarUri)
     yield res
   end getJavadocJar

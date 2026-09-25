@@ -47,7 +47,7 @@ class MavenCentralIndexClientImpl(httpClient: CommonAkkaHttpClient)(using system
       case baseUri :: rest =>
         val uri = s"$baseUri/$filePrefix.properties"
         httpClient
-          .queueRequestWithRetry(HttpRequest(uri = uri))
+          .queueRequest(HttpRequest(uri = uri))
           .flatMap: response =>
             if response.status != StatusCodes.OK then
               response.discardEntityBytes()
@@ -87,7 +87,7 @@ class MavenCentralIndexClientImpl(httpClient: CommonAkkaHttpClient)(using system
       case baseUri :: rest =>
         val uri = s"$baseUri/$filePrefix.$n.gz"
         httpClient
-          .queueRequestWithRetry(HttpRequest(uri = uri))
+          .queueRequest(HttpRequest(uri = uri))
           .flatMap: response =>
             if response.status != StatusCodes.OK then
               response.discardEntityBytes()
