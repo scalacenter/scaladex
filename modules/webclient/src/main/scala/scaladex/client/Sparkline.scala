@@ -15,7 +15,7 @@ object Sparkline:
     val commits = canvas.getAttribute("data-commit-activity-count").split(",").map(_.toDouble).toSeq
     val startingDay = canvas.getAttribute("data-commit-activity-starting-day")
     if startingDay.nonEmpty then
-      val startDate = Instant.ofEpochSecond(startingDay.toLong)
+      val startDate = Instant.ofEpochMilli(startingDay.toLong)
       val data = commits.zipWithIndex.map {
         case (commit, index) => DataPoint(startDate.plus(index * 7, ChronoUnit.DAYS).toEpochMilli.toDouble, commit)
       }
