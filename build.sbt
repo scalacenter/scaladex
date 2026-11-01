@@ -263,7 +263,7 @@ lazy val loadtest = project
 
 lazy val V = new {
   val doobie = "0.13.4"
-  val pekko = "1.7.0"
+  val pekko = "1.7.1"
   val pekkoHttp = "1.4.0"
   val elastic4s = "9.5.0"
   val nscalaTime = "3.0.0"
