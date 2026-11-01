@@ -211,7 +211,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "fastparse" % "3.1.1",
-      "io.github.cquiroz" %%% "scala-java-time" % "2.7.0",
+      "io.github.cquiroz" %%% "scala-java-time" % "2.9.0",
       "org.endpoints4s" %%% "algebra" % "1.13.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "org.jsoup" % "jsoup" % "1.23.1",
