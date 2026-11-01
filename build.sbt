@@ -173,7 +173,7 @@ lazy val server = project
       "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
       "com.github.blemale" %% "scaffeine" % V.scaffeine,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "org.endpoints4s" %% "pekko-http-server" % "2.1.0",
+      "org.endpoints4s" %% "pekko-http-server" % "2.2.0",
       "org.webjars" % "chartjs" % "4.5.1",
       "org.webjars.npm" % "date-fns" % "4.4.0",
       "org.webjars.npm" % "chartjs-adapter-date-fns" % "3.0.0",
