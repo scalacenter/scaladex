@@ -71,7 +71,7 @@ lazy val infra = project
       "org.flywaydb" % "flyway-database-postgresql" % "12.11.0", // split out of flyway-core since 10.x
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "com.github.pjfanning" %% "pekko-http-circe" % "3.9.2",
+      "com.github.pjfanning" %% "pekko-http-circe" % "3.12.0",
       ("io.get-coursier" %% "coursier" % V.coursier).cross(CrossVersion.for3Use2_13),
       ("io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier).cross(CrossVersion.for3Use2_13),
       "com.github.blemale" %% "scaffeine" % V.scaffeine,
