@@ -21,7 +21,7 @@ inThisBuild(
 
 lazy val loggingSettings = Seq(
   libraryDependencies ++= Seq(
-    "ch.qos.logback" % "logback-classic" % "1.6.3",
+    "ch.qos.logback" % "logback-classic" % "1.6.6",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
   ),
   // Drop and replace commons-logging with slf4j
@@ -71,7 +71,7 @@ lazy val infra = project
       "org.flywaydb" % "flyway-database-postgresql" % "12.11.0", // split out of flyway-core since 10.x
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "com.github.pjfanning" %% "pekko-http-circe" % "3.9.2",
+      "com.github.pjfanning" %% "pekko-http-circe" % "3.12.0",
       ("io.get-coursier" %% "coursier" % V.coursier).cross(CrossVersion.for3Use2_13),
       ("io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier).cross(CrossVersion.for3Use2_13),
       "com.github.blemale" %% "scaffeine" % V.scaffeine,
@@ -139,7 +139,7 @@ lazy val webclient = project
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.13.1",
-      "org.endpoints4s" %%% "fetch-client" % "4.1.0",
+      "org.endpoints4s" %%% "fetch-client" % "4.2.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test
     )
   )
@@ -161,7 +161,7 @@ lazy val server = project
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
     ),
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.3.0",
       "org.scalatest" %% "scalatest" % V.scalatest % Test,
       "org.apache.pekko" %% "pekko-testkit" % V.pekko % Test,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
@@ -173,12 +173,12 @@ lazy val server = project
       "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
       "com.github.blemale" %% "scaffeine" % V.scaffeine,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "org.endpoints4s" %% "pekko-http-server" % "2.1.0",
+      "org.endpoints4s" %% "pekko-http-server" % "2.2.0",
       "org.webjars" % "chartjs" % "4.5.1",
       "org.webjars.npm" % "date-fns" % "4.4.0",
       "org.webjars.npm" % "chartjs-adapter-date-fns" % "3.0.0",
       "org.webjars" % "font-awesome" % "7.3.0",
-      "org.webjars" % "swagger-ui" % "5.20.8"
+      "org.webjars" % "swagger-ui" % "5.34.1"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     Compile / resourceGenerators += (Assets / WebKeys.assets).map(Seq(_)),
@@ -212,9 +212,9 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "fastparse" % "3.1.1",
       "io.github.cquiroz" %%% "scala-java-time" % "2.7.0",
-      "org.endpoints4s" %%% "algebra" % "1.13.0",
+      "org.endpoints4s" %%% "algebra" % "1.14.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.23.1",
+      "org.jsoup" % "jsoup" % "1.23.2",
       "io.circe" %%% "circe-core" % V.circe,
       "io.circe" %%% "circe-generic" % V.circe,
       "io.circe" %%% "circe-parser" % V.circe
@@ -233,7 +233,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-6",
-      "org.jsoup" % "jsoup" % "1.23.1",
+      "org.jsoup" % "jsoup" % "1.23.2",
       "org.apache.ivy" % "ivy" % "2.6.0",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "io.github.json4s" %% "json4s-native" % V.json4s,
@@ -264,13 +264,13 @@ lazy val loadtest = project
 lazy val V = new {
   val doobie = "0.13.4"
   val pekko = "1.7.0"
-  val pekkoHttp = "1.4.0"
+  val pekkoHttp = "1.4.2"
   val elastic4s = "9.5.0"
-  val nscalaTime = "3.0.0"
+  val nscalaTime = "3.2.0"
   val scalatest = "3.2.20"
-  val circe = "0.14.16"
+  val circe = "0.14.17"
   val json4s = "4.1.1"
   val coursier = "2.1.24"
-  val gatling = "3.15.1"
+  val gatling = "3.16.0"
   val scaffeine = "5.3.0"
 }

@@ -1,6 +1,6 @@
 //> using scala 3.3.8
 //> using dep org.jsoup:jsoup:1.22.2
-//> using dep org.scala-lang.modules:scala-xml_3:2.2.0
+//> using dep org.scala-lang.modules:scala-xml_3:2.5.0
 
 /** Download POMs from Maven Central and publish them to Scaladex `/publish`.
   *
