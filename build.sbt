@@ -270,7 +270,7 @@ lazy val V = new {
   val scalatest = "3.2.20"
   val circe = "0.14.17"
   val json4s = "4.1.1"
-  val coursier = "2.1.24"
+  val coursier = "2.1.26"
   val gatling = "3.16.0"
   val scaffeine = "5.3.0"
 }
