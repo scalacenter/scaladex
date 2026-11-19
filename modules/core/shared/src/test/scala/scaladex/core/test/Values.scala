@@ -287,4 +287,15 @@ object Values:
   object Scala3:
     val organization: Project.Organization = Project.Organization("scala")
     val reference: Project.Reference = Project.Reference.unsafe("scala/scala3")
+
+  object CompilerPluginProj:
+    val reference: Project.Reference = Project.Reference.unsafe("org/example-compiler-plugin")
+    val fullScalaVersion: Version = Version(2, 13, 16)
+    val projectDocument: ProjectDocument =
+      ProjectDocument
+        .default(reference)
+        .copy(
+          languages = Seq(Scala.`2.13`),
+          platforms = Seq(CompilerPlugin(fullScalaVersion))
+        )
 end Values
