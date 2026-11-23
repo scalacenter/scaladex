@@ -38,6 +38,8 @@ class MavenCentralIndexClientImpl(httpClient: CommonAkkaHttpClient)(using system
   )
   private val filePrefix = "nexus-maven-repository-index"
 
+  private def get(uri: String): HttpRequest = HttpRequest(uri = uri).withHeaders(MavenCentralClientImpl.userAgent)
+
   def fetchRemoteCursor(): Future[IndexCursor] =
     def loop(remaining: List[String], failures: List[String]): Future[IndexCursor] = remaining match
       case Nil =>
@@ -47,7 +49,7 @@ class MavenCentralIndexClientImpl(httpClient: CommonAkkaHttpClient)(using system
       case baseUri :: rest =>
         val uri = s"$baseUri/$filePrefix.properties"
         httpClient
-          .queueRequest(HttpRequest(uri = uri))
+          .queueRequest(get(uri))
           .flatMap: response =>
             if response.status != StatusCodes.OK then
               response.discardEntityBytes()
@@ -87,7 +89,7 @@ class MavenCentralIndexClientImpl(httpClient: CommonAkkaHttpClient)(using system
       case baseUri :: rest =>
         val uri = s"$baseUri/$filePrefix.$n.gz"
         httpClient
-          .queueRequest(HttpRequest(uri = uri))
+          .queueRequest(get(uri))
           .flatMap: response =>
             if response.status != StatusCodes.OK then
               response.discardEntityBytes()

@@ -27,7 +27,7 @@ jobs:
       - uses: coursier/setup-action@v3
         with:
           apps: sbt
-          jvm: "adoptium:1.17"
+          jvm: "temurin:17"
       - uses: coursier/cache-action@v9
       - name: Unit tests
         run: sbt test
@@ -43,7 +43,7 @@ jobs:
           submodules: true
       - uses: coursier/setup-action@v3
         with:
-          jvm: "adoptium:1.17"
+          jvm: "temurin:17"
           apps: sbt
       - name: Integration tests
         env:

@@ -32,9 +32,7 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
   private given ExecutionContextExecutor = system.dispatcher
   private val baseUri = "https://repo1.maven.org/maven2"
 
-  private val userAgent = `User-Agent`("Scaladex (+https://index.scala-lang.org)")
-
-  private def get(uri: String): HttpRequest = HttpRequest(uri = uri).withHeaders(userAgent)
+  private def get(uri: String): HttpRequest = HttpRequest(uri = uri).withHeaders(MavenCentralClientImpl.userAgent)
 
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/"
@@ -152,6 +150,8 @@ class MavenCentralClientImpl(httpClient: CommonAkkaHttpClient)(using system: Act
 end MavenCentralClientImpl
 
 object MavenCentralClientImpl:
+  private[infra] val userAgent = `User-Agent`("Scaladex (+https://index.scala-lang.org)")
+
   private val poolSettings: ConnectionPoolSettings = ConnectionPoolSettings("").withMaxConnections(10)
 
   private def retryForbidden(response: HttpResponse): Boolean = response.status == StatusCodes.Forbidden
