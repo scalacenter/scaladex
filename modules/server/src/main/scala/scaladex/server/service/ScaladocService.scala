@@ -40,7 +40,7 @@ class ScaladocService(
   private val cache: AsyncLoadingCache[Artifact.Reference, Entry] =
     Scaffeine()
       .maximumWeight(maxCacheBytes)
-      .weigher((_, entry: Entry) => entry.sizeOnDisk.toInt)
+      .weigher((_, entry: Entry) => entry.weight)
       .removalListener((ref: Artifact.Reference, _, cause) =>
         if cause != RemovalCause.REPLACED then deleteRecursively(localDir(ref))
       )
@@ -117,9 +117,16 @@ class ScaladocService(
 end ScaladocService
 
 object ScaladocService:
-  private enum Entry(val sizeOnDisk: Long):
-    case Unavailable extends Entry(0L)
-    case Available(size: Long) extends Entry(size)
+  // Caffeine never evicts zero-weight entries, so misses must weigh something to stay bounded.
+  private val unavailableWeight: Int = 16 * 1024
+
+  private enum Entry:
+    case Unavailable
+    case Available(sizeOnDisk: Long)
+
+    def weight: Int = this match
+      case Unavailable => unavailableWeight
+      case Available(size) => size.toInt
 
   /** Rejects reads past `maxBytes`, tracked cumulatively across every entry read through this instance. Only overrides
     * the bulk-read method, since that's the one `Files.copy` actually calls.
