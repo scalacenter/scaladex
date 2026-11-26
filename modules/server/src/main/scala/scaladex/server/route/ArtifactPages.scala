@@ -1,6 +1,7 @@
 package scaladex.server.route
 
 import scala.concurrent.ExecutionContext
+import scala.util.Failure
 import scala.util.Success
 
 import scaladex.core.model.Artifact
@@ -17,6 +18,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.directives.ContentTypeResolver
 
 class ArtifactPages(env: Env, database: WebDatabase, scaladocService: ScaladocService)(using ExecutionContext)
     extends LazyLogging:
@@ -49,12 +51,7 @@ class ArtifactPages(env: Env, database: WebDatabase, scaladocService: ScaladocSe
         yield (project, artifact, available)
 
         onComplete(resultF) {
-          case Success((_, artifact, true)) =>
-            val localDir = scaladocService.localDir(artifact.reference)
-            concat(
-              pathEndOrSingleSlash(getFromFile(localDir.resolve("index.html").toFile)),
-              getFromDirectory(localDir.toString)
-            )
+          case Success((_, artifact, true)) => serveScaladocFile(artifact.reference)
           case Success((project, artifact, false)) =>
             redirectToExternalScaladoc(project, artifact, user)
           case _ =>
@@ -63,6 +60,27 @@ class ArtifactPages(env: Env, database: WebDatabase, scaladocService: ScaladocSe
       }
     }
   )
+
+  private def serveScaladocFile(ref: Artifact.Reference): Route = extractUnmatchedPath { path =>
+    onComplete(scaladocService.getFile(ref, decode(path))) {
+      case Success(Some((name, bytes))) =>
+        // a given artifact version's scaladoc never changes
+        respondWithHeader(
+          headers.`Cache-Control`(headers.CacheDirectives.public, headers.CacheDirectives.`max-age`(86400))
+        ) {
+          complete(HttpEntity(ContentTypeResolver.Default(name), bytes))
+        }
+      case Success(None) => complete(StatusCodes.NotFound)
+      case Failure(exception) =>
+        logger.warn(s"Failed to read scaladoc file $path of $ref", exception)
+        complete(StatusCodes.InternalServerError)
+    }
+  }
+
+  private def decode(path: Uri.Path): String = path match
+    case Uri.Path.Empty => ""
+    case Uri.Path.Slash(tail) => "/" + decode(tail)
+    case Uri.Path.Segment(head, tail) => head + decode(tail)
 
   private def redirectToExternalScaladoc(
       project: Option[Project],

@@ -197,7 +197,7 @@ object Server extends LazyLogging:
       config.filesystem.scaladoc,
       mavenCentralClient,
       config.scaladoc.maxCacheBytes,
-      config.scaladoc.maxUnpackedBytes
+      config.scaladoc.maxJarBytes
     )
     val artifactPages = new ArtifactPages(config.env, webDatabase, scaladocService)
     val awesomePages = new AwesomePages(config.env, searchEngine)

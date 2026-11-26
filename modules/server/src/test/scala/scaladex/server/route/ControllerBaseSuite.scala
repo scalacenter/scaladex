@@ -56,6 +56,6 @@ trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRoute
     config.filesystem.scaladoc,
     NoopMavenCentralClient,
     config.scaladoc.maxCacheBytes,
-    config.scaladoc.maxUnpackedBytes
+    config.scaladoc.maxJarBytes
   )
 end ControllerBaseSuite
