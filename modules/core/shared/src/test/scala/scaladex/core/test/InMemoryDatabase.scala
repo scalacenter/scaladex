@@ -171,7 +171,8 @@ class InMemoryDatabase extends SchedulerDatabase:
     Future.successful(allArtifacts.values.map(_.groupId).toSeq.distinct)
   override def getGroupIds(limit: Int, offset: Int): Future[Seq[Artifact.GroupId]] = ???
   override def getArtifactRefs(): Future[Seq[Artifact.Reference]] = ???
-  override def getArtifactRefs(groupId: Artifact.GroupId): Future[Seq[Artifact.Reference]] = ???
+  override def getArtifactRefs(groupId: Artifact.GroupId): Future[Seq[Artifact.Reference]] =
+    Future.successful(allArtifacts.keys.filter(_.groupId == groupId).toSeq)
   override def getArtifactRefs(groupId: Artifact.GroupId, limit: Int, offset: Int): Future[Seq[Artifact.Reference]] =
     ???
   override def insertUser(userId: UUID, userInfo: UserInfo): Future[Unit] = ???

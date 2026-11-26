@@ -61,13 +61,22 @@ class MavenCentralService(
         if missingVersions.nonEmpty then
           logger.info(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
         else if versions.isEmpty then logger.warn(s"No versions listed for ${groupId.value}:${artifactId.value}")
-      missingPomFiles <- missingVersions.mapSync(ref =>
+      inserted <- indexRefs(missingVersions)
+    yield inserted
+
+  /** Fetch and publish the POM of each ref, one request per ref. Unlike `findMissing`, no directory listing or
+    * `maven-metadata.xml` is needed because the caller already knows the exact versions (e.g. from the nexus index).
+    * Returns the number of POMs successfully published.
+    */
+  def indexRefs(refs: Seq[Artifact.Reference]): Future[Int] =
+    for
+      pomFiles <- refs.mapSync(ref =>
         mavenCentralClient
           .getPomFile(ref)
           .map(res => Option(ref -> res))
           .recover(tolerateHttpClientErrors(None))
       )
-      publishResult <- missingPomFiles.flatten.mapSync {
+      publishResult <- pomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>
           val published = for
             _ <- delay(publishDelay)
@@ -79,6 +88,12 @@ class MavenCentralService(
       case PublishResult.Success => true
       case _ => false
     }
+
+  /** The `(groupId, artifactId)` pairs of `contrib/non-standard.json`: artifacts with no Scala suffix that we index
+    * anyway. Reloaded on each call so an updated file is picked up without a restart.
+    */
+  def nonStandardArtifacts(): Set[(String, String)] =
+    NonStandardLib.load(dataPaths).map(lib => (lib.groupId, lib.artifactId)).toSet
 
   def findMissing(): Future[String] =
     def loop(page: Int, totalInserted: Int): Future[Int] =

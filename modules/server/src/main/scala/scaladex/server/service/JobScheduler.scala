@@ -29,7 +29,9 @@ class JobScheduler(val job: Job, run: () => Future[String])(using system: ActorS
       case _: Job.Started => ()
       case _ =>
         state = Job.Started(Instant.now, user.map(_.info.login))
-        cancellable = Some(system.scheduler.scheduleWithFixedDelay(Duration.Zero, job.frequency)(runnable))
+        // automatic start (server boot) honours the job's initial delay; an admin start runs it right away
+        val initialDelay = if user.isDefined then Duration.Zero else job.initialDelay
+        cancellable = Some(system.scheduler.scheduleWithFixedDelay(initialDelay, job.frequency)(runnable))
 
   def stop(user: Option[UserState]): Unit =
     state match
