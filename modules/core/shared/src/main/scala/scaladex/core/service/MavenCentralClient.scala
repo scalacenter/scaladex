@@ -11,4 +11,3 @@ trait MavenCentralClient:
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]]
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]]
   def getPomFile(mavenReference: Artifact.Reference): Future[(String, Instant)]
-  def getJavadocJar(mavenReference: Artifact.Reference): Future[Option[Array[Byte]]]
