@@ -9,27 +9,33 @@ import scala.util.control.NonFatal
 import scaladex.core.model.Artifact
 import scaladex.core.model.DiscoveredGroupId
 import scaladex.core.model.IndexCursor
+import scaladex.core.model.Version
 import scaladex.core.service.MavenCentralIndexClient
+import scaladex.core.service.MavenCentralIndexClient.Record
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
 
 import com.typesafe.scalalogging.LazyLogging
 
-/** Finds Scala group IDs newly published to Maven Central by reading the nexus incremental index, then auto-indexes
-  * each one through the existing `MavenCentralService.syncOne`. Every discovered group ID is recorded in
-  * `discovered_group_id` for the admin review queue. See `doc/dev/maven-central-discovery.md`.
+/** Finds Scala artifacts newly published to Maven Central by reading the nexus incremental index, and indexes them.
+  * This is the primary way new releases reach Scaladex: each index record names an exact `groupId:artifactId:version`,
+  * so only the POMs of versions we do not have yet are downloaded (no directory listings or `maven-metadata.xml`).
+  * Group IDs seen for the first time are also recorded in `discovered_group_id` for the admin review queue. See
+  * `doc/dev/maven-central-discovery.md`.
   *
-  * Neither the chunk scan nor the group sync below cap how much work one run does: both pull everything currently
-  * available. The pacing safeguard is the shared `CommonAkkaHttpClient` instance's cross-client throttle, not a per-run
-  * batch size — so a large backlog (a fresh deploy backfilling from chunk 0, or a long outage) drains at the throttled
-  * request rate instead of trickling in over many scheduled runs.
+  * Chunks are processed one at a time and the cursor is saved after each, so a large backlog (a fresh deploy
+  * backfilling from chunk 0, or a long outage) never holds more than one chunk's records in memory and a failure only
+  * loses the chunk in progress. Request pacing comes from the shared `CommonAkkaHttpClient` throttle.
   */
 class DiscoveryService(
     database: SchedulerDatabase,
     indexClient: MavenCentralIndexClient,
-    syncGroupId: Artifact.GroupId => Future[String]
+    indexRefs: Seq[Artifact.Reference] => Future[Int],
+    syncGroupId: Artifact.GroupId => Future[String],
+    nonStandardArtifacts: () => Set[(String, String)] = () => Set.empty
 )(using ExecutionContext)
     extends LazyLogging:
+  import DiscoveryService.Stats
 
   // defensive cap on one run's DB query / duration, not a throttle (the shared CommonAkkaHttpClient paces the
   // actual requests) -- comfortably above any realistic backlog
@@ -39,19 +45,81 @@ class DiscoveryService(
     remote <- indexClient.fetchRemoteCursor()
     localOpt <- database.getMavenIndexCursor()
     from = resolveFrom(localOpt, remote)
-    chunksAvailable = remote.lastIncremental - from.lastIncremental
-    result <-
-      if chunksAvailable <= 0 then Future.successful(MavenCentralIndexClient.Result(Nil, from.lastIncremental))
-      else indexClient.recordsSince(from, remote, chunksAvailable)(r => isScalaArtifact(r.artifactId))
-    newGroupIds <- selectNewGroupIds(result.records)
-    now = Instant.now
-    inserted <- database.insertDiscoveredGroupIds(
-      newGroupIds.map(g => DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, g, now))
-    )
-    // advance only to the last chunk actually read; a failed chunk keeps its records in scope for the next run
-    _ <- database.setMavenIndexCursor(IndexCursor(remote.chainId, result.reachedIncremental))
-    synced <- syncPending()
-  yield s"Discovered $inserted new group IDs from ${result.records.size} Scala records; synced $synced"
+    nonStandard = nonStandardArtifacts()
+    stats <- scanChunks(from, remote, r => isScalaArtifact(r.artifactId) || nonStandard((r.groupId, r.artifactId)))
+    retried <- syncPending()
+  yield s"Scanned ${stats.chunks} chunks (${stats.records} Scala records): indexed ${stats.inserted} new POMs, " +
+    s"discovered ${stats.newGroupIds} new group IDs; retried $retried pending group IDs"
+
+  private def scanChunks(from: IndexCursor, remote: IndexCursor, keep: Record => Boolean): Future[Stats] =
+    def loop(cursor: IndexCursor, acc: Stats): Future[Stats] =
+      if cursor.lastIncremental >= remote.lastIncremental then Future.successful(acc)
+      else
+        indexClient
+          .recordsSince(cursor, remote, maxChunks = 1)(keep)
+          .flatMap: result =>
+            // the client already logged why; the chunk stays in scope for the next run
+            if result.reachedIncremental <= cursor.lastIncremental then Future.successful(acc)
+            else
+              val next = IndexCursor(remote.chainId, result.reachedIncremental)
+              for
+                chunkStats <- processRecords(result.records)
+                // advance only once the chunk's artifacts are indexed, so a failure re-reads it next run
+                _ <- database.setMavenIndexCursor(next)
+                _ = logger.info(s"Processed Maven index chunk ${next.lastIncremental}: $chunkStats")
+                total <- loop(next, acc + chunkStats)
+              yield total
+              end for
+    loop(from, Stats.empty)
+  end scanChunks
+
+  private def processRecords(records: Seq[Record]): Future[Stats] =
+    // one artifact appears once per file (jar, sources, javadoc...), hence the distinct
+    val refsByGroup = records.iterator
+      .filterNot(_.deleted)
+      .map(r => Artifact.Reference(Artifact.GroupId(r.groupId), Artifact.ArtifactId(r.artifactId), Version(r.version)))
+      .distinct
+      .toSeq
+      .groupBy(_.groupId)
+    for
+      recorded <- database.getAllDiscoveredGroupIds().map(_.map(_.groupId).toSet)
+      perGroup <- refsByGroup.toSeq.sortBy(_._1.value).mapSync((groupId, refs) => processGroup(groupId, refs, recorded))
+    yield perGroup.foldLeft(Stats(chunks = 1, records = records.size))(_ + _)
+  end processRecords
+
+  private def processGroup(
+      groupId: Artifact.GroupId,
+      refs: Seq[Artifact.Reference],
+      recorded: Set[Artifact.GroupId]
+  ): Future[Stats] =
+    database
+      .getArtifactRefs(groupId)
+      .flatMap: knownSeq =>
+        val known = knownSeq.toSet
+        val missing = refs.filterNot(known)
+        val isNewGroup = known.isEmpty && !recorded.contains(groupId)
+        if isNewGroup then indexNewGroup(groupId, missing)
+        else if missing.isEmpty then Future.successful(Stats.empty)
+        else indexRefs(missing).map(n => Stats(inserted = n))
+
+  private def indexNewGroup(groupId: Artifact.GroupId, refs: Seq[Artifact.Reference]): Future[Stats] =
+    val pending = DiscoveredGroupId.pending(DiscoveredGroupId.Source.MavenIndex, groupId, Instant.now)
+    database
+      .insertDiscoveredGroupIds(Seq(pending))
+      .flatMap: _ =>
+        val indexed = for
+          inserted <- indexRefs(refs)
+          projectRefs <- database.getProjectRefsByGroupId(groupId)
+          _ <- database.updateDiscoveredGroupIdSync(groupId, Instant.now, s"Inserted $inserted poms", projectRefs)
+        yield Stats(inserted = inserted, newGroupIds = 1)
+        indexed.recoverWith:
+          case NonFatal(e) =>
+            // last_synced_at stays unset, so syncPending retries the whole group with a full sync
+            logger.warn(s"Failed to index discovered group ${groupId.value}, will retry: ${e.getMessage}")
+            database
+              .updateDiscoveredGroupIdError(groupId, s"error: ${e.getMessage}")
+              .map(_ => Stats(newGroupIds = 1))
+  end indexNewGroup
 
   /** Rewind the cursor so the next `discover()` re-scans the last `chunksBack` chunks. Admin action for backfilling
     * after a deploy or a missed chunk.
@@ -86,14 +154,9 @@ class DiscoveryService(
     val parsed = Artifact.ArtifactId(artifactId)
     parsed.isScala && parsed.binaryVersion.isValid
 
-  private def selectNewGroupIds(records: Seq[MavenCentralIndexClient.Record]): Future[Seq[Artifact.GroupId]] =
-    val candidates = records.iterator.filterNot(_.deleted).map(_.groupId).distinct.map(Artifact.GroupId.apply).toSeq
-    for
-      known <- database.getGroupIds().map(_.toSet)
-      recorded <- database.getAllDiscoveredGroupIds().map(_.map(_.groupId).toSet)
-    yield candidates.filterNot(known).filterNot(recorded)
-
-  // oldest first, so a backlog drains in publish order instead of starving early entries
+  /** Retry discovered group IDs that failed to index, with a full listing-based sync. Oldest first, so a backlog drains
+    * in publish order instead of starving early entries.
+    */
   private def syncPending(): Future[Int] = for
     pending <- database.getPendingDiscoveredGroupIdsToSync(syncBatchSize)
     _ <- pending.mapSync(syncAndRecord)
@@ -111,4 +174,13 @@ class DiscoveryService(
         logger.warn(s"Failed to sync discovered group ${discovered.groupId.value}, will retry: ${e.getMessage}")
         database.updateDiscoveredGroupIdError(discovered.groupId, s"error: ${e.getMessage}")
   end syncAndRecord
+end DiscoveryService
+
+object DiscoveryService:
+  final case class Stats(chunks: Int = 0, records: Int = 0, inserted: Int = 0, newGroupIds: Int = 0):
+    def +(other: Stats): Stats =
+      Stats(chunks + other.chunks, records + other.records, inserted + other.inserted, newGroupIds + other.newGroupIds)
+    override def toString: String = s"$records Scala records, $inserted new POMs, $newGroupIds new group IDs"
+  object Stats:
+    val empty: Stats = Stats()
 end DiscoveryService

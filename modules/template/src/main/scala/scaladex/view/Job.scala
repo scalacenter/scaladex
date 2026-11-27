@@ -6,7 +6,16 @@ import scala.concurrent.duration.*
 
 import scaladex.core.util.TimeUtils
 
-case class Job(name: String, description: String, frequency: FiniteDuration)
+/** @param initialDelay
+  *   how long after server start the first automatic run happens. Long-period jobs use it so that a deploy does not
+  *   trigger them; starting the job from the admin page always runs it immediately.
+  */
+case class Job(
+    name: String,
+    description: String,
+    frequency: FiniteDuration,
+    initialDelay: FiniteDuration = Duration.Zero
+)
 
 object Job:
   val syncSearch: Job = Job(
@@ -41,19 +50,21 @@ object Job:
   )
   val missingMavenArtifacts: Job = Job(
     "missing-maven-artifacts",
-    "Find missing artifacts in Maven Central of the known group IDs.",
-    24.hours
+    "Fallback for discover-maven-namespaces: crawl Maven Central directory listings of all known group IDs to find artifacts missing from the nexus index.",
+    30.days,
+    initialDelay = 7.days
   )
   val nonStandardArtifacts: Job = Job(
     "non-standard-artifacts",
-    "Find missing non-standard artifacts from Maven Central",
-    2.hours
+    "Fallback for discover-maven-namespaces: find missing non-standard artifacts from Maven Central.",
+    30.days,
+    initialDelay = 7.days
   )
 
   val discoverMavenNamespaces: Job = Job(
     "discover-maven-namespaces",
-    "Find new Scala group IDs on Maven Central via the nexus index, then auto-index them.",
-    12.hours
+    "Index new Scala artifacts from the Maven Central nexus index and record new group IDs for review.",
+    6.hours
   )
   val latestArtifacts: Job = Job(
     "latest-artifacts",

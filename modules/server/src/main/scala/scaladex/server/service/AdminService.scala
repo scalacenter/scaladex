@@ -37,7 +37,13 @@ class AdminService(
   private given ExecutionContext = system.dispatcher
 
   private val discoveryService =
-    new DiscoveryService(database, mavenCentralIndexClient, mavenCentralService.syncOne(_, None))
+    new DiscoveryService(
+      database,
+      mavenCentralIndexClient,
+      mavenCentralService.indexRefs,
+      mavenCentralService.syncOne(_, None),
+      () => mavenCentralService.nonStandardArtifacts()
+    )
 
   val projectService = new ProjectService(database, searchEngine)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
