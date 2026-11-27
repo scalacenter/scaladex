@@ -8,7 +8,6 @@ bin/.scalafmt
 scaladex.log
 .bloop/
 .metals/
-scaladex-scaladoc/
 **/project/metals.sbt
 .bsp/
 .vscode/

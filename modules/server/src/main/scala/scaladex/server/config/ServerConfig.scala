@@ -9,7 +9,6 @@ import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.config.GithubConfig
 import scaladex.infra.config.MavenCentralConfig
 import scaladex.infra.config.PostgreSQLConfig
-import scaladex.infra.config.ScaladocConfig
 
 import com.softwaremill.pekkohttpsession.SessionConfig
 import com.typesafe.config.Config
@@ -27,8 +26,7 @@ case class ServerConfig(
     filesystem: FilesystemConfig,
     github: GithubConfig,
     mavenCentral: MavenCentralConfig,
-    caching: CacheConfig,
-    scaladoc: ScaladocConfig
+    caching: CacheConfig
 )
 
 object ServerConfig:
@@ -50,7 +48,6 @@ object ServerConfig:
     val github = GithubConfig.from(config)
     val mavenCentral = MavenCentralConfig.from(config)
     val caching = CacheConfig.from(config)
-    val scaladoc = ScaladocConfig.from(config)
 
     ServerConfig(
       env,
@@ -64,8 +61,7 @@ object ServerConfig:
       filesystem,
       github,
       mavenCentral,
-      caching,
-      scaladoc
+      caching
     )
   end load
 end ServerConfig
